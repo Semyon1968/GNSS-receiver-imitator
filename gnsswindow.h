@@ -24,7 +24,8 @@ private slots:
 private:
     Ui::GNSSWindow *ui;
     QTcpSocket *socket;
-
+    void setupSocket();
+    void connectToServer();
     void sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload = {});
 };
 
