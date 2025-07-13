@@ -24,12 +24,25 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
       <string>Передача</string>
      </attribute>
+     <widget class="QPushButton" name="pushBtnTrancfer">
+      <property name="geometry">
+       <rect>
+        <x>580</x>
+        <y>440</y>
+        <width>171</width>
+        <height>26</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Передать пакет</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">

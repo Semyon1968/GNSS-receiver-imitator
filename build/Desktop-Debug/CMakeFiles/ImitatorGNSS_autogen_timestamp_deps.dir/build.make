@@ -66,9 +66,10 @@ include CMakeFiles/ImitatorGNSS_autogen_timestamp_deps.dir/compiler_depend.make
 # Include the progress variables for this target.
 include CMakeFiles/ImitatorGNSS_autogen_timestamp_deps.dir/progress.make
 
-CMakeFiles/ImitatorGNSS_autogen_timestamp_deps: /usr/lib/qt5/bin/moc
-CMakeFiles/ImitatorGNSS_autogen_timestamp_deps: /usr/lib/qt5/bin/uic
 CMakeFiles/ImitatorGNSS_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.15.13
+CMakeFiles/ImitatorGNSS_autogen_timestamp_deps: /usr/lib/x86_64-linux-gnu/libQt5Network.so.5.15.13
+CMakeFiles/ImitatorGNSS_autogen_timestamp_deps: /usr/lib/qt5/bin/uic
+CMakeFiles/ImitatorGNSS_autogen_timestamp_deps: /usr/lib/qt5/bin/moc
 
 ImitatorGNSS_autogen_timestamp_deps: CMakeFiles/ImitatorGNSS_autogen_timestamp_deps
 ImitatorGNSS_autogen_timestamp_deps: CMakeFiles/ImitatorGNSS_autogen_timestamp_deps.dir/build.make

@@ -132,6 +132,7 @@ ImitatorGNSS: CMakeFiles/ImitatorGNSS.dir/main.cpp.o
 ImitatorGNSS: CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o
 ImitatorGNSS: CMakeFiles/ImitatorGNSS.dir/build.make
 ImitatorGNSS: /usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.15.13
+ImitatorGNSS: /usr/lib/x86_64-linux-gnu/libQt5Network.so.5.15.13
 ImitatorGNSS: /usr/lib/x86_64-linux-gnu/libQt5Gui.so.5.15.13
 ImitatorGNSS: /usr/lib/x86_64-linux-gnu/libQt5Core.so.5.15.13
 ImitatorGNSS: CMakeFiles/ImitatorGNSS.dir/link.txt
