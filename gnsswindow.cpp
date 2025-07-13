@@ -11,19 +11,51 @@ GNSSWindow::GNSSWindow(QWidget *parent)
 
     // Инициализация сокета
     socket = new QTcpSocket(this);
-    socket->connectToHost("127.0.0.1", 5000); // IP и порт сервера
 
     connect(socket, &QTcpSocket::connected, this, [](){
         qDebug() << "Соединение установлено";
     });
-
     connect(socket, &QTcpSocket::readyRead, this, [this]() {
         QByteArray data = socket->readAll();
         qDebug() << "Приняты данные:" << data.toHex(' ');
-        // Здесь можно вызвать функцию парсинга UBX-ответа
+
+        if (data.size() < 8) {
+            // Пакет слишком короткий для UBX
+            return;
+        }
+
+        // Проверка синхросимволов UBX
+        if (static_cast<quint8>(data[0]) != 0xB5 || static_cast<quint8>(data[1]) != 0x62) {
+            qDebug() << "Некорректный пакет (нет UBX sync)";
+            return;
+        }
+
+        quint8 msgClass = static_cast<quint8>(data[2]);
+        quint8 msgId = static_cast<quint8>(data[3]);
+
+        quint16 length = static_cast<quint8>(data[4]) | (static_cast<quint8>(data[5]) << 8);
+
+        if (data.size() < 8 + length) {
+            qDebug() << "Пакет неполный";
+            return;
+        }
+
+        QByteArray payload = data.mid(6, length);
+
+        // Заполняем GUI элементы
+        ui->leClassReceiver->setText(QString("%1").arg(msgClass, 2, 16, QChar('0')).toUpper());
+        ui->leIDReceiver->setText(QString("%1").arg(msgId, 2, 16, QChar('0')).toUpper());
+        ui->tePayloadReceiver->setPlainText(payload.toHex(' ').toUpper());
     });
 
-    // Меню
+
+    connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
+            this, [this](QAbstractSocket::SocketError socketError){
+                qDebug() << "Socket error:" << socket->errorString();
+                QMessageBox::warning(this, "Socket Error", socket->errorString());
+            });
+
+    socket->connectToHost("127.0.0.1", 5000); // IP и порт сервера
     connect(ui->action_3, &QAction::triggered, this, []() {
         QMessageBox::information(nullptr, "О разработчике", "Разработчик: Семён Тихонов");
     });
@@ -32,9 +64,8 @@ GNSSWindow::GNSSWindow(QWidget *parent)
     });
     connect(ui->action_2, &QAction::triggered, qApp, &QApplication::quit);
 
-    connect(ui->pushBtnTrancfer, &QPushButton::clicked, this, [this]() {
-        sendUBXPacket(0x01, 0x07);
-    });
+    connect(ui->pushBtnTrancfer, &QPushButton::clicked, this, &GNSSWindow::onSendBtnClicked);
+
 }
 
 GNSSWindow::~GNSSWindow()
@@ -42,7 +73,32 @@ GNSSWindow::~GNSSWindow()
     delete ui;
 }
 
-// Отдельно — реализация sendUBXPacket вне конструктора и деструктора
+void GNSSWindow::onSendBtnClicked()
+{
+    // Считываем Class и ID из lineEdit как числа в hex
+    bool okClass = false, okId = false;
+    quint8 msgClass = ui->leClass->text().toUInt(&okClass, 16);
+    quint8 msgId = ui->leID->text().toUInt(&okId, 16);
+
+    if (!okClass || !okId) {
+        QMessageBox::warning(this, "Ошибка", "Неверный формат Class или ID (ожидается hex)");
+        return;
+    }
+
+    // Считываем payload из QTextEdit, ожидая hex-строку (без пробелов или с пробелами)
+    QString payloadText = ui->tePayload->toPlainText().trimmed();
+
+    // Уберём пробелы, переведём в QByteArray
+    QByteArray payload = QByteArray::fromHex(payloadText.toUtf8());
+
+    if (payload.isEmpty() && !payloadText.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Payload должен содержать корректные hex-данные");
+        return;
+    }
+
+    sendUBXPacket(msgClass, msgId, payload);
+}
+
 void GNSSWindow::sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload)
 {
     QByteArray packet;
@@ -65,6 +121,8 @@ void GNSSWindow::sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &
     packet.append(ck_a);
     packet.append(ck_b);
 
+     qDebug() << "Отправляем пакет (hex):" << packet.toHex(' ');
+
     if (socket && socket->state() == QAbstractSocket::ConnectedState) {
         socket->write(packet);
         socket->flush();
@@ -73,3 +131,4 @@ void GNSSWindow::sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &
         QMessageBox::warning(this, "Ошибка", "Нет TCP-соединения");
     }
 }
+

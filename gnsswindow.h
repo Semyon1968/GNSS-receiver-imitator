@@ -18,6 +18,9 @@ public:
     explicit GNSSWindow(QWidget *parent = nullptr);
     ~GNSSWindow();
 
+private slots:
+    void onSendBtnClicked();
+
 private:
     Ui::GNSSWindow *ui;
     QTcpSocket *socket;
