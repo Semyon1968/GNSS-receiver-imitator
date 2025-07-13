@@ -204,6 +204,29 @@
        <string>Payload</string>
       </property>
      </widget>
+     <widget class="QLineEdit" name="leNameReceiver">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>310</y>
+        <width>441</width>
+        <height>61</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_7">
+      <property name="geometry">
+       <rect>
+        <x>170</x>
+        <y>280</y>
+        <width>111</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Тип сообщения</string>
+      </property>
+     </widget>
     </widget>
    </widget>
   </widget>

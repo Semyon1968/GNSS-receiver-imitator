@@ -345,4 +345,6 @@ CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qmessagebox.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qdialog.h \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/QDebug \
- /usr/include/x86_64-linux-gnu/qt5/QtCore/qdebug.h
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qdebug.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/QHash \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qhash.h
