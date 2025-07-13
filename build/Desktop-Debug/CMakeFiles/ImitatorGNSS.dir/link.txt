@@ -1,0 +1,1 @@
+/usr/bin/g++-13 -DQT_QML_DEBUG -g CMakeFiles/ImitatorGNSS.dir/ImitatorGNSS_autogen/mocs_compilation.cpp.o CMakeFiles/ImitatorGNSS.dir/main.cpp.o CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o -o ImitatorGNSS  /usr/lib/x86_64-linux-gnu/libQt5Widgets.so.5.15.13 /usr/lib/x86_64-linux-gnu/libQt5Gui.so.5.15.13 /usr/lib/x86_64-linux-gnu/libQt5Core.so.5.15.13 
