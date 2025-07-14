@@ -3,6 +3,8 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QHash>
+#include <QTime>
+#include <QFile>
 
 // Структура ключа для UBX-сообщения
 struct UBXKey {
@@ -144,12 +146,12 @@ QHash<UBXKey, QString> createUbxMap() {
     // UBX-SEC
     map.insert({0x27, 0x03}, "UBX-SEC-UNIQID");
 
-    // UBX-TIM – Timing messages
+    // UBX-TIM
     map.insert({0x0d, 0x03}, "UBX-TIM-TM2");
     map.insert({0x0d, 0x01}, "UBX-TIM-TP");
     map.insert({0x0d, 0x06}, "UBX-TIM-VRFY");
 
-    // UBX-UPD – Firmware update messages
+    // UBX-UPD
     map.insert({0x09, 0x14}, "UBX-UPD-SOS");
 
     return map;
@@ -177,7 +179,7 @@ GNSSWindow::GNSSWindow(QWidget *parent)
         QMessageBox::information(nullptr, "О разработчике", "Разработчик: Семён Тихонов");
     });
     connect(ui->action_4, &QAction::triggered, this, []() {
-        QMessageBox::information(nullptr, "Версия программы", "Версия: 1.0.0\nДата релиза: 15.06.2025");
+        QMessageBox::information(nullptr, "О программе", "Версия: 1.0.0\nДата релиза: 15.06.2025");
     });
     connect(ui->action_2, &QAction::triggered, qApp, &QApplication::quit);
 
@@ -225,6 +227,23 @@ void GNSSWindow::setupSocket()
 
         QString messageName = getUbxMessageName(msgClass, msgId);
         ui->leNameReceiver->setText(messageName);
+
+        // Логирование принятых сообщений
+        QString logEntry = QString("[%1] Получено: %2 (%3, %4) | Payload: %5")
+            .arg(QTime::currentTime().toString("HH:mm:ss"))
+            .arg(messageName)
+            .arg(QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0')).toUpper())
+            .arg(QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0')).toUpper())
+            .arg(QString::fromUtf8(payload.toHex(' ').toUpper()));
+        ui->teLogs->append(logEntry);
+
+        QFile file("test_log.txt");
+        if (file.open(QIODevice::Append | QIODevice::Text)) {
+            QTextStream out(&file);
+            out << logEntry << "\n";
+            file.close();
+        }
+
     });
 
     connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
