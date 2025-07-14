@@ -204,10 +204,10 @@ void GNSSWindow::setupSocket()
         receiveBuffer.append(socket->readAll());
 
         while (receiveBuffer.size() >= 8) {
-            // ищем начало пакета
+            // ищем начало пакета UBX (B5 62)
             int startIdx = receiveBuffer.indexOf(QByteArray::fromHex("B562"));
             if (startIdx == -1) {
-                receiveBuffer.clear(); // отбросим всё до синхрослов
+                receiveBuffer.clear(); // отбросим всё до синхрослова
                 break;
             }
             if (startIdx > 0) {
@@ -238,7 +238,8 @@ void GNSSWindow::setupSocket()
                 qDebug() << "Ошибка контрольной суммы";
                 continue;
             }
-
+            // Очистка полей GUI перед заполнением новыми данными
+            clearGuiFields();
             // безопасный парсинг
             qDebug() << "Принят пакет:" << fullPacket.toHex(' ').toUpper();
 
@@ -246,17 +247,19 @@ void GNSSWindow::setupSocket()
                 //парсинг NAV-PVT
                 quint32 iTOW = qFromLittleEndian<quint32>((const uchar*)payload.constData());
                 quint16 year = qFromLittleEndian<quint16>((const uchar*)(payload.constData() + 4));
-                quint8 month = payload[6];
-                quint8 day = payload[7];
-                quint8 hour = payload[8];
-                quint8 minute = payload[9];
-                quint8 second = payload[10];
-                quint8 fixType = payload[20];
-                quint8 numSV = payload[23];
+                quint8 month = static_cast<quint8>(payload[6]);
+                quint8 day = static_cast<quint8>(payload[7]);
+                quint8 hour = static_cast<quint8>(payload[8]);
+                quint8 minute = static_cast<quint8>(payload[9]);
+                quint8 second = static_cast<quint8>(payload[10]);
+                quint8 fixType = static_cast<quint8>(payload[20]);
+                quint8 numSV = static_cast<quint8>(payload[23]);
                 qint32 lon = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 24));
                 qint32 lat = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 28));
                 qint32 height = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 32));
                 qint32 hMSL = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 36));
+                qint32 groundSpeed = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 60));
+                qint32 heading = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 64));
 
                 QString utcTime = QString("%1-%2-%3 %4:%5:%6")
                                       .arg(year, 4, 10, QChar('0'))
@@ -268,6 +271,8 @@ void GNSSWindow::setupSocket()
 
                 double lonDeg = lon / 1e7;
                 double latDeg = lat / 1e7;
+                double speed_mps = groundSpeed / 1000.0;          // м/с
+                double heading_deg = heading / 1e5;               // градусы
                 double heightEllipsoid = height / 1000.0;
                 double heightMSL = hMSL / 1000.0;
 
@@ -278,44 +283,47 @@ void GNSSWindow::setupSocket()
                 ui->leLongitude->setText(QString::number(lonDeg, 'f', 7));
                 ui->leHeight->setText(QString::number(heightEllipsoid, 'f', 2));
                 ui->leHMSL->setText(QString::number(heightMSL, 'f', 2));
+
+                // Выводим speed и heading из пакета
+                ui->leSpeed->setText(QString::number(speed_mps, 'f', 2));
+                ui->leHeading->setText(QString::number(heading_deg, 'f', 5));
+
+                // Выводим raw payload для наглядности
+                ui->tePayloadReceiver->setPlainText(payload.toHex(' ').toUpper());
             }
-            if (msgClass == 0x01 && msgId == 0x21 && payload.size() >= 20) {
-                // UBX-NAV-TIMEUTC
+            else if (msgClass == 0x01 && msgId == 0x21 && payload.size() >= 20) {
+                //парсинг NAV-TIMEUTC
                 quint32 iTOW = qFromLittleEndian<quint32>((const uchar*)payload.constData());
-                quint32 tAcc = qFromLittleEndian<quint32>((const uchar*)(payload.constData() + 4));
-                quint32 nano = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 8));
                 quint16 year = qFromLittleEndian<quint16>((const uchar*)(payload.constData() + 12));
-                quint8 month = payload[14];
-                quint8 day = payload[15];
-                quint8 hour = payload[16];
-                quint8 minute = payload[17];
-                quint8 second = payload[18];
-                quint8 valid = payload[19];
+                quint8 month = static_cast<quint8>(payload[14]);
+                quint8 day = static_cast<quint8>(payload[15]);
+                quint8 hour = static_cast<quint8>(payload[16]);
+                quint8 minute = static_cast<quint8>(payload[17]);
+                quint8 second = static_cast<quint8>(payload[18]);
 
                 QString utcTime = QString("%1-%2-%3 %4:%5:%6")
-                                      .arg(year, 4, 10, QChar('0'))
-                                      .arg(month, 2, 10, QChar('0'))
-                                      .arg(day, 2, 10, QChar('0'))
-                                      .arg(hour, 2, 10, QChar('0'))
-                                      .arg(minute, 2, 10, QChar('0'))
-                                      .arg(second, 2, 10, QChar('0'));
+                    .arg(year, 4, 10, QChar('0'))
+                    .arg(month, 2, 10, QChar('0'))
+                    .arg(day, 2, 10, QChar('0'))
+                    .arg(hour, 2, 10, QChar('0'))
+                    .arg(minute, 2, 10, QChar('0'))
+                    .arg(second, 2, 10, QChar('0'));
 
                 ui->leUTCTime->setText(utcTime);
             }
 
-            // логика для TIMEUTC или других сообщений остаётся та же
             ui->leClassReceiver->setText(QString("%1").arg(msgClass, 2, 16, QChar('0')).toUpper());
             ui->leIDReceiver->setText(QString("%1").arg(msgId, 2, 16, QChar('0')).toUpper());
-            ui->tePayloadReceiver->setPlainText(payload.toHex(' ').toUpper());
             ui->leNameReceiver->setText(getUbxMessageName(msgClass, msgId));
 
             QString logEntry = QString("[%1] Получено: %2 (0x%3, 0x%4) | Payload: %5")
-                .arg(QTime::currentTime().toString("HH:mm:ss"))
-                .arg(getUbxMessageName(msgClass, msgId))
-                .arg(msgClass, 2, 16, QChar('0')).arg(msgId, 2, 16, QChar('0'))
-                .arg(QString::fromUtf8(payload.toHex(' ').toUpper()));
+                                   .arg(QTime::currentTime().toString("HH:mm:ss"))
+                                   .arg(getUbxMessageName(msgClass, msgId))
+                                   .arg(msgClass, 2, 16, QChar('0')).arg(msgId, 2, 16, QChar('0'))
+                                   .arg(QString::fromUtf8(payload.toHex(' ').toUpper()));
 
             ui->teLogs->append(logEntry);
+
 
             QFile file("test_log.txt");
             if (file.open(QIODevice::Append | QIODevice::Text)) {
@@ -323,9 +331,9 @@ void GNSSWindow::setupSocket()
                 out << logEntry << "\n";
                 file.close();
             }
+
         }
     });
-
 
     connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
             this, [this](QAbstractSocket::SocketError){
@@ -334,9 +342,21 @@ void GNSSWindow::setupSocket()
             });
 }
 
-void GNSSWindow::connectToServer()
+void GNSSWindow::clearGuiFields()
 {
-    socket->connectToHost("127.0.0.1", 5000);
+    ui->leUTCTime->clear();
+    ui->leFixType->clear();
+    ui->leNumSV->clear();
+    ui->leLatitude->clear();
+    ui->leLongitude->clear();
+    ui->leHeight->clear();
+    ui->leHMSL->clear();
+    ui->leSpeed->clear();
+    ui->leHeading->clear();
+    ui->tePayloadReceiver->clear();
+    ui->leClassReceiver->clear();
+    ui->leIDReceiver->clear();
+    ui->leNameReceiver->clear();
 }
 
 void GNSSWindow::onSendBtnClicked()
@@ -419,6 +439,19 @@ void GNSSWindow::onSendBtnClicked()
             qToLittleEndian(hMSL, (uchar*)(payload.data() + 36));
         }
 
+        // Скорость (speed) и Heading из полей
+        QString speedStr = ui->leSpeed_2->text();
+        if (!speedStr.trimmed().isEmpty()) {
+            qint32 groundSpeed = static_cast<qint32>(speedStr.toDouble() * 1000.0); // из m/s в mm/s
+            qToLittleEndian(groundSpeed, (uchar*)(payload.data() + 60));
+        }
+
+        QString headingStr = ui->leHeading_2->text();
+        if (!headingStr.trimmed().isEmpty()) {
+            qint32 heading = static_cast<qint32>(headingStr.toDouble() * 1e5); // из deg в 1e-5 deg
+            qToLittleEndian(heading, (uchar*)(payload.data() + 64));
+        }
+
     } else if (msgClass == 0x01 && msgId == 0x21) { // NAV-TIMEUTC
         payload.fill(0, 20); // Размер payload для NAV-TIMEUTC
 
@@ -456,42 +489,167 @@ void GNSSWindow::onSendBtnClicked()
         if (!fixStr.trimmed().isEmpty()) {
             payload[16] = fixStr.toUInt();
         }
-
-        // flags (опционально)
-        QString flagsStr = ui->leFlags->text();
-        if (!flagsStr.trimmed().isEmpty()) {
-            payload[17] = flagsStr.toUInt();
-        }
-
-    } else {
-        QMessageBox::warning(this, "Ошибка", "Поддерживаются только UBX-NAV-PVT (0x01, 0x07) и UBX-NAV-TIMEUTC (0x01, 0x21)");
-        return;
     }
 
-    // Если есть hex-строка payload-а вручную
-    QString rawPayloadStr = ui->tePayload->toPlainText().simplified();
-    if (!rawPayloadStr.isEmpty()) {
-        QByteArray manualPayload;
-        QStringList byteList = rawPayloadStr.split(QRegularExpression("[\\s,;]+"));
-        for (const QString &byteStr : byteList) {
-            bool ok = false;
-            quint8 b = byteStr.toUInt(&ok, 16);
-            if (!ok) {
-                QMessageBox::warning(this, "Ошибка", "Неверный hex-формат в tePayload");
-                return;
+    // Проверяем есть ли raw payload в поле tePayload
+    QString rawPayloadHex = ui->tePayload->toPlainText().trimmed().remove(' ');
+    QByteArray rawPayload = QByteArray::fromHex(rawPayloadHex.toUtf8());
+
+    // Если rawPayload не пустой, то используем его, иначе - сформированный
+    QByteArray finalPayload = rawPayload.isEmpty() ? payload : rawPayload;
+
+    // **Обновляем конкретные поля с приоритетом, даже если есть rawPayload**
+
+    if (msgClass == 0x01 && msgId == 0x07) { // NAV-PVT
+
+        // UTC-время
+        QString utcStr = ui->leUTCTime_2->text();
+        if (!utcStr.trimmed().isEmpty()) {
+            QDateTime dt = QDateTime::fromString(utcStr, "yyyy-MM-dd HH:mm:ss");
+            if (dt.isValid()) {
+                quint16 year = dt.date().year();
+                quint8 month = dt.date().month();
+                quint8 day = dt.date().day();
+                quint8 hour = dt.time().hour();
+                quint8 minute = dt.time().minute();
+                quint8 second = dt.time().second();
+
+                qToLittleEndian(year, (uchar*)(finalPayload.data() + 4));
+                finalPayload[6] = month;
+                finalPayload[7] = day;
+                finalPayload[8] = hour;
+                finalPayload[9] = minute;
+                finalPayload[10] = second;
+
+                finalPayload[11] = 0x07; // valid флаги (дата + время + fullyResolved)
             }
-            manualPayload.append(static_cast<char>(b));
         }
 
-        // Заменим данные в payload там, где пользователь не ввёл значения в поля
-        for (int i = 0; i < qMin(payload.size(), manualPayload.size()); ++i) {
-            if ((quint8)payload[i] == 0) {
-                payload[i] = manualPayload[i];
+        // fixType
+        QString fixStr = ui->leFixType_2->text();
+        if (!fixStr.trimmed().isEmpty()) {
+            finalPayload[20] = fixStr.toUInt();
+        }
+
+        // numSV
+        QString svStr = ui->leNumSV_2->text();
+        if (!svStr.trimmed().isEmpty()) {
+            finalPayload[23] = svStr.toUInt();
+        }
+
+        // Координаты
+        QString lonStr = ui->leLongitude_2->text();
+        if (!lonStr.trimmed().isEmpty()) {
+            qint32 lon = static_cast<qint32>(lonStr.toDouble() * 1e7);
+            qToLittleEndian(lon, (uchar*)(finalPayload.data() + 24));
+        }
+
+        QString latStr = ui->leLatitude_2->text();
+        if (!latStr.trimmed().isEmpty()) {
+            qint32 lat = static_cast<qint32>(latStr.toDouble() * 1e7);
+            qToLittleEndian(lat, (uchar*)(finalPayload.data() + 28));
+        }
+
+        QString hStr = ui->leHeight_2->text();
+        if (!hStr.trimmed().isEmpty()) {
+            qint32 height = static_cast<qint32>(hStr.toDouble() * 1000);
+            qToLittleEndian(height, (uchar*)(finalPayload.data() + 32));
+        }
+
+        QString hmslStr = ui->leHMSL_2->text();
+        if (!hmslStr.trimmed().isEmpty()) {
+            qint32 hMSL = static_cast<qint32>(hmslStr.toDouble() * 1000);
+            qToLittleEndian(hMSL, (uchar*)(finalPayload.data() + 36));
+        }
+
+        // Скорость (speed)
+        QString speedStr = ui->leSpeed_2->text();
+        if (!speedStr.trimmed().isEmpty()) {
+            qint32 groundSpeed = static_cast<qint32>(speedStr.toDouble() * 1000.0); // из m/s в mm/s
+            qToLittleEndian(groundSpeed, (uchar*)(finalPayload.data() + 60));
+        }
+
+        // Heading
+        QString headingStr = ui->leHeading_2->text();
+        if (!headingStr.trimmed().isEmpty()) {
+            qint32 heading = static_cast<qint32>(headingStr.toDouble() * 1e5); // из deg в 1e-5 deg
+            qToLittleEndian(heading, (uchar*)(finalPayload.data() + 64));
+        }
+
+    } else if (msgClass == 0x01 && msgId == 0x21) { // NAV-TIMEUTC
+
+        // UTC-время
+        QString utcStr = ui->leUTCTime_2->text();
+        if (!utcStr.trimmed().isEmpty()) {
+            QDateTime dt = QDateTime::fromString(utcStr, "yyyy-MM-dd HH:mm:ss");
+            if (dt.isValid()) {
+                quint16 year = dt.date().year();
+                quint8 month = dt.date().month();
+                quint8 day = dt.date().day();
+                quint8 hour = dt.time().hour();
+                quint8 minute = dt.time().minute();
+                quint8 second = dt.time().second();
+
+                qToLittleEndian(year, (uchar*)(finalPayload.data() + 12));
+                finalPayload[14] = month;
+                finalPayload[15] = day;
+                finalPayload[16] = hour;
+                finalPayload[17] = minute;
+                finalPayload[18] = second;
+                finalPayload[19] = 0x07; // valid флаги: date + time + fully resolved
             }
+        }
+
+        // fixType
+        QString fixStr = ui->leFixType_2->text();
+        if (!fixStr.trimmed().isEmpty()) {
+            finalPayload[16] = fixStr.toUInt();
         }
     }
 
-    sendUBXPacket(msgClass, msgId, payload);
+    QByteArray packet;
+    packet.append(0xB5);
+    packet.append(0x62);
+    packet.append(msgClass);
+    packet.append(msgId);
+
+    quint16 len = static_cast<quint16>(finalPayload.size());
+    packet.append(static_cast<char>(len & 0xFF));
+    packet.append(static_cast<char>((len >> 8) & 0xFF));
+    packet.append(finalPayload);
+
+    // Рассчёт CK
+    quint8 ck_a = 0, ck_b = 0;
+    for (int i = 2; i < packet.size(); ++i) {
+        ck_a += static_cast<quint8>(packet[i]);
+        ck_b += ck_a;
+    }
+    packet.append(ck_a);
+    packet.append(ck_b);
+
+    socket->write(packet);
+/*
+    // Логирование отправки
+    QString logEntry = QString("[%1] Отправлено: %2 (0x%3, 0x%4) | Payload: %5")
+                           .arg(QTime::currentTime().toString("HH:mm:ss"))
+                           .arg(getUbxMessageName(msgClass, msgId))
+                           .arg(msgClass, 2, 16, QChar('0')).arg(msgId, 2, 16, QChar('0'))
+                           .arg(QString::fromUtf8(finalPayload.toHex(' ').toUpper()));
+
+    ui->teLogs->append(logEntry);
+
+    QFile file("test_log.txt");
+    if (file.open(QIODevice::Append | QIODevice::Text)) {
+        QTextStream out(&file);
+        out << logEntry << "\n";
+        file.close();
+    }
+    */
+}
+
+void GNSSWindow::connectToServer()
+{
+    socket->connectToHost("127.0.0.1", 5000);
 }
 
 void GNSSWindow::sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload)

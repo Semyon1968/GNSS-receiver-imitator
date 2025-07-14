@@ -20,6 +20,7 @@ public:
 
 private slots:
     void onSendBtnClicked();
+    void clearGuiFields();
 
 private:
     Ui::GNSSWindow *ui;
