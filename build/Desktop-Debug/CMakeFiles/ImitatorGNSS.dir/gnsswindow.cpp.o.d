@@ -312,6 +312,12 @@ CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qeventloop.h \
  /usr/include/x86_64-linux-gnu/qt5/QtGui/qguiapplication.h \
  /usr/include/x86_64-linux-gnu/qt5/QtGui/qinputmethod.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGridLayout \
+ /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgridlayout.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qlayout.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qlayoutitem.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qboxlayout.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgridlayout.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QLabel \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qlabel.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qframe.h \
@@ -352,4 +358,9 @@ CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qdatetime.h \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/QFile \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qfile.h \
- /usr/include/x86_64-linux-gnu/qt5/QtCore/qfiledevice.h
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qfiledevice.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/QtEndian \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qendian.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qfloat16.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/QRegularExpression \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qregularexpression.h

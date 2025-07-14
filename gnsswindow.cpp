@@ -5,6 +5,9 @@
 #include <QHash>
 #include <QTime>
 #include <QFile>
+#include <QtEndian>
+#include <QRegularExpression>
+
 
 // Структура ключа для UBX-сообщения
 struct UBXKey {
@@ -198,53 +201,131 @@ void GNSSWindow::setupSocket()
     });
 
     connect(socket, &QTcpSocket::readyRead, this, [this]() {
-        QByteArray data = socket->readAll();
-        qDebug() << "Приняты данные:" << data.toHex(' ');
+        receiveBuffer.append(socket->readAll());
 
-        if (data.size() < 8) {
-            return; // слишком короткий пакет
+        while (receiveBuffer.size() >= 8) {
+            // ищем начало пакета
+            int startIdx = receiveBuffer.indexOf(QByteArray::fromHex("B562"));
+            if (startIdx == -1) {
+                receiveBuffer.clear(); // отбросим всё до синхрослов
+                break;
+            }
+            if (startIdx > 0) {
+                receiveBuffer.remove(0, startIdx); // удаляем всё до начала пакета
+            }
+
+            if (receiveBuffer.size() < 8) break; // ждём заголовок
+
+            quint8 msgClass = static_cast<quint8>(receiveBuffer[2]);
+            quint8 msgId = static_cast<quint8>(receiveBuffer[3]);
+            quint16 length = static_cast<quint8>(receiveBuffer[4]) | (static_cast<quint8>(receiveBuffer[5]) << 8);
+            int totalSize = 6 + length + 2; // header + payload + checksum
+
+            if (receiveBuffer.size() < totalSize) break; // ждём весь пакет
+
+            QByteArray fullPacket = receiveBuffer.mid(0, totalSize);
+            receiveBuffer.remove(0, totalSize);
+
+            QByteArray payload = fullPacket.mid(6, length);
+            quint8 ck_a = 0, ck_b = 0;
+            for (int i = 2; i < 6 + length; ++i) {
+                ck_a += static_cast<quint8>(fullPacket[i]);
+                ck_b += ck_a;
+            }
+
+            if (ck_a != static_cast<quint8>(fullPacket[6 + length]) ||
+                ck_b != static_cast<quint8>(fullPacket[6 + length + 1])) {
+                qDebug() << "Ошибка контрольной суммы";
+                continue;
+            }
+
+            // безопасный парсинг
+            qDebug() << "Принят пакет:" << fullPacket.toHex(' ').toUpper();
+
+            if (msgClass == 0x01 && msgId == 0x07 && payload.size() >= 92) {
+                //парсинг NAV-PVT
+                quint32 iTOW = qFromLittleEndian<quint32>((const uchar*)payload.constData());
+                quint16 year = qFromLittleEndian<quint16>((const uchar*)(payload.constData() + 4));
+                quint8 month = payload[6];
+                quint8 day = payload[7];
+                quint8 hour = payload[8];
+                quint8 minute = payload[9];
+                quint8 second = payload[10];
+                quint8 fixType = payload[20];
+                quint8 numSV = payload[23];
+                qint32 lon = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 24));
+                qint32 lat = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 28));
+                qint32 height = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 32));
+                qint32 hMSL = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 36));
+
+                QString utcTime = QString("%1-%2-%3 %4:%5:%6")
+                                      .arg(year, 4, 10, QChar('0'))
+                                      .arg(month, 2, 10, QChar('0'))
+                                      .arg(day, 2, 10, QChar('0'))
+                                      .arg(hour, 2, 10, QChar('0'))
+                                      .arg(minute, 2, 10, QChar('0'))
+                                      .arg(second, 2, 10, QChar('0'));
+
+                double lonDeg = lon / 1e7;
+                double latDeg = lat / 1e7;
+                double heightEllipsoid = height / 1000.0;
+                double heightMSL = hMSL / 1000.0;
+
+                ui->leUTCTime->setText(utcTime);
+                ui->leFixType->setText(QString::number(fixType));
+                ui->leNumSV->setText(QString::number(numSV));
+                ui->leLatitude->setText(QString::number(latDeg, 'f', 7));
+                ui->leLongitude->setText(QString::number(lonDeg, 'f', 7));
+                ui->leHeight->setText(QString::number(heightEllipsoid, 'f', 2));
+                ui->leHMSL->setText(QString::number(heightMSL, 'f', 2));
+            }
+            if (msgClass == 0x01 && msgId == 0x21 && payload.size() >= 20) {
+                // UBX-NAV-TIMEUTC
+                quint32 iTOW = qFromLittleEndian<quint32>((const uchar*)payload.constData());
+                quint32 tAcc = qFromLittleEndian<quint32>((const uchar*)(payload.constData() + 4));
+                quint32 nano = qFromLittleEndian<qint32>((const uchar*)(payload.constData() + 8));
+                quint16 year = qFromLittleEndian<quint16>((const uchar*)(payload.constData() + 12));
+                quint8 month = payload[14];
+                quint8 day = payload[15];
+                quint8 hour = payload[16];
+                quint8 minute = payload[17];
+                quint8 second = payload[18];
+                quint8 valid = payload[19];
+
+                QString utcTime = QString("%1-%2-%3 %4:%5:%6")
+                                      .arg(year, 4, 10, QChar('0'))
+                                      .arg(month, 2, 10, QChar('0'))
+                                      .arg(day, 2, 10, QChar('0'))
+                                      .arg(hour, 2, 10, QChar('0'))
+                                      .arg(minute, 2, 10, QChar('0'))
+                                      .arg(second, 2, 10, QChar('0'));
+
+                ui->leUTCTime->setText(utcTime);
+            }
+
+            // логика для TIMEUTC или других сообщений остаётся та же
+            ui->leClassReceiver->setText(QString("%1").arg(msgClass, 2, 16, QChar('0')).toUpper());
+            ui->leIDReceiver->setText(QString("%1").arg(msgId, 2, 16, QChar('0')).toUpper());
+            ui->tePayloadReceiver->setPlainText(payload.toHex(' ').toUpper());
+            ui->leNameReceiver->setText(getUbxMessageName(msgClass, msgId));
+
+            QString logEntry = QString("[%1] Получено: %2 (0x%3, 0x%4) | Payload: %5")
+                .arg(QTime::currentTime().toString("HH:mm:ss"))
+                .arg(getUbxMessageName(msgClass, msgId))
+                .arg(msgClass, 2, 16, QChar('0')).arg(msgId, 2, 16, QChar('0'))
+                .arg(QString::fromUtf8(payload.toHex(' ').toUpper()));
+
+            ui->teLogs->append(logEntry);
+
+            QFile file("test_log.txt");
+            if (file.open(QIODevice::Append | QIODevice::Text)) {
+                QTextStream out(&file);
+                out << logEntry << "\n";
+                file.close();
+            }
         }
-
-        if (static_cast<quint8>(data[0]) != 0xB5 || static_cast<quint8>(data[1]) != 0x62) {
-            qDebug() << "Некорректный пакет (нет UBX sync)";
-            return;
-        }
-
-        quint8 msgClass = static_cast<quint8>(data[2]);
-        quint8 msgId = static_cast<quint8>(data[3]);
-        quint16 length = static_cast<quint8>(data[4]) | (static_cast<quint8>(data[5]) << 8);
-
-        if (data.size() < 8 + length) {
-            qDebug() << "Пакет неполный";
-            return;
-        }
-
-        QByteArray payload = data.mid(6, length);
-
-        ui->leClassReceiver->setText(QString("%1").arg(msgClass, 2, 16, QChar('0')).toUpper());
-        ui->leIDReceiver->setText(QString("%1").arg(msgId, 2, 16, QChar('0')).toUpper());
-        ui->tePayloadReceiver->setPlainText(payload.toHex(' ').toUpper());
-
-        QString messageName = getUbxMessageName(msgClass, msgId);
-        ui->leNameReceiver->setText(messageName);
-
-        // Логирование принятых сообщений
-        QString logEntry = QString("[%1] Получено: %2 (%3, %4) | Payload: %5")
-            .arg(QTime::currentTime().toString("HH:mm:ss"))
-            .arg(messageName)
-            .arg(QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0')).toUpper())
-            .arg(QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0')).toUpper())
-            .arg(QString::fromUtf8(payload.toHex(' ').toUpper()));
-        ui->teLogs->append(logEntry);
-
-        QFile file("test_log.txt");
-        if (file.open(QIODevice::Append | QIODevice::Text)) {
-            QTextStream out(&file);
-            out << logEntry << "\n";
-            file.close();
-        }
-
     });
+
 
     connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
             this, [this](QAbstractSocket::SocketError){
@@ -260,25 +341,154 @@ void GNSSWindow::connectToServer()
 
 void GNSSWindow::onSendBtnClicked()
 {
-    // Считываем Class и ID из lineEdit как числа в hex
     bool okClass = false, okId = false;
     quint8 msgClass = ui->leClass->text().toUInt(&okClass, 16);
     quint8 msgId = ui->leID->text().toUInt(&okId, 16);
 
     if (!okClass || !okId) {
-        QMessageBox::warning(this, "Ошибка", "Неверный формат Class или ID (ожидается hex)");
+        QMessageBox::warning(this, "Ошибка", "Неверный формат Class или ID (hex)");
         return;
     }
 
-    // Считываем payload из QTextEdit, ожидая hex-строку (без пробелов или с пробелами)
-    QString payloadText = ui->tePayload->toPlainText().trimmed();
+    QByteArray payload;
 
-    // Уберём пробелы, переведём в QByteArray
-    QByteArray payload = QByteArray::fromHex(payloadText.toUtf8());
+    if (msgClass == 0x01 && msgId == 0x07) { // NAV-PVT
+        payload.fill(0, 92); // Размер payload для NAV-PVT
 
-    if (payload.isEmpty() && !payloadText.isEmpty()) {
-        QMessageBox::warning(this, "Ошибка", "Payload должен содержать корректные hex-данные");
+        // iTOW (оставим 0)
+        quint32 iTOW = 0;
+        qToLittleEndian(iTOW, (uchar*)payload.data());
+
+        // UTC время
+        QString utcStr = ui->leUTCTime_2->text();
+        if (!utcStr.trimmed().isEmpty()) {
+            QDateTime dt = QDateTime::fromString(utcStr, "yyyy-MM-dd HH:mm:ss");
+            if (!dt.isValid()) {
+                QMessageBox::warning(this, "Ошибка", "Неверный формат даты/времени");
+                return;
+            }
+            quint16 year = dt.date().year();
+            quint8 month = dt.date().month();
+            quint8 day = dt.date().day();
+            quint8 hour = dt.time().hour();
+            quint8 minute = dt.time().minute();
+            quint8 second = dt.time().second();
+
+            qToLittleEndian(year, (uchar*)(payload.data() + 4));
+            payload[6] = month;
+            payload[7] = day;
+            payload[8] = hour;
+            payload[9] = minute;
+            payload[10] = second;
+
+            payload[11] = 0x07; // valid флаги (дата + время + fullyResolved)
+        }
+
+        // fixType
+        QString fixStr = ui->leFixType_2->text();
+        if (!fixStr.trimmed().isEmpty()) {
+            payload[20] = fixStr.toUInt();
+        }
+
+        // numSV
+        QString svStr = ui->leNumSV_2->text();
+        if (!svStr.trimmed().isEmpty()) {
+            payload[23] = svStr.toUInt();
+        }
+
+        // Координаты
+        QString lonStr = ui->leLongitude_2->text();
+        QString latStr = ui->leLatitude_2->text();
+        QString hStr = ui->leHeight_2->text();
+        QString hmslStr = ui->leHMSL_2->text();
+
+        if (!lonStr.trimmed().isEmpty()) {
+            qint32 lon = static_cast<qint32>(lonStr.toDouble() * 1e7);
+            qToLittleEndian(lon, (uchar*)(payload.data() + 24));
+        }
+        if (!latStr.trimmed().isEmpty()) {
+            qint32 lat = static_cast<qint32>(latStr.toDouble() * 1e7);
+            qToLittleEndian(lat, (uchar*)(payload.data() + 28));
+        }
+        if (!hStr.trimmed().isEmpty()) {
+            qint32 height = static_cast<qint32>(hStr.toDouble() * 1000);
+            qToLittleEndian(height, (uchar*)(payload.data() + 32));
+        }
+        if (!hmslStr.trimmed().isEmpty()) {
+            qint32 hMSL = static_cast<qint32>(hmslStr.toDouble() * 1000);
+            qToLittleEndian(hMSL, (uchar*)(payload.data() + 36));
+        }
+
+    } else if (msgClass == 0x01 && msgId == 0x21) { // NAV-TIMEUTC
+        payload.fill(0, 20); // Размер payload для NAV-TIMEUTC
+
+        // iTOW
+        quint32 iTOW = 0;
+        qToLittleEndian(iTOW, (uchar*)payload.data());
+
+        // UTC время
+        QString utcStr = ui->leUTCTime_2->text();
+        if (!utcStr.trimmed().isEmpty()) {
+            QDateTime dt = QDateTime::fromString(utcStr, "yyyy-MM-dd HH:mm:ss");
+            if (!dt.isValid()) {
+                QMessageBox::warning(this, "Ошибка", "Неверный формат даты/времени");
+                return;
+            }
+
+            quint16 year = dt.date().year();
+            quint8 month = dt.date().month();
+            quint8 day = dt.date().day();
+            quint8 hour = dt.time().hour();
+            quint8 minute = dt.time().minute();
+            quint8 second = dt.time().second();
+
+            qToLittleEndian(year, (uchar*)(payload.data() + 12));
+            payload[14] = month;
+            payload[15] = day;
+            payload[16] = hour;
+            payload[17] = minute;
+            payload[18] = second;
+            payload[19] = 0x07; // valid флаги: date + time + fully resolved
+        }
+
+        // fixType (0..5)
+        QString fixStr = ui->leFixType_2->text();
+        if (!fixStr.trimmed().isEmpty()) {
+            payload[16] = fixStr.toUInt();
+        }
+
+        // flags (опционально)
+        QString flagsStr = ui->leFlags->text();
+        if (!flagsStr.trimmed().isEmpty()) {
+            payload[17] = flagsStr.toUInt();
+        }
+
+    } else {
+        QMessageBox::warning(this, "Ошибка", "Поддерживаются только UBX-NAV-PVT (0x01, 0x07) и UBX-NAV-TIMEUTC (0x01, 0x21)");
         return;
+    }
+
+    // Если есть hex-строка payload-а вручную
+    QString rawPayloadStr = ui->tePayload->toPlainText().simplified();
+    if (!rawPayloadStr.isEmpty()) {
+        QByteArray manualPayload;
+        QStringList byteList = rawPayloadStr.split(QRegularExpression("[\\s,;]+"));
+        for (const QString &byteStr : byteList) {
+            bool ok = false;
+            quint8 b = byteStr.toUInt(&ok, 16);
+            if (!ok) {
+                QMessageBox::warning(this, "Ошибка", "Неверный hex-формат в tePayload");
+                return;
+            }
+            manualPayload.append(static_cast<char>(b));
+        }
+
+        // Заменим данные в payload там, где пользователь не ввёл значения в поля
+        for (int i = 0; i < qMin(payload.size(), manualPayload.size()); ++i) {
+            if ((quint8)payload[i] == 0) {
+                payload[i] = manualPayload[i];
+            }
+        }
     }
 
     sendUBXPacket(msgClass, msgId, payload);
@@ -287,17 +497,16 @@ void GNSSWindow::onSendBtnClicked()
 void GNSSWindow::sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload)
 {
     QByteArray packet;
-    packet.append(0xB5); // sync char 1
-    packet.append(0x62); // sync char 2
+    packet.append(0xB5);
+    packet.append(0x62);
     packet.append(msgClass);
     packet.append(msgId);
-
     quint16 len = payload.size();
-    packet.append(len & 0xFF);         // length LSB
-    packet.append((len >> 8) & 0xFF);  // length MSB
+    packet.append(len & 0xFF);
+    packet.append((len >> 8) & 0xFF);
     packet.append(payload);
 
-    // Checksum calculation
+    // checksum
     quint8 ck_a = 0, ck_b = 0;
     for (int i = 2; i < packet.size(); ++i) {
         ck_a += static_cast<quint8>(packet[i]);
@@ -306,7 +515,7 @@ void GNSSWindow::sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &
     packet.append(ck_a);
     packet.append(ck_b);
 
-     qDebug() << "Отправляем пакет:" << packet.toHex(' ');
+    qDebug() << "Отправляем пакет:" << packet.toHex(' ');
 
     if (socket && socket->state() == QAbstractSocket::ConnectedState) {
         socket->write(packet);
@@ -316,4 +525,3 @@ void GNSSWindow::sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &
         QMessageBox::warning(this, "Ошибка", "Нет TCP-соединения");
     }
 }
-
