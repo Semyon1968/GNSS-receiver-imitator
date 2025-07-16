@@ -194,6 +194,12 @@ GNSSWindow::~GNSSWindow()
     delete ui;
 }
 
+void GNSSWindow::on_TimeBtn_clicked()
+{
+    QString currentTime = QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd HH:mm:ss");
+    ui->leUTCTime_2->setText(currentTime);
+}
+
 void GNSSWindow::setupSocket()
 {
     connect(socket, &QTcpSocket::connected, this, [](){
