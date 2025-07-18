@@ -297,22 +297,6 @@ CMakeFiles/ImitatorGNSS.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtGui/qinputmethod.h \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qlocale.h \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qvariant.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QComboBox \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qcombobox.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qabstractitemdelegate.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qstyleoption.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qabstractspinbox.h \
- /usr/include/x86_64-linux-gnu/qt5/QtGui/qvalidator.h \
- /usr/include/x86_64-linux-gnu/qt5/QtCore/qregularexpression.h \
- /usr/include/x86_64-linux-gnu/qt5/QtGui/qicon.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qslider.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qabstractslider.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qstyle.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qtabbar.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qtabwidget.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qrubberband.h \
- /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qframe.h \
- /usr/include/x86_64-linux-gnu/qt5/QtCore/qabstractitemmodel.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QDialog \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGridLayout \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgridlayout.h \
@@ -322,6 +306,7 @@ CMakeFiles/ImitatorGNSS.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgridlayout.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QGroupBox \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qgroupbox.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qframe.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QLabel \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qlabel.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QLineEdit \
@@ -333,6 +318,7 @@ CMakeFiles/ImitatorGNSS.dir/main.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QPushButton \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qpushbutton.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/qabstractbutton.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtGui/qicon.h \
  /usr/include/x86_64-linux-gnu/qt5/QtWidgets/QApplication \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/QFile \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qfile.h \

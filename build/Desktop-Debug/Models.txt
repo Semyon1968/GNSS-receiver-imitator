@@ -1,3 +1,2 @@
-Sigma
-Vzor
-Omega
+U-blox M9
+U-blox M8

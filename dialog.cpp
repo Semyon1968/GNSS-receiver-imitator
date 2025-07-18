@@ -3,6 +3,8 @@
 #include <QFile>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QRandomGenerator>
+#include <QString>
 
 Dialog::Dialog(QWidget *parent)
     : QDialog(parent)
@@ -10,6 +12,10 @@ Dialog::Dialog(QWidget *parent)
 {
     ui->setupUi(this);
     loadModels();
+
+    // Генерируем серийный номер длиной 12 символов и ставим в поле
+    QString serial = generateSerialNumber(12);
+    ui->leSerialNum->setText(serial);
 }
 
 Dialog::~Dialog()
@@ -25,23 +31,47 @@ void Dialog::loadModels()
         return;
     }
 
-    ui->BoxModel->clear();  // очистить текущие элементы
-
+    QStringList models;
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine().trimmed();
         if (!line.isEmpty()) {
-            ui->BoxModel->addItem(line);
+            models.append(line);
         }
     }
-
     file.close();
+
+    if (!models.isEmpty()) {
+        int randomIndex = QRandomGenerator::global()->bounded(models.size());
+        ui->BoxModel->setText(models[randomIndex]);
+    } else {
+        ui->BoxModel->clear();  // Если файл пустой — очистить поле
+    }
+}
+
+// Метод для генерации серийного номера
+QString Dialog::generateSerialNumber(int length)
+{
+    const QString chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    QString result;
+    for (int i = 0; i < length; ++i) {
+        int index = QRandomGenerator::global()->bounded(chars.length());
+        result.append(chars.at(index));
+    }
+    return result;
 }
 
 void Dialog::on_ButtonEnter_clicked()
 {
     GNSSWindow *win = new GNSSWindow();
-    win->show();
 
+    // Получаем данные из полей
+    QString model = ui->BoxModel->text();
+    QString serial = ui->leSerialNum->text();
+
+    // Передаем в GNSSWindow
+    win->setModel(model);
+    win->setSerialNumber(serial);
+    win->show();
     this->close();  // Закрываем текущее окно
 }

@@ -17,16 +17,21 @@ class GNSSWindow : public QMainWindow
 public:
     explicit GNSSWindow(QWidget *parent = nullptr);
     ~GNSSWindow();
+    void setModel(const QString &model);
+    void setSerialNumber(const QString &serial);
+
 
 private slots:
     void onSendBtnClicked();
     void clearGuiFields();
-    void on_TimeBtn_clicked();
+    void onUTCTimeModeChanged(const QString &mode);
 
 private:
     Ui::GNSSWindow *ui;
     QTcpSocket *socket;
     QByteArray receiveBuffer;
+    QString currentModel;
+    QString currentSerialNumber;
     void setupSocket();
     void connectToServer();
     void sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload = {});

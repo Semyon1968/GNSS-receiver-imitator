@@ -15,6 +15,7 @@ public:
 private slots:
     void on_ButtonEnter_clicked();
     void loadModels();
+    QString generateSerialNumber(int length);
 
 private:
     Ui::Dialog *ui;  // Указатель на UI класс
