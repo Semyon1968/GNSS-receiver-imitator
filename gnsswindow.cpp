@@ -346,7 +346,9 @@ void GNSSWindow::setupSocket()
             ui->leClassReceiver->setText(QString("%1").arg(msgClass, 2, 16, QChar('0')).toUpper());
             ui->leIDReceiver->setText(QString("%1").arg(msgId, 2, 16, QChar('0')).toUpper());
             ui->leNameReceiver->setText(getUbxMessageName(msgClass, msgId));
+            ui->tePayloadReceiver->setPlainText(payload.toHex(' ').toUpper());
 
+            // Логирование
             QString logEntry = QString("[%1] Получено: %2 (0x%3, 0x%4) | Payload: %5 | Model: %6 | Serial: %7")
                                    .arg(QTime::currentTime().toString("HH:mm:ss"))
                                    .arg(getUbxMessageName(msgClass, msgId))
@@ -391,6 +393,7 @@ void GNSSWindow::clearGuiFields()
     ui->leClassReceiver->clear();
     ui->leIDReceiver->clear();
     ui->leNameReceiver->clear();
+    ui->leStatus->clear();
 }
 
 void GNSSWindow::onSendBtnClicked()
@@ -610,10 +613,15 @@ void GNSSWindow::onSendBtnClicked()
     packet.append(ck_a);
     packet.append(ck_b);
 
+    if (ui->cbGetStatus->isChecked())
+    {
+        chkGetStatus();
+    }
+
     socket->write(packet);
 }
 
-void GNSSWindow::on_btnGetStatus_clicked()
+void GNSSWindow::chkGetStatus()
 {
     QTcpSocket *statusSocket = new QTcpSocket(this);
 

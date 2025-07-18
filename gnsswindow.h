@@ -25,7 +25,7 @@ private slots:
     void onSendBtnClicked();
     void clearGuiFields();
     void onUTCTimeModeChanged(const QString &mode);
-    void on_btnGetStatus_clicked();
+    void chkGetStatus();
 
 private:
     Ui::GNSSWindow *ui;

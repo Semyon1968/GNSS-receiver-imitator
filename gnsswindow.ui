@@ -19,7 +19,7 @@
      <rect>
       <x>10</x>
       <y>30</y>
-      <width>1031</width>
+      <width>1131</width>
       <height>431</height>
      </rect>
     </property>
@@ -35,7 +35,7 @@
        <rect>
         <x>9</x>
         <y>9</y>
-        <width>841</width>
+        <width>981</width>
         <height>372</height>
        </rect>
       </property>
@@ -250,13 +250,6 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="3">
-        <widget class="QPushButton" name="btnGetStatus">
-         <property name="text">
-          <string>Get Status</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
     </widget>
@@ -269,14 +262,11 @@
        <rect>
         <x>10</x>
         <y>7</y>
-        <width>901</width>
+        <width>1091</width>
         <height>371</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="1" column="2" rowspan="13">
-        <widget class="QTextEdit" name="teLogs"/>
-       </item>
        <item row="11" column="0" rowspan="3" colspan="2">
         <widget class="QLineEdit" name="leNameReceiver"/>
        </item>
@@ -343,9 +333,6 @@
        </item>
        <item row="3" column="3">
         <widget class="QLineEdit" name="leUTCTime"/>
-       </item>
-       <item row="4" column="0" rowspan="5" colspan="2">
-        <widget class="QTextEdit" name="tePayloadReceiver"/>
        </item>
        <item row="10" column="0">
         <widget class="QLabel" name="label_7">
@@ -478,15 +465,21 @@
        <item row="9" column="3">
         <widget class="QLineEdit" name="leLongitude"/>
        </item>
-       <item row="11" column="3" colspan="2">
-        <widget class="QLineEdit" name="leStatus"/>
-       </item>
        <item row="10" column="3">
         <widget class="QLabel" name="label_23">
          <property name="text">
-          <string>Status</string>
+          <string>Status Flags</string>
          </property>
         </widget>
+       </item>
+       <item row="4" column="0" rowspan="5" colspan="2">
+        <widget class="QTextEdit" name="tePayloadReceiver"/>
+       </item>
+       <item row="11" column="3" rowspan="2" colspan="2">
+        <widget class="QLineEdit" name="leStatus"/>
+       </item>
+       <item row="1" column="2" rowspan="12">
+        <widget class="QTextEdit" name="teLogs"/>
        </item>
       </layout>
      </widget>
