@@ -382,4 +382,7 @@ CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/QRegularExpression \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/qregularexpression.h \
  /usr/include/x86_64-linux-gnu/qt5/QtCore/QElapsedTimer \
- /usr/include/x86_64-linux-gnu/qt5/QtCore/qelapsedtimer.h
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qelapsedtimer.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/QTimer \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qtimer.h \
+ /usr/include/x86_64-linux-gnu/qt5/QtCore/qbasictimer.h

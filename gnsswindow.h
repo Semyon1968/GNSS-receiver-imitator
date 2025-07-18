@@ -25,6 +25,7 @@ private slots:
     void onSendBtnClicked();
     void clearGuiFields();
     void onUTCTimeModeChanged(const QString &mode);
+    void on_btnGetStatus_clicked();
 
 private:
     Ui::GNSSWindow *ui;
@@ -32,6 +33,7 @@ private:
     QByteArray receiveBuffer;
     QString currentModel;
     QString currentSerialNumber;
+    QTimer* statusTimeoutTimer = nullptr;
     void setupSocket();
     void connectToServer();
     void sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload = {});

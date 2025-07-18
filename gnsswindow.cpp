@@ -8,7 +8,7 @@
 #include <QtEndian>
 #include <QRegularExpression>
 #include <QElapsedTimer>
-
+#include <QTimer>
 
 // Структура ключа для UBX-сообщения
 struct UBXKey {
@@ -342,22 +342,6 @@ void GNSSWindow::setupSocket()
 
                 ui->leUTCTime->setText(utcTime);
             }
-            else if (msgClass == 0x0A && msgId == 0x01) {
-                // Распарсить статус из payload
-                QString statusResponse = QString::fromUtf8(payload).trimmed();
-                QStringList parts = statusResponse.split("|");
-
-                if (parts.size() == 3) {
-                    QString formatted = QString("Статус: %1 | Спуфинг: %2 | Джамминг: %3")
-                                            .arg(parts[0].trimmed())
-                                            .arg(parts[1].trimmed())
-                                            .arg(parts[2].trimmed());
-                    ui->leStatus->setText(formatted);
-                } else {
-                    ui->leStatus->setText("Ошибка формата ответа от сервера");
-                    qDebug() << "Ответ от сервера:" << statusResponse;
-                }
-            }
 
             ui->leClassReceiver->setText(QString("%1").arg(msgClass, 2, 16, QChar('0')).toUpper());
             ui->leIDReceiver->setText(QString("%1").arg(msgId, 2, 16, QChar('0')).toUpper());
@@ -366,8 +350,9 @@ void GNSSWindow::setupSocket()
             QString logEntry = QString("[%1] Получено: %2 (0x%3, 0x%4) | Payload: %5 | Model: %6 | Serial: %7")
                                    .arg(QTime::currentTime().toString("HH:mm:ss"))
                                    .arg(getUbxMessageName(msgClass, msgId))
-                                   .arg(msgClass, 2, 16, QChar('0')).arg(msgId, 2, 16, QChar('0'))
-                                   .arg(QString::fromUtf8(payload.toHex(' ').toUpper()))
+                                   .arg(msgClass, 2, 16, QChar('0'))
+                                   .arg(msgId, 2, 16, QChar('0'))
+                                   .arg(QString(payload.toHex(' ').toUpper()))
                                    .arg(currentModel)
                                    .arg(currentSerialNumber);
 
@@ -379,6 +364,7 @@ void GNSSWindow::setupSocket()
                 out << logEntry << "\n";
                 file.close();
             }
+
 
         }
     });
@@ -625,6 +611,69 @@ void GNSSWindow::onSendBtnClicked()
     packet.append(ck_b);
 
     socket->write(packet);
+}
+
+void GNSSWindow::on_btnGetStatus_clicked()
+{
+    QTcpSocket *statusSocket = new QTcpSocket(this);
+
+    connect(statusSocket, &QTcpSocket::connected, this, [statusSocket]() {
+        statusSocket->write("GetStatus");
+    });
+
+    connect(statusSocket, &QTcpSocket::readyRead, this, [this, statusSocket]() {
+        QByteArray data = statusSocket->readAll();
+
+        // Найдем UBX-пакет
+        int startIdx = data.indexOf(QByteArray::fromHex("B562"));
+        if (startIdx == -1) {
+            ui->leStatus->setText("Ошибка: UBX пакет не найден");
+            statusSocket->deleteLater();
+            return;
+        }
+
+        if (data.size() < startIdx + 8) return; // ещё нет полного заголовка
+
+        quint8 msgClass = static_cast<quint8>(data[startIdx + 2]);
+        quint8 msgId = static_cast<quint8>(data[startIdx + 3]);
+        quint16 length = static_cast<quint8>(data[startIdx + 4]) | (static_cast<quint8>(data[startIdx + 5]) << 8);
+        int totalSize = 6 + length + 2;
+
+        if (data.size() < startIdx + totalSize) return; // ждём весь пакет
+
+        QByteArray payload = data.mid(startIdx + 6, length);
+
+        // проверка контрольной суммы
+        quint8 ck_a = 0, ck_b = 0;
+        for (int i = 2; i < 6 + length; ++i) {
+            ck_a += static_cast<quint8>(data[startIdx + i]);
+            ck_b += ck_a;
+        }
+        if (ck_a != static_cast<quint8>(data[startIdx + 6 + length]) ||
+            ck_b != static_cast<quint8>(data[startIdx + 6 + length + 1])) {
+            ui->leStatus->setText("Ошибка контрольной суммы");
+            statusSocket->deleteLater();
+            return;
+        }
+
+        if (msgClass == 0x0A && msgId == 0x01) {
+            QString statusResponse = QString::fromUtf8(payload).trimmed();
+            ui->leStatus->setText(statusResponse);
+        } else {
+            ui->leStatus->setText("Неожиданный пакет");
+        }
+
+        statusSocket->disconnectFromHost();
+        statusSocket->deleteLater();
+    });
+
+    connect(statusSocket, &QTcpSocket::errorOccurred, this, [this, statusSocket](QAbstractSocket::SocketError socketError){
+        Q_UNUSED(socketError);
+        ui->leStatus->setText("Ошибка соединения: " + statusSocket->errorString());
+        statusSocket->deleteLater();
+    });
+
+    statusSocket->connectToHost("127.0.0.1", 5000);
 }
 
 void GNSSWindow::connectToServer()
