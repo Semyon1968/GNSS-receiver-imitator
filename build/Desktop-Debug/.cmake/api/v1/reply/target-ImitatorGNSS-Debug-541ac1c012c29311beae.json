@@ -31,19 +31,19 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 34,
+				"line" : 37,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 59,
+				"line" : 69,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 41,
+				"line" : 44,
 				"parent" : 0
 			},
 			{
@@ -162,7 +162,8 @@
 			[
 				0,
 				1,
-				2
+				2,
+				5
 			]
 		}
 	],
@@ -241,7 +242,8 @@
 			[
 				0,
 				1,
-				2
+				2,
+				5
 			]
 		},
 		{
@@ -249,7 +251,9 @@
 			"sourceIndexes" : 
 			[
 				3,
-				5
+				6,
+				8,
+				9
 			]
 		},
 		{
@@ -257,14 +261,15 @@
 			"sourceIndexes" : 
 			[
 				4,
-				6
+				7,
+				10
 			]
 		},
 		{
 			"name" : "CMake Rules",
 			"sourceIndexes" : 
 			[
-				7
+				11
 			]
 		}
 	],
@@ -300,9 +305,31 @@
 			"sourceGroupIndex" : 2
 		},
 		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "dialog.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "dialog.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "dialog.ui",
+			"sourceGroupIndex" : 2
+		},
+		{
 			"backtrace" : 0,
 			"isGenerated" : true,
 			"path" : "build/Desktop-Debug/ImitatorGNSS_autogen/include/ui_gnsswindow.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/Desktop-Debug/ImitatorGNSS_autogen/include/ui_dialog.h",
 			"sourceGroupIndex" : 1
 		},
 		{

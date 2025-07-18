@@ -9,15 +9,18 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Добавляем Qt Network
+# Находим Qt5 (Widgets и Network)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
 
 set(PROJECT_SOURCES
-        main.cpp
-        gnsswindow.cpp
-        gnsswindow.h
-        gnsswindow.ui
+    main.cpp
+    gnsswindow.cpp
+    gnsswindow.h
+    gnsswindow.ui
+    dialog.cpp
+    dialog.h
+    dialog.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -37,10 +40,17 @@ else()
     endif()
 endif()
 
-# Линкуем Widgets и Network
+# Линкуем Qt Widgets и Network
 target_link_libraries(ImitatorGNSS PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network
+)
+
+# Копируем Models.txt в каталог с исполняемым файлом после сборки
+add_custom_command(TARGET ImitatorGNSS POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_CURRENT_SOURCE_DIR}/Models.txt
+        $<TARGET_FILE_DIR:ImitatorGNSS>/Models.txt
 )
 
 if(${QT_VERSION} VERSION_LESS 6.1.0)

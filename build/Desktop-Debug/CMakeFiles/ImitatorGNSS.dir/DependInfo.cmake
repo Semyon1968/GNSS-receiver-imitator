@@ -10,6 +10,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "" "ImitatorGNSS_autogen/timestamp" "custom" "ImitatorGNSS_autogen/deps"
   "/home/zigmen/ImitatorGNSS/build/Desktop-Debug/ImitatorGNSS_autogen/mocs_compilation.cpp" "CMakeFiles/ImitatorGNSS.dir/ImitatorGNSS_autogen/mocs_compilation.cpp.o" "gcc" "CMakeFiles/ImitatorGNSS.dir/ImitatorGNSS_autogen/mocs_compilation.cpp.o.d"
+  "/home/zigmen/ImitatorGNSS/dialog.cpp" "CMakeFiles/ImitatorGNSS.dir/dialog.cpp.o" "gcc" "CMakeFiles/ImitatorGNSS.dir/dialog.cpp.o.d"
   "/home/zigmen/ImitatorGNSS/gnsswindow.cpp" "CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o" "gcc" "CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o.d"
   "/home/zigmen/ImitatorGNSS/main.cpp" "CMakeFiles/ImitatorGNSS.dir/main.cpp.o" "gcc" "CMakeFiles/ImitatorGNSS.dir/main.cpp.o.d"
   )

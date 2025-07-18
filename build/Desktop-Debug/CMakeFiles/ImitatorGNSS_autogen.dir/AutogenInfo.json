@@ -81,6 +81,12 @@
 	"HEADERS" : 
 	[
 		[
+			"/home/zigmen/ImitatorGNSS/dialog.h",
+			"MU",
+			"EWIEGA46WW/moc_dialog.cpp",
+			null
+		],
+		[
 			"/home/zigmen/ImitatorGNSS/gnsswindow.h",
 			"MU",
 			"EWIEGA46WW/moc_gnsswindow.cpp",
@@ -139,6 +145,7 @@
 	"SETTINGS_FILE" : "/home/zigmen/ImitatorGNSS/build/Desktop-Debug/CMakeFiles/ImitatorGNSS_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
+		[ "/home/zigmen/ImitatorGNSS/dialog.cpp", "MU", null ],
 		[ "/home/zigmen/ImitatorGNSS/gnsswindow.cpp", "MU", null ],
 		[ "/home/zigmen/ImitatorGNSS/main.cpp", "MU", null ]
 	],

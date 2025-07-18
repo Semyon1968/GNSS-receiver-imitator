@@ -7,7 +7,7 @@
 				{
 					"build" : ".",
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.-Debug-803917e065e5a5717c83.json",
+					"jsonFile" : "directory-.-Debug-5d0f030130a1658f9722.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.5"
@@ -44,7 +44,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ImitatorGNSS::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ImitatorGNSS-Debug-6672430ccbc160144367.json",
+					"jsonFile" : "target-ImitatorGNSS-Debug-541ac1c012c29311beae.json",
 					"name" : "ImitatorGNSS",
 					"projectIndex" : 0
 				},

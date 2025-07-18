@@ -4,6 +4,8 @@ ImitatorGNSS_autogen/timestamp: \
 	/home/zigmen/ImitatorGNSS/build/Desktop-Debug/CMakeFiles/3.28.3/CMakeCXXCompiler.cmake \
 	/home/zigmen/ImitatorGNSS/build/Desktop-Debug/CMakeFiles/3.28.3/CMakeSystem.cmake \
 	/home/zigmen/ImitatorGNSS/build/Desktop-Debug/ImitatorGNSS_autogen/moc_predefs.h \
+	/home/zigmen/ImitatorGNSS/dialog.cpp \
+	/home/zigmen/ImitatorGNSS/dialog.h \
 	/home/zigmen/ImitatorGNSS/gnsswindow.cpp \
 	/home/zigmen/ImitatorGNSS/gnsswindow.h \
 	/home/zigmen/ImitatorGNSS/main.cpp \
@@ -342,7 +344,9 @@ ImitatorGNSS_autogen/timestamp: \
 	/usr/include/x86_64-linux-gnu/qt5/QtNetwork/qtcpsocket.h \
 	/usr/include/x86_64-linux-gnu/qt5/QtNetwork/qtnetwork-config.h \
 	/usr/include/x86_64-linux-gnu/qt5/QtNetwork/qtnetworkglobal.h \
+	/usr/include/x86_64-linux-gnu/qt5/QtWidgets/QDialog \
 	/usr/include/x86_64-linux-gnu/qt5/QtWidgets/QMainWindow \
+	/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qdialog.h \
 	/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qmainwindow.h \
 	/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qsizepolicy.h \
 	/usr/include/x86_64-linux-gnu/qt5/QtWidgets/qtabwidget.h \
@@ -417,5 +421,6 @@ ImitatorGNSS_autogen/timestamp: \
 	/usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake \
 	/usr/share/cmake-3.28/Modules/Platform/Linux.cmake \
 	/usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake \
+	/home/zigmen/ImitatorGNSS/dialog.ui \
 	/home/zigmen/ImitatorGNSS/gnsswindow.ui \
 	/usr/bin/cmake

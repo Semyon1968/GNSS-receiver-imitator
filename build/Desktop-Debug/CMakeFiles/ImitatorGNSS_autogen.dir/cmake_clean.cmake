@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/ImitatorGNSS_autogen"
+  "ImitatorGNSS_autogen/include/ui_dialog.h"
   "ImitatorGNSS_autogen/include/ui_gnsswindow.h"
   "ImitatorGNSS_autogen/mocs_compilation.cpp"
   "ImitatorGNSS_autogen/timestamp"

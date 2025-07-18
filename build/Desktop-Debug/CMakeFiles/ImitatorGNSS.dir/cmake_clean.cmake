@@ -4,6 +4,8 @@ file(REMOVE_RECURSE
   "ImitatorGNSS_autogen"
   "CMakeFiles/ImitatorGNSS.dir/ImitatorGNSS_autogen/mocs_compilation.cpp.o"
   "CMakeFiles/ImitatorGNSS.dir/ImitatorGNSS_autogen/mocs_compilation.cpp.o.d"
+  "CMakeFiles/ImitatorGNSS.dir/dialog.cpp.o"
+  "CMakeFiles/ImitatorGNSS.dir/dialog.cpp.o.d"
   "CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o"
   "CMakeFiles/ImitatorGNSS.dir/gnsswindow.cpp.o.d"
   "CMakeFiles/ImitatorGNSS.dir/main.cpp.o"
