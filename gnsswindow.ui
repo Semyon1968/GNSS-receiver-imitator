@@ -20,7 +20,7 @@
       <x>10</x>
       <y>30</y>
       <width>1131</width>
-      <height>431</height>
+      <height>441</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -40,19 +40,6 @@
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="8" column="2">
-        <widget class="QLabel" name="label_20">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>NumSV</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="2">
         <widget class="QLineEdit" name="leSpeed_2"/>
        </item>
@@ -75,9 +62,6 @@
           <bool>true</bool>
          </property>
         </widget>
-       </item>
-       <item row="7" column="2">
-        <widget class="QLineEdit" name="leFixType_2"/>
        </item>
        <item row="8" column="3">
         <widget class="QLabel" name="label_18">
@@ -102,19 +86,6 @@
          </property>
          <property name="text">
           <string>Longitude</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="2">
-        <widget class="QLabel" name="label_22">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>FixType</string>
          </property>
         </widget>
        </item>
@@ -213,30 +184,11 @@
          </property>
         </widget>
        </item>
-       <item row="9" column="2">
-        <widget class="QLineEdit" name="leNumSV_2"/>
-       </item>
        <item row="3" column="2">
         <widget class="QComboBox" name="BoxUTCTime_2"/>
        </item>
        <item row="4" column="2" rowspan="2">
         <widget class="QLineEdit" name="leUTCTime_2"/>
-       </item>
-       <item row="7" column="3">
-        <widget class="QLineEdit" name="leHMSL_2"/>
-       </item>
-       <item row="6" column="3">
-        <widget class="QLabel" name="label_19">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>HMSL</string>
-         </property>
-        </widget>
        </item>
        <item row="2" column="3" rowspan="2">
         <widget class="QCheckBox" name="cbGetStatus">
@@ -253,7 +205,71 @@
        <item row="12" column="1">
         <widget class="QCheckBox" name="cbRate">
          <property name="text">
-          <string>Rate</string>
+          <string>Отправка с заданной частотой</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="2">
+        <widget class="QLineEdit" name="leHMSL_2"/>
+       </item>
+       <item row="8" column="2">
+        <widget class="QLabel" name="label_19">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>HMSL</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="3">
+        <widget class="QLabel" name="label_20">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>NumSV</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3">
+        <widget class="QLineEdit" name="leNumSV_2"/>
+       </item>
+       <item row="6" column="3">
+        <widget class="QLabel" name="label_22">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>FixType</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="3">
+        <widget class="QLineEdit" name="leFixType_2"/>
+       </item>
+       <item row="7" column="2">
+        <widget class="QLineEdit" name="leInfText_2"/>
+       </item>
+       <item row="6" column="2">
+        <widget class="QLabel" name="label_28">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>InfoText</string>
          </property>
         </widget>
        </item>
@@ -296,9 +312,6 @@
        <item row="1" column="3">
         <widget class="QLineEdit" name="leSpeed"/>
        </item>
-       <item row="5" column="3">
-        <widget class="QLineEdit" name="leFixType"/>
-       </item>
        <item row="1" column="4">
         <widget class="QLineEdit" name="leHeading"/>
        </item>
@@ -312,22 +325,6 @@
          </property>
          <property name="text">
           <string>UTCTime</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="4">
-        <widget class="QLineEdit" name="leHMSL"/>
-       </item>
-       <item row="2" column="4">
-        <widget class="QLabel" name="label_10">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>HMSL</string>
          </property>
         </widget>
        </item>
@@ -352,19 +349,6 @@
         <widget class="QLabel" name="label_6">
          <property name="text">
           <string>Payload</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="3">
-        <widget class="QLabel" name="label_12">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>FixType</string>
          </property>
         </widget>
        </item>
@@ -453,22 +437,6 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="3">
-        <widget class="QLineEdit" name="leNumSV"/>
-       </item>
-       <item row="6" column="3">
-        <widget class="QLabel" name="label_14">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>NumSV</string>
-         </property>
-        </widget>
-       </item>
        <item row="9" column="3">
         <widget class="QLineEdit" name="leLongitude"/>
        </item>
@@ -488,6 +456,70 @@
        <item row="1" column="2" rowspan="12">
         <widget class="QTextEdit" name="teLogs"/>
        </item>
+       <item row="7" column="3">
+        <widget class="QLineEdit" name="leHMSL"/>
+       </item>
+       <item row="6" column="3">
+        <widget class="QLabel" name="label_10">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>HMSL</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="4">
+        <widget class="QLabel" name="label_14">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>NumSV</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="4">
+        <widget class="QLineEdit" name="leNumSV"/>
+       </item>
+       <item row="5" column="4">
+        <widget class="QLineEdit" name="leFixType"/>
+       </item>
+       <item row="4" column="4">
+        <widget class="QLabel" name="label_12">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>FixType</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3">
+        <widget class="QLineEdit" name="leInfText"/>
+       </item>
+       <item row="4" column="3">
+        <widget class="QLabel" name="label_32">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>InfoText</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>
@@ -504,7 +536,7 @@
     <property name="title">
      <string>Данные о датчике</string>
     </property>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
        <x>11</x>

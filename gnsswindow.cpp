@@ -189,7 +189,7 @@ GNSSWindow::GNSSWindow(QWidget *parent)
     connectToServer();
 
     connect(ui->action_3, &QAction::triggered, this, []() {
-        QMessageBox::information(nullptr, "О разработчике", "Разработчик: Семён Тихонов");
+        QMessageBox::information(nullptr, "О разработчике", "Разработчик: Семён Тихонов\nПочта: zigmen@vk.com");
     });
     connect(ui->action_4, &QAction::triggered, this, []() {
         QMessageBox::information(nullptr, "О программе", "Версия: 1.0.0\nДата релиза: 15.06.2025");
@@ -394,6 +394,37 @@ void GNSSWindow::setupSocket()
 
                 ui->leUTCTime->setText(utcTime);
             }
+            else if (msgClass == 0x04) {
+                QString type;
+                switch (msgId) {
+                case 0x00: type = "ERROR"; break;
+                case 0x01: type = "WARNING"; break;
+                case 0x02: type = "NOTICE"; break;
+                case 0x03: type = "TEST"; break;
+                case 0x04: type = "DEBUG"; break;
+                default:   type = "UNKNOWN"; break;
+                }
+
+                QString message = QString::fromUtf8(payload).trimmed();
+
+                // Показываем сообщение в отдельном QLineEdit (leInfText)
+                ui->leInfText->setText(message);
+
+                // Выводим в поле приёма полезной нагрузки
+                ui->tePayloadReceiver->append(QString("UBX-INF-%1: %2").arg(type, message));
+
+                // Добавляем лог в журнал
+                QString logEntry = QString("[%1] UBX-INF-%2: %3")
+                                       .arg(QTime::currentTime().toString("HH:mm:ss"))
+                                       .arg(type)
+                                       .arg(message);
+                //ui->teLogs->append(logEntry);
+
+                // Также выводим в консоль отладочно
+                qDebug() << logEntry;
+            }
+
+
 
             ui->leClassReceiver->setText(QString("%1").arg(msgClass, 2, 16, QChar('0')).toUpper());
             ui->leIDReceiver->setText(QString("%1").arg(msgId, 2, 16, QChar('0')).toUpper());
@@ -446,6 +477,7 @@ void GNSSWindow::clearGuiFields()
     ui->leIDReceiver->clear();
     ui->leNameReceiver->clear();
     ui->leStatus->clear();
+    ui->leInfText->clear();
 }
 
 void GNSSWindow::onSendBtnClicked()
@@ -570,6 +602,25 @@ void GNSSWindow::onSendBtnClicked()
     // Используем raw payload, если задан
     QString rawPayloadHex = ui->tePayload->toPlainText().trimmed().remove(' ');
     QByteArray rawPayload = QByteArray::fromHex(rawPayloadHex.toUtf8());
+
+    if (msgClass == 0x04 && msgId <= 0x04) { // UBX-INF-*
+        // Получаем текст
+        QString infText = ui->leInfText_2->text().trimmed();
+
+        if (infText.isEmpty()) {
+            QMessageBox::warning(this, "Ошибка", "Введите текст для UBX-INF сообщения");
+            return;
+        }
+
+        QByteArray asciiText = infText.toUtf8();
+        if (asciiText.size() > 255) {
+            QMessageBox::warning(this, "Ошибка", "Максимум 255 байт в UBX-INF payload");
+            return;
+        }
+
+        payload = asciiText;
+    }
+
     QByteArray finalPayload = rawPayload.isEmpty() ? payload : rawPayload;
 
     // Перезапись ключевых полей даже если есть rawPayload
