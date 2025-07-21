@@ -195,7 +195,7 @@ GNSSWindow::GNSSWindow(QWidget *parent)
         QMessageBox::information(nullptr, "О программе", "Версия: 1.0.0\nДата релиза: 15.06.2025");
     });
     connect(ui->action_2, &QAction::triggered, qApp, &QApplication::quit);
-
+    connect(ui->cbRate, &QCheckBox::stateChanged, this, &GNSSWindow::onRateCheckboxChanged);
     connect(ui->pushBtnTrancfer, &QPushButton::clicked, this, &GNSSWindow::onSendBtnClicked);
 }
 
@@ -211,13 +211,65 @@ void GNSSWindow::onUTCTimeModeChanged(const QString &mode)
 void GNSSWindow::setModel(const QString &model)
 {
     currentModel = model;
-    ui->labelModel->setText(model); // если есть QLabel для отображения
+    ui->labelModel->setText(model);
 }
 
 void GNSSWindow::setSerialNumber(const QString &serial)
 {
     currentSerialNumber = serial;
-    ui->labelSerialNum->setText(serial); // если есть QLabel для отображения
+    ui->labelSerialNum->setText(serial);
+}
+
+void GNSSWindow::setRate(const QString &rate)
+{
+    currentRate = rate;
+    ui->labelRate->setText(rate);
+}
+
+void GNSSWindow::onRateCheckboxChanged(int state)
+{
+    if (state == Qt::Checked) {
+        // Чекбокс включён — запускаем отправку
+        onSendRateClicked();
+    } else {
+        // Чекбокс выключен — останавливаем таймер
+        if (rateTimer && rateTimer->isActive()) {
+            rateTimer->stop();
+            printedCount = 0;
+            qDebug() << "Остановлена отправка с заданной частотой";
+        }
+    }
+}
+
+void GNSSWindow::onSendRateClicked()
+{
+    if (ui->cbRate->isChecked()) {
+        // Преобразуем currentRate в число
+        bool ok = false;
+        currentRateInt = currentRate.toInt(&ok);
+
+        if (!ok || currentRateInt <= 0) {
+            qDebug() << "Неверное значение rate:" << currentRate;
+            return;
+        }
+
+        int intervalMs = 60000 / currentRateInt; // интервал в мс
+
+        if (!rateTimer) {
+            rateTimer = new QTimer(this);
+            connect(rateTimer, &QTimer::timeout, this, [this]() {
+                onSendBtnClicked();
+                printedCount++;
+                if (printedCount >= currentRateInt) {
+                    rateTimer->stop();
+                    printedCount = 0;
+                }
+            });
+        }
+
+        printedCount = 0;
+        rateTimer->start(intervalMs);
+    }
 }
 
 GNSSWindow::~GNSSWindow()
@@ -612,11 +664,6 @@ void GNSSWindow::onSendBtnClicked()
 
     packet.append(ck_a);
     packet.append(ck_b);
-
-    if (ui->cbGetStatus->isChecked())
-    {
-        chkGetStatus();
-    }
 
     socket->write(packet);
 }

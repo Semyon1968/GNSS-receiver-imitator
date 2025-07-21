@@ -13,9 +13,12 @@ Dialog::Dialog(QWidget *parent)
     ui->setupUi(this);
     loadModels();
 
-    // Генерируем серийный номер длиной 12 символов и ставим в поле
+    // Генерируем серийный номер длиной 12 символов
     QString serial = generateSerialNumber(12);
     ui->leSerialNum->setText(serial);
+    // Генерация частоты обновления
+    int randomRate = (QRandomGenerator::global()->bounded(6) + 1) * 10;
+    ui->leRate->setText(QString::number(randomRate));
 }
 
 Dialog::~Dialog()
@@ -68,10 +71,12 @@ void Dialog::on_ButtonEnter_clicked()
     // Получаем данные из полей
     QString model = ui->BoxModel->text();
     QString serial = ui->leSerialNum->text();
+    QString rate = ui->leRate->text();
 
     // Передаем в GNSSWindow
     win->setModel(model);
     win->setSerialNumber(serial);
+    win->setRate(rate);
     win->show();
     this->close();  // Закрываем текущее окно
 }
