@@ -148,7 +148,7 @@
        <item row="12" column="0">
         <widget class="QPushButton" name="pushBtnTrancfer">
          <property name="text">
-          <string>Передать пакет</string>
+          <string>Передать один пакет</string>
          </property>
         </widget>
        </item>
