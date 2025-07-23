@@ -785,6 +785,7 @@ void GNSSWindow::chkGetStatus()
 void GNSSWindow::connectToServer()
 {
     socket->connectToHost("127.0.0.1", 5000);
+    //socket->connectToHost("192.168.2.22", 23);
 }
 
 void GNSSWindow::sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload)
