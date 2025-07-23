@@ -29,25 +29,31 @@ Dialog::~Dialog()
 void Dialog::loadModels()
 {
     QFile file("Models.txt");
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
         QMessageBox::warning(this, "Ошибка", "Не удалось открыть файл Models.txt");
         return;
     }
 
     QStringList models;
     QTextStream in(&file);
-    while (!in.atEnd()) {
+    while (!in.atEnd())
+    {
         QString line = in.readLine().trimmed();
-        if (!line.isEmpty()) {
+        if (!line.isEmpty())
+        {
             models.append(line);
         }
     }
     file.close();
 
-    if (!models.isEmpty()) {
+    if (!models.isEmpty())
+    {
         int randomIndex = QRandomGenerator::global()->bounded(models.size());
         ui->BoxModel->setText(models[randomIndex]);
-    } else {
+    }
+    else
+    {
         ui->BoxModel->clear();  // Если файл пустой — очистить поле
     }
 }
@@ -57,7 +63,8 @@ QString Dialog::generateSerialNumber(int length)
 {
     const QString chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     QString result;
-    for (int i = 0; i < length; ++i) {
+    for (int i = 0; i < length; ++i)
+    {
         int index = QRandomGenerator::global()->bounded(chars.length());
         result.append(chars.at(index));
     }

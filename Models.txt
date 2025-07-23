@@ -1,2 +1,2 @@
 U-blox M9
-U-blox M8
+U-blox M8A

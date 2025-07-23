@@ -2,7 +2,7 @@
 #define DIALOG_H
 
 #include <QDialog>
-#include "ui_dialog.h"  // Подключаем сгенерированный UI класс
+#include "ui_dialog.h"
 
 class Dialog : public QDialog
 {
@@ -18,7 +18,7 @@ private slots:
     QString generateSerialNumber(int length);
 
 private:
-    Ui::Dialog *ui;  // Указатель на UI класс
+    Ui::Dialog *ui;
 };
 
 #endif // DIALOG_H
