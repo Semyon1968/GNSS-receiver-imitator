@@ -133,6 +133,8 @@ public:
     void setModel(const QString &model);
     void setSerialNumber(const QString &serial);
     void setRate(const QString &rate);
+    void setSocket(QTcpSocket *socket);
+    void setupSocket();
 
 private slots:
     void onSendBtnClicked();
@@ -144,16 +146,16 @@ private slots:
 
 private:
     Ui::GNSSWindow *ui;
-    QTcpSocket *socket;
+    //QTcpSocket *socket;
     QByteArray receiveBuffer;
     QString currentModel;
     QString currentRate;
     QString currentSerialNumber;
     QTimer* statusTimeoutTimer = nullptr;
     QTimer *rateTimer = nullptr;
+    QTcpSocket *socket = nullptr;
     int currentRateInt = 0;
     int printedCount = 0;
-    void setupSocket();
     void connectToServer();
     void sendUBXPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload = {});
 };

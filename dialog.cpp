@@ -5,20 +5,25 @@
 #include <QMessageBox>
 #include <QRandomGenerator>
 #include <QString>
+#include "dialog.h"
+#include "gnsswindow.h"
+#include "ui_dialog.h"
 
 Dialog::Dialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::Dialog)
+    , mSocket(new QTcpSocket(this))
 {
     ui->setupUi(this);
-    loadModels();
 
-    // Генерируем серийный номер длиной 12 символов
-    QString serial = generateSerialNumber(12);
-    ui->leSerialNum->setText(serial);
-    // Генерация частоты обновления
-    int randomRate = (QRandomGenerator::global()->bounded(6) + 1) * 10;
-    ui->leRate->setText(QString::number(randomRate));
+    // Обработка ошибок TCP-соединения
+    connect(mSocket, &QAbstractSocket::errorOccurred, this, [=](QAbstractSocket::SocketError socketError) {
+        Q_UNUSED(socketError);
+        QMessageBox::critical(this, "Ошибка подключения", mSocket->errorString());
+    });
+
+    // Обработка успешного подключения
+    connect(mSocket, &QTcpSocket::connected, this, &Dialog::onConnected);
 }
 
 Dialog::~Dialog()
@@ -26,64 +31,35 @@ Dialog::~Dialog()
     delete ui;
 }
 
-void Dialog::loadModels()
+// Нажатие на кнопку "Enter"
+void Dialog::on_ButtonEnter_clicked()
 {
-    QFile file("Models.txt");
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(this, "Ошибка", "Не удалось открыть файл Models.txt");
+    QString ip = ui->leIpAddress->text().trimmed();
+    QString portStr = ui->lePort->text().trimmed();
+
+    if (ip.isEmpty() || portStr.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Введите IP-адрес и порт.");
         return;
     }
 
-    QStringList models;
-    QTextStream in(&file);
-    while (!in.atEnd())
-    {
-        QString line = in.readLine().trimmed();
-        if (!line.isEmpty())
-        {
-            models.append(line);
-        }
+    bool ok;
+    quint16 port = portStr.toUShort(&ok);
+    if (!ok) {
+        QMessageBox::warning(this, "Ошибка", "Некорректный порт.");
+        return;
     }
-    file.close();
 
-    if (!models.isEmpty())
-    {
-        int randomIndex = QRandomGenerator::global()->bounded(models.size());
-        ui->BoxModel->setText(models[randomIndex]);
-    }
-    else
-    {
-        ui->BoxModel->clear();  // Если файл пустой — очистить поле
-    }
+    mSocket->connectToHost(ip, port);
+    qDebug() << "Соединение установлено";
 }
 
-// Метод для генерации серийного номера
-QString Dialog::generateSerialNumber(int length)
-{
-    const QString chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    QString result;
-    for (int i = 0; i < length; ++i)
-    {
-        int index = QRandomGenerator::global()->bounded(chars.length());
-        result.append(chars.at(index));
-    }
-    return result;
-}
-
-void Dialog::on_ButtonEnter_clicked()
+// Обработка успешного подключения
+void Dialog::onConnected()
 {
     GNSSWindow *win = new GNSSWindow();
 
-    // Получаем данные из полей
-    QString model = ui->BoxModel->text();
-    QString serial = ui->leSerialNum->text();
-    QString rate = ui->leRate->text();
-
-    // Передаем в GNSSWindow
-    win->setModel(model);
-    win->setSerialNumber(serial);
-    win->setRate(rate);
+    win->setSocket(mSocket);
+    win->setupSocket();
     win->show();
-    this->close();  // Закрываем текущее окно
+    this->close();
 }

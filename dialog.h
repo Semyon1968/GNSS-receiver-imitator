@@ -2,6 +2,7 @@
 #define DIALOG_H
 
 #include <QDialog>
+#include <QTcpSocket>
 #include "ui_dialog.h"
 
 class Dialog : public QDialog
@@ -14,11 +15,12 @@ public:
 
 private slots:
     void on_ButtonEnter_clicked();
-    void loadModels();
-    QString generateSerialNumber(int length);
+    void onConnected();
 
 private:
     Ui::Dialog *ui;
+    QTcpSocket *mSocket;
+
 };
 
 #endif // DIALOG_H
