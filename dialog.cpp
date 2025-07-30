@@ -1,65 +1,96 @@
 #include "dialog.h"
-#include "gnsswindow.h"
-#include <QFile>
-#include <QTextStream>
-#include <QMessageBox>
-#include <QRandomGenerator>
-#include <QString>
-#include "dialog.h"
-#include "gnsswindow.h"
 #include "ui_dialog.h"
+#include "gnsswindow.h"
+#include <QMessageBox>
+#include <QDebug>
 
-Dialog::Dialog(QWidget *parent)
-    : QDialog(parent)
-    , ui(new Ui::Dialog)
-    , mSocket(new QTcpSocket(this))
+Dialog::Dialog(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::Dialog),
+    m_socket(new QTcpSocket(this)),
+    m_gnssWindow(nullptr) // Инициализация
 {
     ui->setupUi(this);
 
-    // Обработка ошибок TCP-соединения
-    connect(mSocket, &QAbstractSocket::errorOccurred, this, [=](QAbstractSocket::SocketError socketError) {
-        Q_UNUSED(socketError);
-        QMessageBox::critical(this, "Ошибка подключения", mSocket->errorString());
-    });
-
-    // Обработка успешного подключения
-    connect(mSocket, &QTcpSocket::connected, this, &Dialog::onConnected);
+    connect(m_socket, &QTcpSocket::connected, this, &Dialog::onConnected);
+    connect(m_socket, &QTcpSocket::disconnected, this, &Dialog::onDisconnected);
+    connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
+            this, &Dialog::onError);
 }
 
-Dialog::~Dialog()
+// Добавьте новый слот
+void Dialog::onDisconnected()
 {
-    delete ui;
+    if (m_gnssWindow) {
+        m_gnssWindow->close();
+        m_gnssWindow->deleteLater();
+        m_gnssWindow = nullptr;
+    }
 }
 
-// Нажатие на кнопку "Enter"
-void Dialog::on_ButtonEnter_clicked()
+void Dialog::onConnected()
 {
-    QString ip = ui->leIpAddress->text().trimmed();
+    if (!m_gnssWindow) {
+        m_gnssWindow = new GNSSWindow();
+        m_gnssWindow->setSocket(m_socket);
+        m_gnssWindow->show();
+        this->hide(); // Лучше hide() чем close()
+    }
+}
+
+void Dialog::on_connectButton_clicked()
+{
+    QString host = ui->leIpAddress->text().trimmed();
     QString portStr = ui->lePort->text().trimmed();
 
-    if (ip.isEmpty() || portStr.isEmpty()) {
-        QMessageBox::warning(this, "Ошибка", "Введите IP-адрес и порт.");
+    if (host.isEmpty() || portStr.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please enter host and port");
         return;
     }
 
     bool ok;
     quint16 port = portStr.toUShort(&ok);
-    if (!ok) {
-        QMessageBox::warning(this, "Ошибка", "Некорректный порт.");
+    if (!ok || port == 0) {
+        QMessageBox::warning(this, "Error", "Invalid port number");
         return;
     }
 
-    mSocket->connectToHost(ip, port);
-    qDebug() << "Соединение установлено";
+    // Отключаемся от предыдущего соединения если оно есть
+    if (m_socket->state() != QAbstractSocket::UnconnectedState) {
+        m_socket->disconnectFromHost();
+        if (m_socket->state() != QAbstractSocket::UnconnectedState) {
+            m_socket->waitForDisconnected();
+        }
+    }
+
+    m_socket->connectToHost(host, port);
+    qDebug() << "Connecting to" << host << ":" << port;
 }
 
-// Обработка успешного подключения
-void Dialog::onConnected()
+Dialog::~Dialog()
 {
-    GNSSWindow *win = new GNSSWindow();
+    // Отключаем все соединения
+    m_socket->disconnect();
 
-    win->setSocket(mSocket);
-    win->setupSocket();
-    win->show();
-    this->close();
+    // Удаляем дочерние объекты
+    delete ui;
+    delete m_socket;
+
+    if (m_gnssWindow) {
+        m_gnssWindow->deleteLater();
+    }
 }
+
+void Dialog::onError(QAbstractSocket::SocketError error)
+{
+    Q_UNUSED(error)
+    QMessageBox::critical(this, "Connection Error", m_socket->errorString());
+
+    // Если окно GNSSWindow было создано, закрываем его
+    if (m_gnssWindow) {
+        m_gnssWindow->close();
+        m_gnssWindow->deleteLater();
+        m_gnssWindow = nullptr;
+    }
+}
+

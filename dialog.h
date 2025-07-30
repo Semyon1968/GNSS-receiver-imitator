@@ -3,7 +3,12 @@
 
 #include <QDialog>
 #include <QTcpSocket>
-#include "ui_dialog.h"
+
+class GNSSWindow;
+
+namespace Ui {
+class Dialog;
+}
 
 class Dialog : public QDialog
 {
@@ -11,16 +16,20 @@ class Dialog : public QDialog
 
 public:
     explicit Dialog(QWidget *parent = nullptr);
-    ~Dialog();
+    ~Dialog();  // Убедитесь, что объявлен
+
+    QTcpSocket* getSocket() const { return m_socket; }
 
 private slots:
-    void on_ButtonEnter_clicked();
+    void on_connectButton_clicked();
     void onConnected();
+    void onDisconnected();
+    void onError(QAbstractSocket::SocketError error);  // Убедитесь, что объявлен
 
 private:
     Ui::Dialog *ui;
-    QTcpSocket *mSocket;
-
+    QTcpSocket *m_socket;
+    GNSSWindow *m_gnssWindow = nullptr;
 };
 
 #endif // DIALOG_H
