@@ -16,20 +16,25 @@ class Dialog : public QDialog
 
 public:
     explicit Dialog(QWidget *parent = nullptr);
-    ~Dialog();  // Убедитесь, что объявлен
+    ~Dialog();
 
     QTcpSocket* getSocket() const { return m_socket; }
+
+signals:
+    void connectionStatusChanged(bool connected);
 
 private slots:
     void on_connectButton_clicked();
     void onConnected();
     void onDisconnected();
-    void onError(QAbstractSocket::SocketError error);  // Убедитесь, что объявлен
+    void onError(QAbstractSocket::SocketError error);
+    void onConnectionTimeout();
 
 private:
     Ui::Dialog *ui;
     QTcpSocket *m_socket;
     GNSSWindow *m_gnssWindow = nullptr;
+    QTimer *m_connectionTimer;
 };
 
 #endif // DIALOG_H

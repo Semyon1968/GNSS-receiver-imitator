@@ -9,9 +9,15 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Находим Qt5 (Widgets и Network)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
+# Find Qt with required components
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network PrintSupport)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network PrintSupport)
+
+# QCustomPlot sources (modified version with Antialiasing fixes)
+set(QCP_SOURCES
+    qcustomplot.cpp
+    qcustomplot.h
+)
 
 set(PROJECT_SOURCES
     main.cpp
@@ -21,6 +27,9 @@ set(PROJECT_SOURCES
     dialog.cpp
     dialog.h
     dialog.ui
+    ubxparser.cpp
+    ubxparser.h
+    ${QCP_SOURCES}
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -40,19 +49,26 @@ else()
     endif()
 endif()
 
-# Линкуем Qt Widgets и Network
+# Link required Qt modules
 target_link_libraries(ImitatorGNSS PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network
+    Qt${QT_VERSION_MAJOR}::PrintSupport
 )
 
-# Копируем Models.txt в каталог с исполняемым файлом после сборки
+# Include directories
+target_include_directories(ImitatorGNSS PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Copy Models.txt
 add_custom_command(TARGET ImitatorGNSS POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_SOURCE_DIR}/Models.txt
         $<TARGET_FILE_DIR:ImitatorGNSS>/Models.txt
 )
 
+# macOS bundle settings
 if(${QT_VERSION} VERSION_LESS 6.1.0)
   set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.ImitatorGNSS)
 endif()
@@ -65,6 +81,7 @@ set_target_properties(ImitatorGNSS PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
+# Installation
 include(GNUInstallDirs)
 install(TARGETS ImitatorGNSS
     BUNDLE DESTINATION .
@@ -72,6 +89,7 @@ install(TARGETS ImitatorGNSS
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+# Finalize for Qt6
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(ImitatorGNSS)
 endif()
