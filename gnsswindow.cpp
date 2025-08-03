@@ -4,37 +4,111 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QDateTime>
+#include "dialog.h"
+#include "ubxparser.h"
 
-GNSSWindow::GNSSWindow(QWidget *parent) :
+GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::GNSSWindow),
+    m_parentDialog(parentDialog),
     m_socket(nullptr),
     m_timer(new QTimer(this)),
+    m_initTimer(new QTimer(this)),
+    m_ackTimeoutTimer(new QTimer(this)),
     m_satModel(new QStandardItemModel(this)),
-    m_antennaStatusLabel(new QLabel(this)),
-    m_signalPlot(new QCustomPlot(this))
+    m_antennaStatusLabel(new QLabel("Antenna Status: Unknown", this)),
+    m_signalPlot(new QCustomPlot(this)),
+    m_initializationComplete(false),
+    m_waitingForAck(false)
 {
     ui->setupUi(this);
 
-    // Инициализация UI компонентов
-    setupSatelliteView();
-    setupSignalPlot();
+    // Initialize UI components first
+    try {
+        setupSatelliteView();
+        setupSignalPlot();
 
-    // Добавление виджетов в интерфейс
-    ui->antennaLayout->addWidget(m_antennaStatusLabel);
-    ui->plotLayout->addWidget(m_signalPlot);
+        // Add widgets to layout
+        ui->antennaLayout->addWidget(m_antennaStatusLabel);
+        ui->plotLayout->addWidget(m_signalPlot);
 
-    // Настройка соединений
-    setupConnections();
-    registerHandlers();
+        // Configure antenna status label
+        m_antennaStatusLabel->setAlignment(Qt::AlignCenter);
+        m_antennaStatusLabel->setStyleSheet("QLabel { color: gray; font-weight: bold; }");
+    } catch (...) {
+        qCritical() << "Failed to initialize UI components";
+        throw;
+    }
 
-    // Запрос начальных данных
-    sendUbxMonVer();
-    sendUbxCfgRate(1000, 1); // 1Hz navigation rate
-    sendUbxCfgAnt(true); // Antenna power ON
+    // Configure timers
+    m_timer->setInterval(1000); // Default 1Hz rate
+    m_initTimer->setSingleShot(true);
+    m_initTimer->setInterval(15000); // 15 секунд
+    m_ackTimeoutTimer->setSingleShot(true);
+    m_ackTimeoutTimer->setInterval(3000); // 3 sec ACK timeout
+
+    // Connect signals with error handling
+    try {
+        // Timer connections
+        connect(m_timer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
+        connect(m_initTimer, &QTimer::timeout, this, [this]() {
+            if (!m_initializationComplete) {
+                appendToLog("Configuration timeout - proceeding without ACK", "warning");
+                m_initializationComplete = true; // Proceed anyway
+                m_timer->start();
+            }
+        });
+
+        connect(m_ackTimeoutTimer, &QTimer::timeout, this, [this]() {
+            if (m_waitingForAck) {
+                appendToLog("ACK timeout - configuration may be incomplete", "error");
+                m_waitingForAck = false;
+                // Consider whether to retry or proceed
+            }
+        });
+
+        // UI connections
+        connect(ui->sendButton, &QPushButton::clicked,
+                this, &GNSSWindow::onSendButtonClicked);
+        connect(ui->autoSendCheck, &QCheckBox::toggled,
+                this, &GNSSWindow::onAutoSendToggled);
+        connect(ui->btnClearLog, &QPushButton::clicked,
+                this, &GNSSWindow::on_btnClearLog_clicked);
+
+    } catch (...) {
+        qCritical() << "Failed to connect signals";
+        throw;
+    }
+
+    // Initialize message system
+    try {
+        initClassIdMapping();
+        updateAvailableIds();
+        registerHandlers();
+    } catch (...) {
+        qCritical() << "Failed to initialize message system";
+        throw;
+    }
+
+    // Connect to parent dialog if exists
+    if (m_parentDialog) {
+        connect(m_parentDialog, &Dialog::logMessage,
+                this, &GNSSWindow::appendToLog);
+        connect(m_parentDialog, &Dialog::connectionStatusChanged,
+                this, &GNSSWindow::onConnectionStatusChanged);
+    }
+
+    // Initial status
+    appendToLog("GNSS Window initialized successfully", "system");
+    qDebug() << "GNSSWindow initialized in" << QDateTime::currentDateTime().toString("hh:mm:ss");
+
+    // Set initial UI state
+    ui->autoSendCheck->setChecked(false);
+    ui->statusbar->showMessage("Waiting for connection...", 3000);
+    // Initialize chip ID display
+    ui->leChipId->setText("0x00000000");
 }
 
-// Исправленный метод initClassIdMapping
 void GNSSWindow::initClassIdMapping()
 {
     m_classIdMap.clear();
@@ -43,18 +117,13 @@ void GNSSWindow::initClassIdMapping()
     QMap<int, QString> navIds;
     navIds.insert(0x07, "PVT");
     navIds.insert(0x03, "STATUS");
+    navIds.insert(0x24, "DYNMODEL");
     m_classIdMap.insert(0x01, navIds);
 
     // RXM класс (0x02)
     QMap<int, QString> rxmIds;
     rxmIds.insert(0x15, "MEASX");
     m_classIdMap.insert(0x02, rxmIds);
-
-    // CFG класс (0x06)
-    QMap<int, QString> cfgIds;
-    cfgIds.insert(0x00, "PRT");
-    cfgIds.insert(0x39, "ITFM");
-    m_classIdMap.insert(0x06, cfgIds);
 
     // MON класс (0x0A)
     QMap<int, QString> monIds;
@@ -65,6 +134,15 @@ void GNSSWindow::initClassIdMapping()
     QMap<int, QString> secIds;
     secIds.insert(0x03, "UNIQID");
     m_classIdMap.insert(0x27, secIds);
+
+    // CFG класс (0x06)
+    QMap<int, QString> cfgIds;
+    cfgIds.insert(0x00, "PRT");
+    cfgIds.insert(0x01, "MSG");
+    cfgIds.insert(0x13, "ANT");
+    cfgIds.insert(0x24, "DYNMODEL");
+    cfgIds.insert(0x39, "ITFM");
+    m_classIdMap.insert(0x06, cfgIds);
 
     // Заполняем comboBox классов
     ui->cbClass->clear();
@@ -105,81 +183,167 @@ GNSSWindow::~GNSSWindow()
 
 void GNSSWindow::setSocket(QTcpSocket *socket)
 {
+    // Отключаем старые соединения, если сокет уже был установлен
     if (m_socket) {
-        m_socket->disconnect(this);
-        //m_socket->deleteLater();
+        m_socket->disconnect(this); // Отключаем все сигналы от старого сокета
     }
 
     m_socket = socket;
+
     if (m_socket) {
+        // Основное соединение для чтения данных
         connect(m_socket, &QTcpSocket::readyRead, this, &GNSSWindow::onReadyRead);
+
+        // Соединение для обработки отключения
         connect(m_socket, &QTcpSocket::disconnected, this, [this]() {
-            QMessageBox::warning(this, "Disconnected", "Connection lost");
-            this->close();
+            appendToLog("Disconnected from host", "system");
+            m_timer->stop();
+            m_socket = nullptr;
         });
 
-        // Запрашиваем базовую информацию при подключении
-        sendUbxMonVer();
-        sendUbxCfgPrt();
+        // Соединение для обработки ошибок (добавляем здесь!)
+        connect(m_socket, &QTcpSocket::errorOccurred, this, &GNSSWindow::onError);
+
+        appendToLog("Socket connected and configured", "debug");
+    } else {
+        appendToLog("Socket pointer is null!", "error");
     }
+}
+
+void GNSSWindow::onError(QAbstractSocket::SocketError error)
+{
+    Q_UNUSED(error);
+    QString errorMsg = m_socket ? m_socket->errorString() : "Socket not initialized";
+    appendToLog("Socket error: " + errorMsg, "error");
+
+    // Дополнительные действия при ошибке
+    m_timer->stop();
+    m_initializationComplete = false;
+    m_waitingForAck = false;
+
+    if (m_socket && m_socket->state() != QAbstractSocket::UnconnectedState) {
+        m_socket->disconnectFromHost();
+    }
+
+    ui->statusbar->showMessage("Connection error: " + errorMsg, 5000);
 }
 
 void GNSSWindow::setupConnections()
 {
+    // Инициализация таймера (но пока не запускаем)
+    m_timer = new QTimer(this);
+    m_initTimer->start(5000); // Таймаут 5 секунд на инициализацию
+
+    connect(m_timer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
+
+    // Отправляем начальную конфигурацию
+    sendInitialConfiguration();
+
+    // Другие соединения...
     connect(ui->sendButton, &QPushButton::clicked, this, &GNSSWindow::onSendButtonClicked);
     connect(ui->autoSendCheck, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendToggled);
-    connect(m_timer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
+}
+
+void GNSSWindow::sendInitialConfiguration()
+{
+    if (m_waitingForAck) return;
+
+    m_waitingForAck = true;
+    m_ackTimeoutTimer->start();
+
+    // Send configuration in proper order
+    sendUbxCfgPrtResponse();      // First response to CFG-PRT request
+    sendUbxCfgMsg(0x01, 0x07, 1); // NAV-PVT at 1Hz
+    sendUbxCfgRate(1000, 1);      // Measurement rate 1Hz
+    sendUbxCfgAnt(true);          // Enable antenna power
+    QTimer::singleShot(100, this, &GNSSWindow::sendUbxMonVer); // Send version after short delay
+    QTimer::singleShot(200, this, &GNSSWindow::sendUbxMonHw);  // Send HW status after version
+
+    appendToLog("Sent initial configuration sequence", "config");
 }
 
 void GNSSWindow::onReadyRead()
 {
-    static QByteArray buffer;
-    buffer += m_socket->readAll();
-    qDebug() << "Raw data received, total buffer:" << buffer.toHex(' ');
+    if (!m_socket) {
+        qCritical() << "onReadyRead: Socket is null!";
+        return;
+    }
 
-    while(buffer.size() >= 8) {
-        // Ищем начало сообщения
-        int start = buffer.indexOf("\xB5\x62");
-        if(start < 0) {
+    // 1. Чтение всех доступных данных
+    QByteArray newData = m_socket->readAll();
+    if (newData.isEmpty()) {
+        qWarning() << "Received empty data packet";
+        return;
+    }
+
+    qDebug() << "Received" << newData.size() << "bytes of raw data:" << newData.toHex(' ');
+
+    // 2. Добавление данных в буфер
+    static QByteArray buffer; // Статический буфер для накопления данных между вызовами
+    buffer.append(newData);
+
+    qDebug() << "Total buffer size:" << buffer.size() << "bytes";
+    appendToLog(QString("Received %1 bytes (total buffer: %2)")
+                    .arg(newData.size())
+                    .arg(buffer.size()), "in");
+
+    // 3. Обработка всех полных сообщений в буфере
+    while (buffer.size() >= 8) { // Минимальный размер UBX сообщения (без payload)
+        // 3.1. Поиск синхробайтов
+        int startPos = buffer.indexOf("\xB5\x62");
+        if (startPos < 0) {
             qDebug() << "No UBX sync chars found, clearing buffer";
             buffer.clear();
             return;
         }
 
-        if(start > 0) {
-            qDebug() << "Discarding" << start << "bytes before sync chars";
-            buffer.remove(0, start);
+        // 3.2. Удаляем мусор перед синхробайтами
+        if (startPos > 0) {
+            qDebug() << "Discarding" << startPos << "bytes before sync chars";
+            buffer.remove(0, startPos);
+            continue;
         }
 
-        // Проверяем, достаточно ли данных для заголовка
-        if(buffer.size() < 8) return;
+        // 3.3. Проверяем, достаточно ли данных для заголовка
+        if (buffer.size() < 8) {
+            qDebug() << "Waiting for more data (header incomplete)";
+            return;
+        }
 
+        // 3.4. Извлекаем длину payload
         quint16 length = static_cast<quint8>(buffer[4]) | (static_cast<quint8>(buffer[5]) << 8);
         quint8 msgClass = static_cast<quint8>(buffer[2]);
         quint8 msgId = static_cast<quint8>(buffer[3]);
 
-        // Проверяем, есть ли полное сообщение
-        if(buffer.size() < 8 + length) {
-            qDebug() << "Waiting for more data. Need:" << 8 + length
+        qDebug() << "Potential message - Class:" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'))
+                 << "ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'))
+                 << "Length:" << length;
+
+        // 3.5. Проверяем, есть ли полное сообщение
+        int totalMessageSize = 8 + length; // Заголовок + payload
+        if (buffer.size() < totalMessageSize) {
+            qDebug() << "Waiting for more data. Need:" << totalMessageSize
                      << "Have:" << buffer.size();
             return;
         }
 
-        QByteArray message = buffer.left(8 + length);
-        buffer.remove(0, 8 + length);
+        // 3.6. Извлекаем полное сообщение
+        QByteArray message = buffer.left(totalMessageSize);
+        buffer.remove(0, totalMessageSize);
 
-        // Парсим сообщение
+        qDebug() << "Processing message of size:" << message.size() << "bytes";
+        appendToLog(QString("Processing UBX: Class=0x%1 ID=0x%2 (%3 bytes)")
+                        .arg(msgClass, 2, 16, QLatin1Char('0'))
+                        .arg(msgId, 2, 16, QLatin1Char('0'))
+                        .arg(message.size()), "debug");
+
+        // 3.7. Парсим сообщение
         QByteArray payload;
-        if(UbxParser::parseUbxMessage(message, msgClass, msgId, payload)) {
-            qDebug() << "Valid UBX message:"
-                     << "Class:" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'))
-                     << "ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'))
-                     << "Length:" << length;
-
-            // Обработка сообщения...
+        if (UbxParser::parseUbxMessage(message, msgClass, msgId, payload)) {
             processUbxMessage(msgClass, msgId, payload);
         } else {
-            qDebug() << "Invalid UBX message, skipping";
+            qWarning() << "Failed to parse UBX message";
+            appendToLog("Failed to parse UBX message", "error");
         }
     }
 }
@@ -203,6 +367,65 @@ void GNSSWindow::registerHandlers()
         appendToLog("INF-ERROR: " + msg, "error");
         QMessageBox::warning(this, "Receiver Error", msg);
     });
+
+    connect(&m_ubxParser, &UbxParser::secUniqidReceived, this, [this](const UbxParser::SecUniqid &data) {
+        ui->leChipId->setText(QString("0x%1").arg(data.uniqueId, 8, 16, QLatin1Char('0')));
+        appendToLog(QString("SEC-UNIQID: 0x%1").arg(data.uniqueId, 8, 16, QLatin1Char('0')), "info");
+    });
+}
+/*
+void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate) {
+    QByteArray payload;
+    payload.append(msgClass);
+    payload.append(msgId);
+    payload.append(rate);
+
+    createUbxPacket(0x06, 0x01, payload);
+    appendToLog(QString("CFG-MSG: Class=0x%1, ID=0x%2, Rate=%3")
+                    .arg(msgClass, 2, 16, QLatin1Char('0'))
+                    .arg(msgId, 2, 16, QLatin1Char('0'))
+                    .arg(rate), "config");
+}
+*/
+void GNSSWindow::sendUbxCfgDynModel(quint8 model) {
+    QByteArray payload(4, 0x00);
+    payload[0] = model;
+
+    createUbxPacket(0x06, 0x24, payload);
+    appendToLog(QString("CFG-DYNMODEL: Model=%1").arg(model), "config");
+}
+
+void GNSSWindow::sendUbxCfgAntSettings(bool openDet, bool shortDet, bool recover) {
+    QByteArray payload(4, 0x00);
+    quint16 flags = 0;
+
+    if(openDet) flags |= 0x0001;
+    if(shortDet) flags |= 0x0002;
+    if(recover) flags |= 0x0004;
+
+    qToLittleEndian<quint16>(flags, payload.data());
+    createUbxPacket(0x06, 0x13, payload);
+
+    appendToLog(QString("CFG-ANT: OpenDet=%1, ShortDet=%2, Recover=%3")
+                    .arg(openDet).arg(shortDet).arg(recover), "config");
+}
+
+void GNSSWindow::sendUbxSecUniqidReq() {
+    createUbxPacket(0x27, 0x03, QByteArray());
+    appendToLog("Requested SEC-UNIQID", "config");
+}
+
+void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate)
+{
+    QByteArray payload;
+    payload.append(msgClass);
+    payload.append(msgId);
+    payload.append(rate);
+
+    createUbxPacket(0x06, 0x01, payload);
+    qDebug() << "CFG-MSG: Class=" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'))
+             << "ID=" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'))
+             << "Rate=" << rate;
 }
 
 void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArray& payload)
@@ -210,10 +433,22 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
     QString messageInfo;
     QString timestamp = QDateTime::currentDateTime().toString("[hh:mm:ss]");
 
+    qDebug() << "Processing UBX message - Class:" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'))
+             << "ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'))
+             << "Payload size:" << payload.size();
+
+    // Логирование содержимого payload
+    qDebug() << "Payload hex dump:";
+    qDebug() << payload.toHex(' ');
+
     // Обработка ACK/NACK сообщений
     if (msgClass == 0x05) {
-        UbxParser::AckPacket ack = UbxParser::parseAck(payload);
+        UbxParser::AckPacket ack = m_ubxParser.parseAck(payload);
         QString ackType = (msgId == 0x01) ? "ACK" : "NACK";
+
+        qDebug() << "Received" << ackType << "for message:"
+                 << "Class:" << QString("0x%1").arg(ack.ackClass, 2, 16, QLatin1Char('0'))
+                 << "ID:" << QString("0x%1").arg(ack.ackId, 2, 16, QLatin1Char('0'));
 
         messageInfo = QString("%1 for %2 (0x%3) ID: 0x%4")
                           .arg(ackType)
@@ -221,23 +456,64 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
                           .arg(ack.ackClass, 2, 16, QLatin1Char('0'))
                           .arg(ack.ackId, 2, 16, QLatin1Char('0'));
 
+        if (msgId == 0x01 && ack.ackClass == 0x06) {
+            m_initializationComplete = true;
+            m_waitingForAck = false;
+            m_ackTimeoutTimer->stop();
+            m_timer->start(1000);
+            qDebug() << "Critical configuration ACK received. Starting NAV-PVT.";
+            appendToLog("Critical configuration ACK received. Starting NAV-PVT.", "system");
+        }
+
         appendToLog(messageInfo, "in");
         return;
     }
 
-    // Обработка CFG-PRT ACK
-    if (msgClass == 0x06 && msgId == 0x00 && payload.isEmpty()) {
-        messageInfo = "CFG-PRT ACK received";
-        appendToLog(messageInfo, "in");
+    // Обработка запросов конфигурации
+    if (msgClass == 0x06 && msgId == 0x00) {
+        qDebug() << "CFG-PRT request received, sending response";
+        sendUbxCfgPrtResponse();
+        sendInitialConfiguration();
         return;
     }
 
-    // Обработка остальных сообщений
+    // Обработка запроса версии (MON-VER)
+    if (msgClass == 0x0A && msgId == 0x04) {
+        qDebug() << "MON-VER request received, sending version info";
+        sendUbxMonVer();
+        return;
+    }
+
+    // Обработка запроса аппаратного состояния (MON-HW)
+    if (msgClass == 0x0A && msgId == 0x09) {
+        qDebug() << "MON-HW request received, sending hardware info";
+        sendUbxMonHw();
+        return;
+    }
+
+    // Обработка запроса уникального ID (SEC-UNIQID)
+    if (msgClass == 0x27 && msgId == 0x03) {
+        qDebug() << "SEC-UNIQID request received, sending chip ID";
+        sendUbxSecUniqid();
+        return;
+    }
+
+    // Основной обработчик сообщений по классам
     switch(msgClass) {
     case 0x01: // NAV класс
         switch(msgId) {
         case 0x07: { // NAV-PVT
             UbxParser::NavPvt pvt = UbxParser::parseNavPvt(payload);
+            qDebug() << "NAV-PVT data:"
+                     << "Lat:" << pvt.lat/1e7 << "Lon:" << pvt.lon/1e7
+                     << "Fix:" << pvt.fixType << "Sats:" << pvt.numSV
+                     << "Time:" << QString("%1-%2-%3 %4:%5:%6 UTC")
+                                       .arg(pvt.year)
+                                       .arg(pvt.month, 2, 10, QChar('0'))
+                                       .arg(pvt.day, 2, 10, QChar('0'))
+                                       .arg(pvt.hour, 2, 10, QChar('0'))
+                                       .arg(pvt.min, 2, 10, QChar('0'))
+                                       .arg(pvt.sec, 2, 10, QChar('0'));
             displayNavPvt(pvt);
             messageInfo = QString("NAV-PVT: Lat=%1 Lon=%2 Fix=%3 Sats=%4")
                               .arg(pvt.lat/1e7, 0, 'f', 7)
@@ -248,6 +524,10 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
         }
         case 0x03: { // NAV-STATUS
             UbxParser::NavStatus status = UbxParser::parseNavStatus(payload);
+            qDebug() << "NAV-STATUS data:"
+                     << "Fix:" << status.fixType
+                     << "Flags:" << QString("0x%1").arg(status.flags, 2, 16, QLatin1Char('0'))
+                     << "TTFF:" << status.ttff << "ms";
             displayNavStatus(status);
             messageInfo = QString("NAV-STATUS: Fix=%1 TTFF=%2ms")
                               .arg(status.fixType)
@@ -255,6 +535,7 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
             break;
         }
         default:
+            qDebug() << "Unknown NAV message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             messageInfo = QString("Unknown NAV message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             break;
         }
@@ -263,9 +544,11 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
     case 0x02: // RXM класс
         switch(msgId) {
         case 0x15: // RXM-MEASX
+            qDebug() << "RXM-MEASX measurement data received";
             messageInfo = "RXM-MEASX: Measurement data";
             break;
         default:
+            qDebug() << "Unknown RXM message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             messageInfo = QString("Unknown RXM message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             break;
         }
@@ -275,6 +558,11 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
         switch(msgId) {
         case 0x00: { // CFG-PRT
             UbxParser::CfgPrt prt = UbxParser::parseCfgPrt(payload);
+            qDebug() << "CFG-PRT data:"
+                     << "Port:" << prt.portID
+                     << "Baud:" << prt.baudRate
+                     << "InProto:" << QString("0x%1").arg(prt.inProtoMask, 0, 16)
+                     << "OutProto:" << QString("0x%1").arg(prt.outProtoMask, 0, 16);
             displayCfgPrt(prt);
             messageInfo = QString("CFG-PRT: Baud=%1 InProto=0x%2 OutProto=0x%3")
                               .arg(prt.baudRate)
@@ -282,10 +570,31 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
                               .arg(prt.outProtoMask, 0, 16);
             break;
         }
-        case 0x39: // CFG-ITFM
-            messageInfo = "CFG-ITFM: Jamming/interference config";
+        case 0x39: { // CFG-ITFM
+            qDebug() << "CFG-ITFM request received, sending response";
+            sendUbxAck(msgClass, msgId);
+            sendUbxCfgItfm();
+            messageInfo = "CFG-ITFM: Jamming/interference config processed";
             break;
+        }
+        case 0x8A: { // CFG-VALGET
+            qDebug() << "CFG-VALGET request received, sending response";
+            QByteArray response;
+            response.append(payload.mid(0, 4));
+            response.append(0x01);
+            createUbxPacket(0x06, 0x8B, response);
+            sendUbxAck(msgClass, msgId);
+            messageInfo = "CFG-VALGET: Configuration value request handled";
+            break;
+        }
+        case 0x8B: { // CFG-VALSET
+            qDebug() << "CFG-VALSET request received, sending ACK";
+            sendUbxAck(msgClass, msgId);
+            messageInfo = "CFG-VALSET: Configuration values updated";
+            break;
+        }
         default:
+            qDebug() << "Unknown CFG message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             messageInfo = QString("Unknown CFG message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             break;
         }
@@ -295,13 +604,32 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
         switch(msgId) {
         case 0x04: { // MON-VER
             UbxParser::MonVer ver = UbxParser::parseMonVer(payload);
+            qDebug() << "MON-VER data:"
+                     << "SW:" << ver.swVersion
+                     << "HW:" << ver.hwVersion
+                     << "Extensions:" << ver.extensions.join(", ");
             displayMonVer(ver);
             messageInfo = QString("MON-VER: SW=%1 HW=%2")
                               .arg(ver.swVersion)
                               .arg(ver.hwVersion);
             break;
         }
+        case 0x09: { // MON-HW
+            UbxParser::MonHw hw = UbxParser::parseMonHw(payload);
+            qDebug() << "MON-HW data:"
+                     << "Antenna:" << (hw.aPower ? "ON" : "OFF")
+                     << "Status:" << QString("0x%1").arg(hw.aStatus, 2, 16, QLatin1Char('0'))
+                     << "Jamming:" << hw.jamInd << "%"
+                     << "Noise:" << hw.noisePerMS
+                     << "AGC:" << hw.agcCnt;
+            processMonHw(hw);
+            messageInfo = QString("MON-HW: Antenna=%1 Jamming=%2%")
+                              .arg(hw.aPower ? "ON" : "OFF")
+                              .arg(hw.jamInd);
+            break;
+        }
         default:
+            qDebug() << "Unknown MON message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             messageInfo = QString("Unknown MON message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             break;
         }
@@ -309,21 +637,30 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
 
     case 0x27: // SEC класс
         switch(msgId) {
-        case 0x03: // SEC-UNIQID
-            messageInfo = "SEC-UNIQID: Unique chip ID received";
+        case 0x03: { // SEC-UNIQID
+            UbxParser::SecUniqid uniqid = UbxParser::parseSecUniqid(payload);
+            qDebug() << "SEC-UNIQID data:"
+                     << "Version:" << uniqid.version
+                     << "ID:" << QString("0x%1").arg(uniqid.uniqueId, 8, 16, QLatin1Char('0'));
+            emit secUniqidReceived(uniqid);
+            messageInfo = QString("SEC-UNIQID: 0x%1").arg(uniqid.uniqueId, 8, 16, QLatin1Char('0'));
             break;
+        }
         default:
+            qDebug() << "Unknown SEC message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             messageInfo = QString("Unknown SEC message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             break;
         }
         break;
 
     default:
+        qDebug() << "Unknown message class:" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'));
         messageInfo = QString("Unknown message class: 0x%1").arg(msgClass, 2, 16, QLatin1Char('0'));
         break;
     }
 
     if (!messageInfo.isEmpty()) {
+        qDebug() << "Processed message:" << messageInfo;
         appendToLog(messageInfo, "in");
     }
 }
@@ -362,7 +699,7 @@ void GNSSWindow::displayCfgPrt(const UbxParser::CfgPrt &data)
 {
     if (data.baudRate == 0) {
         qDebug() << "Received CFG-PRT ACK, requesting current config...";
-        sendUbxCfgPrt(); // Запрашиваем актуальную конфигурацию
+        sendUbxCfgPrtResponse(); // Запрашиваем актуальную конфигурацию
         return;
     }
     ui->statusbar->showMessage(
@@ -427,59 +764,63 @@ UbxParser::NavSat UbxParser::parseNavSat(const QByteArray &payload) {
     return result;
 }
 
-UbxParser::MonHw UbxParser::parseMonHw(const QByteArray &payload) {
-    MonHw result = {};
-    if(payload.size() < 60) return result; // Минимальный размер структуры
-
-    result.pinSel = qFromLittleEndian<quint32>(payload.mid(0, 4));
-    result.pinBank = qFromLittleEndian<quint32>(payload.mid(4, 4));
-    result.pinDir = qFromLittleEndian<quint32>(payload.mid(8, 4));
-    result.pinVal = qFromLittleEndian<quint32>(payload.mid(12, 4));
-    result.noisePerMS = qFromLittleEndian<quint32>(payload.mid(16, 4));
-    result.agcCnt = qFromLittleEndian<quint32>(payload.mid(20, 4));
-    result.aStatus = payload[24];
-    result.aPower = payload[25];
-    result.flags = payload[26];
-    result.usedMask = qFromLittleEndian<quint32>(payload.mid(28, 4));
-    result.jamInd = payload[56];
-    result.pinIrq = qFromLittleEndian<quint32>(payload.mid(60, 4));
-    result.pullH = qFromLittleEndian<quint32>(payload.mid(64, 4));
-    result.pullL = qFromLittleEndian<quint32>(payload.mid(68, 4));
-
-    return result;
-}
-
 void GNSSWindow::appendToLog(const QString &message, const QString &type)
 {
-    if(ui->actionPauseLog->isChecked())
+    // 1. Проверка на паузу лога
+    if (!ui || !ui->actionPauseLog || ui->actionPauseLog->isChecked()) {
         return;
+    }
 
+    // 2. Подготовка временной метки
     QString timestamp = QDateTime::currentDateTime().toString("[hh:mm:ss]");
     QString formattedMessage;
 
-    if(type == "in") {
+    // 3. Форматирование сообщения в зависимости от типа
+    if (type.compare("in", Qt::CaseInsensitive) == 0) {
         formattedMessage = QString("<div style='color:#2E7D32;'><b>%1 IN:</b> %2</div>")
-                               .arg(timestamp, message);
+                               .arg(timestamp, message.toHtmlEscaped());
     }
-    else if(type == "out") {
-        // Теперь принимаем только данные без временной метки
+    else if (type.compare("out", Qt::CaseInsensitive) == 0) {
         formattedMessage = QString("<div style='color:#1565C0;'><b>%1 OUT:</b> %2</div>")
-                               .arg(timestamp, message);
+                               .arg(timestamp, message.toHtmlEscaped());
     }
-    else if(type == "system") {
+    else if (type.compare("system", Qt::CaseInsensitive) == 0) {
         formattedMessage = QString("<div style='color:#7B1FA2;'><b>%1 SYS:</b> %2</div>")
-                               .arg(timestamp, message);
+                               .arg(timestamp, message.toHtmlEscaped());
+    }
+    else if (type.compare("error", Qt::CaseInsensitive) == 0) {
+        formattedMessage = QString("<div style='color:#C62828;'><b>%1 ERR:</b> %2</div>")
+                               .arg(timestamp, message.toHtmlEscaped());
     }
     else {
-        formattedMessage = QString("<div>%1 %2</div>")
-                               .arg(timestamp, message);
+        formattedMessage = QString("<div style='color:#000000;'>%1 %2</div>")
+                               .arg(timestamp, message.toHtmlEscaped());
     }
 
-    ui->teReceived->append(formattedMessage);
+    // 4. Проверка и добавление в лог
+    if (ui && ui->teReceived) {
+        // 4.1. Ограничение размера лога (не более 10000 строк)
+        if (ui->teReceived->document()->lineCount() > 10000) {
+            ui->teReceived->clear();
+            ui->teReceived->append("<div style='color:#7B1FA2;'><b>Log cleared automatically</b></div>");
+        }
 
-    if(!ui->actionPauseLog->isChecked()) {
-        ui->teReceived->ensureCursorVisible();
+        // 4.2. Добавление сообщения
+        ui->teReceived->append(formattedMessage);
+
+        // 4.3. Автопрокрутка если не стоит пауза
+        if (!ui->actionPauseLog->isChecked()) {
+            QTextCursor cursor = ui->teReceived->textCursor();
+            cursor.movePosition(QTextCursor::End);
+            ui->teReceived->setTextCursor(cursor);
+        }
     }
+
+    // 5. Дублирование в консоль для отладки
+    qDebug().noquote() << QString("%1 %2: %3")
+                              .arg(timestamp)
+                              .arg(type.toUpper())
+                              .arg(message);
 }
 
 void GNSSWindow::displayMonVer(const UbxParser::MonVer &data)
@@ -584,10 +925,11 @@ void GNSSWindow::processMonHw(const UbxParser::MonHw &hw)
         m_antennaStatusLabel->setPixmap(QPixmap(":/icons/antenna_red.png"));
     }
 
-    QString info = QString("Antenna: %1\nJamming: %2%\nNoise: %3")
+    QString info = QString("Antenna: %1\nJamming: %2%\nNoise: %3\nAGC: %4")
                        .arg(status)
                        .arg(hw.jamInd)
-                       .arg(hw.noisePerMS);
+                       .arg(hw.noisePerMS)
+                       .arg(hw.agcCnt);
 
     ui->lbAntennaStatus->setText(info);
     appendToLog(QString("MON-HW: %1").arg(info), "status");
@@ -625,7 +967,7 @@ void GNSSWindow::onSendButtonClicked()
         else if (msgId == 0x03) sendUbxNavStatus();
         break;
     case 0x06: // CFG
-        if (msgId == 0x00) sendUbxCfgPrt();
+        if (msgId == 0x00) sendUbxCfgPrtResponse();
         else if (msgId == 0x39) sendUbxCfgItfm();
         break;
     case 0x0A: // MON
@@ -639,12 +981,40 @@ void GNSSWindow::onSendButtonClicked()
 
 void GNSSWindow::onAutoSendToggled(bool checked)
 {
+    if (checked && !m_initializationComplete) {
+        QMessageBox::warning(this, "Warning",
+                             "Cannot start sending NAV-PVT - initialization not complete");
+        ui->autoSendCheck->setChecked(false);
+        return;
+    }
+
     if (checked) {
         int rate = ui->rateSpin->value();
         m_timer->start(1000 / rate);
     } else {
         m_timer->stop();
     }
+}
+
+void GNSSWindow::sendUbxCfgPrtResponse()
+{
+    QByteArray payload(20, 0x00);
+
+    // UART1 configuration
+    payload[0] = 0x01; // Port ID: UART1
+
+    // Mode: 8N1, no parity
+    qToLittleEndian<quint32>(0x000008D0, payload.data() + 4);
+
+    // BaudRate: 115200
+    qToLittleEndian<quint32>(115200, payload.data() + 8);
+
+    // Protocols: UBX + NMEA
+    qToLittleEndian<quint16>(0x0003, payload.data() + 12); // inProtoMask
+    qToLittleEndian<quint16>(0x0003, payload.data() + 14); // outProtoMask
+
+    createUbxPacket(0x06, 0x00, payload);
+    appendToLog("Sent UART1 configuration", "config");
 }
 
 // CFG-PRT (Port Configuration)
@@ -687,29 +1057,24 @@ void GNSSWindow::sendUbxMonVer()
 {
     QByteArray payload;
 
-    // Software version
-    QString swVersion = "ROM CORE 3.01 (107888)";
-    payload.append(swVersion.toUtf8());
+    // SW Version
+    payload.append("ROM CORE 3.01 (107888)");
     payload.append('\0');
 
-    // Hardware version
-    QString hwVersion = "00080000";
-    payload.append(hwVersion.toUtf8());
+    // HW Version
+    payload.append("00080000");
     payload.append('\0');
 
-    // Extension strings
-    QString ext1 = "PROTVER=18.00";
-    QString ext2 = "GPS;GLO;GAL;BDS";
-    QString ext3 = "SBAS;IMES;QZSS";
-
-    payload.append(ext1.toUtf8());
+    // Extensions
+    payload.append("PROTVER=18.00");
     payload.append('\0');
-    payload.append(ext2.toUtf8());
+    payload.append("GPS;GLO;GAL;BDS");
     payload.append('\0');
-    payload.append(ext3.toUtf8());
+    payload.append("SBAS;IMES;QZSS");
     payload.append('\0');
 
     createUbxPacket(0x0A, 0x04, payload);
+    appendToLog("Sent version information", "config");
 }
 
 // SEC-UNIQID (Unique Chip ID)
@@ -720,13 +1085,17 @@ void GNSSWindow::sendUbxSecUniqid()
     // Version
     payload[0] = 0x01;
 
-    // Unique chip ID (example)
+    // Unique chip ID - use a realistic value
     payload[1] = 0x12;
     payload[2] = 0x34;
     payload[3] = 0x56;
     payload[4] = 0x78;
 
     createUbxPacket(0x27, 0x03, payload);
+    appendToLog("Sent SEC-UNIQID with valid chip ID", "config");
+
+    // Also update the UI
+    ui->leChipId->setText("0x12345678");
 }
 
 // NAV-STATUS (Receiver Navigation Status)
@@ -809,15 +1178,73 @@ void GNSSWindow::pauseLog(bool paused)
 // CFG-ITFM (Jamming/Interference Monitor)
 void GNSSWindow::sendUbxCfgItfm()
 {
+    // Создаем payload размером 8 байт (как указано в спецификации UBX-CFG-ITFM)
     QByteArray payload(8, 0x00);
 
-    // config
+    // Конфигурация защиты от помех (jamming/interference monitor):
+    // Структура payload:
+    // uint32 config - битовая маска конфигурации
+    // uint32 config2 - расширенная конфигурация
+
+    // Базовые настройки (config):
+    // Бит 0: enable - 0=выключено (по умолчанию)
+    // Бит 1: general - общие настройки
+    // Бит 2: bbThreshold - порог для широкополосных помех
+    // Бит 3: cwThreshold - порог для узкополосных помех
+
+    // Устанавливаем значения по умолчанию:
+    // BBThreshold = 0 (disabled)
+    // CWThreshold = 0 (disabled)
+    // Enable = 0 (disabled)
+    // General = 0 (no special config)
+
+    // Записываем config (первые 4 байта)
     qToLittleEndian<quint32>(0x00000000, payload.data());
 
-    // config2
+    // Записываем config2 (последние 4 байта) - резерв, должен быть 0
     qToLittleEndian<quint32>(0x00000000, payload.data() + 4);
 
+    // Формируем и отправляем UBX пакет
     createUbxPacket(0x06, 0x39, payload);
+
+    // Логируем действие
+    appendToLog("Sent CFG-ITFM with default config (jamming detection disabled)", "config");
+
+    qDebug() << "CFG-ITFM packet sent with payload:" << payload.toHex(' ');
+
+    // Дополнительно можно отправить ACK, если требуется
+    // sendUbxAck(0x06, 0x39);
+}
+
+void GNSSWindow::sendUbxAck(quint8 msgClass, quint8 msgId)
+{
+    QByteArray payload;
+    payload.append(static_cast<char>(msgClass));
+    payload.append(static_cast<char>(msgId));
+
+    createUbxPacket(0x05, 0x01, payload); // 0x05,0x01 - это ACK
+
+    appendToLog(QString("Sent ACK for Class=0x%1 ID=0x%2")
+                    .arg(msgClass, 2, 16, QLatin1Char('0'))
+                    .arg(msgId, 2, 16, QLatin1Char('0')),
+                "config");
+
+    qDebug() << "ACK sent for message Class:" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'))
+             << "ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+}
+
+void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId)
+{
+    QByteArray payload;
+    payload.append(static_cast<char>(msgClass));
+    payload.append(static_cast<char>(msgId));
+
+    createUbxPacket(0x05, 0x00, payload); // 0x05,0x00 - это NACK
+
+    appendToLog(QString("Sent NACK for Class=0x%1 ID=0x%2")
+                    .arg(msgClass, 2, 16, QLatin1Char('0'))
+                    .arg(msgId, 2, 16, QLatin1Char('0')),
+                "error");
 }
 
 void GNSSWindow::setupSignalPlot()
@@ -841,97 +1268,147 @@ void GNSSWindow::setupSignalPlot()
     m_signalPlot->replot();
 }
 
-void GNSSWindow::sendUbxNavPvt()
+void GNSSWindow::sendUbxMonHw()
 {
-    // Отправляем все служебные сообщения при первом вызове
-    static bool firstRun = true;
-    if (firstRun) {
-        sendUbxMonVer();
-        sendUbxSecUniqid();
-        sendUbxCfgPrt();
-        sendUbxNavStatus();
-        sendUbxCfgItfm();
-        firstRun = false;
+    QByteArray payload(60, 0x00); // Exactly 60 bytes for MON-HW
+
+    // Fill in all required fields
+    qToLittleEndian<quint32>(0x00000000, payload.data());      // pinSel
+    qToLittleEndian<quint32>(0x00000000, payload.data() + 4);  // pinBank
+    qToLittleEndian<quint32>(0x00000000, payload.data() + 8);  // pinDir
+    qToLittleEndian<quint32>(0x00000000, payload.data() + 12); // pinVal
+
+    // Noise and AGC - set realistic values
+    qToLittleEndian<quint16>(50, payload.data() + 16);  // noisePerMS (50)
+    qToLittleEndian<quint16>(120, payload.data() + 18); // agcCnt (120)
+
+    // Critical status fields
+    payload[20] = 0x01; // aStatus (1 = OK)
+    payload[21] = 0x01; // aPower (1 = powered)
+    payload[22] = 0x01; // flags (1 = antenna supervised)
+    payload[23] = 0x00; // reserved1
+
+    // usedMask (4 bytes)
+    payload[24] = 0x00;
+    payload[25] = 0x00;
+    payload[26] = 0x00;
+    payload[27] = 0x00;
+
+    // VP (interference) array (17 bytes)
+    for(int i = 28; i < 45; i++) {
+        payload[i] = 0x00;
     }
 
-    // Код отправки NAV-PVT
+    payload[45] = 0x00; // jamInd (0%)
+    payload[46] = 0x00; // reserved2[0]
+    payload[47] = 0x00; // reserved2[1]
+
+    qToLittleEndian<quint32>(0x00000000, payload.data() + 48); // pinIrq
+    qToLittleEndian<quint32>(0x00000000, payload.data() + 52); // pullH
+    qToLittleEndian<quint32>(0x00000000, payload.data() + 56); // pullL
+
+    createUbxPacket(0x0A, 0x09, payload);
+    appendToLog("Sent MON-HW with valid status (0x01)", "config");
+}
+
+void GNSSWindow::sendUbxNavPvt()
+{
     QByteArray payload(92, 0x00);
 
-    // Fill PVT data
-    QDateTime dt = QDateTime::currentDateTimeUtc();
-    qToLittleEndian<quint32>(0, payload.data()); // iTOW
-    qToLittleEndian<quint16>(dt.date().year(), payload.data() + 4);
-    payload[6] = dt.date().month();
-    payload[7] = dt.date().day();
-    payload[8] = dt.time().hour();
-    payload[9] = dt.time().minute();
-    payload[10] = dt.time().second();
-    payload[20] = 3; // 3D fix
+    // Заполните payload актуальными данными
+    qToLittleEndian<quint32>(QDateTime::currentDateTime().toMSecsSinceEpoch(), payload.data()); // iTOW
+    payload[20] = 0x03; // fixType (3D fix)
+    payload[23] = 10;   // numSV (количество спутников)
 
-    // Position data
-    qToLittleEndian<qint32>(55*1e7, payload.data() + 24); // lat
-    qToLittleEndian<qint32>(37*1e7, payload.data() + 28); // lon
-    qToLittleEndian<qint32>(150*1000, payload.data() + 32); // height
-
-    createUbxPacket(0x01, 0x07, payload); // NAV-PVT
+    createUbxPacket(0x01, 0x07, payload);
+    appendToLog("Sent NAV-PVT", "out");
 }
 
 void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload)
 {
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        qWarning() << "Cannot send - socket not ready. State:"
+                   << (m_socket ? m_socket->state() : QAbstractSocket::UnconnectedState);
+        return;
+    }
+
+    // 1. Проверка входных параметров
+    if (msgClass > 0xFF || msgId > 0xFF) {
+        qWarning() << "Invalid UBX class or ID values (class:" << msgClass << "id:" << msgId << ")";
+        return;
+    }
+
+    // 2. Формирование пакета
     QByteArray packet;
-    // Формируем заголовок UBX
-    packet.append('\xB5');  // Sync char 1
-    packet.append('\x62');  // Sync char 2
-    packet.append(msgClass);
-    packet.append(msgId);
 
-    // Добавляем длину payload
+    // 2.1. Синхробайты
+    packet.append('\xB5'); // Sync char 1
+    packet.append('\x62'); // Sync char 2
+
+    // 2.2. Заголовок
+    packet.append(static_cast<char>(msgClass));
+    packet.append(static_cast<char>(msgId));
+
+    // 2.3. Длина payload (little-endian)
     quint16 length = payload.size();
-    packet.append(length & 0xFF);
-    packet.append((length >> 8) & 0xFF);
+    packet.append(static_cast<char>(length & 0xFF));
+    packet.append(static_cast<char>((length >> 8) & 0xFF));
 
-    // Добавляем сам payload
+    // 2.4. Payload
     packet.append(payload);
 
-    // Вычисляем контрольную сумму
+    // 2.5. Расчет контрольной суммы
     quint8 ck_a = 0, ck_b = 0;
-    for(int i = 2; i < packet.size(); i++) {
+    for (int i = 2; i < packet.size(); i++) {
         ck_a += static_cast<quint8>(packet[i]);
         ck_b += ck_a;
     }
     packet.append(ck_a);
     packet.append(ck_b);
 
-    if(m_socket && m_socket->state() == QTcpSocket::ConnectedState) {
-        // Отправляем пакет
-        m_socket->write(packet);
+    // 3. Подробное логирование
+    QString logMessage = QString("Prepared UBX packet: Class=0x%1 ID=0x%2 Length=%3")
+                             .arg(msgClass, 2, 16, QLatin1Char('0'))
+                             .arg(msgId, 2, 16, QLatin1Char('0'))
+                             .arg(packet.size());
 
-        // Форматируем hex-вывод
-        QString hexStr;
-        const int bytesPerLine = 16;
+    qDebug() << logMessage;
+    qDebug() << "Full packet:" << packet.toHex(' ');
+    appendToLog(logMessage, "debug");
 
-        // Добавляем заголовок
-        for(int i = 0; i < 6 && i < packet.size(); ++i) {
-            hexStr += QString("%1 ").arg(static_cast<quint8>(packet[i]), 2, 16, QLatin1Char('0')).toUpper();
+    // 4. Отправка через сокет
+    if (!m_socket) {
+        qCritical() << "Socket is null! Cannot send packet.";
+        appendToLog("Error: Socket not initialized", "error");
+        return;
+    }
+
+    if (m_socket->state() != QAbstractSocket::ConnectedState) {
+        qWarning() << "Socket not connected. Current state:" << m_socket->state();
+        appendToLog(QString("Error: Socket state %1").arg(m_socket->state()), "error");
+        return;
+    }
+
+    qint64 bytesWritten = m_socket->write(packet);
+    if (bytesWritten == -1) {
+        qWarning() << "Socket write error:" << m_socket->errorString();
+        appendToLog(QString("Write error: %1").arg(m_socket->errorString()), "error");
+    }
+    else if (bytesWritten != packet.size()) {
+        qWarning() << "Partial write:" << bytesWritten << "of" << packet.size() << "bytes";
+        appendToLog(QString("Warning: Partial write (%1/%2 bytes)")
+                        .arg(bytesWritten).arg(packet.size()), "warning");
+    }
+    else {
+        qDebug() << "Successfully sent" << bytesWritten << "bytes";
+        appendToLog(QString("Sent: Class=0x%1 ID=0x%2 (%3 bytes)")
+                        .arg(msgClass, 2, 16, QLatin1Char('0'))
+                        .arg(msgId, 2, 16, QLatin1Char('0'))
+                        .arg(bytesWritten), "out");
+
+        // Принудительная отправка буфера
+        if (!m_socket->flush()) {
+            qWarning() << "Flush failed:" << m_socket->errorString();
         }
-
-        // Добавляем payload с переносами строк
-        if(packet.size() > 6) {
-            hexStr += "\n    ";
-            for(int i = 6; i < packet.size(); ++i) {
-                hexStr += QString("%1 ").arg(static_cast<quint8>(packet[i]), 2, 16, QLatin1Char('0')).toUpper();
-                if((i - 5) % bytesPerLine == 0 && i != packet.size() - 1) {
-                    hexStr += "\n    ";
-                }
-            }
-        }
-
-        // Удаляем последний пробел и добавляем в лог
-        hexStr = hexStr.trimmed();
-        appendToLog(hexStr, "out");
-
-        qDebug() << "Sent UBX packet - Class: 0x" << QString::number(msgClass, 16).toUpper()
-                 << "ID: 0x" << QString::number(msgId, 16).toUpper()
-                 << "Size:" << packet.size() << "bytes";
     }
 }

@@ -10,6 +10,9 @@
 #include <QMap>
 #include "ubxparser.h"
 #include "qcustomplot.h"
+#include <QAbstractSocket>
+
+class Dialog;
 
 namespace Ui {
 class GNSSWindow;
@@ -20,16 +23,19 @@ class GNSSWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit GNSSWindow(QWidget *parent = nullptr);
+    explicit GNSSWindow(Dialog* parentDialog = nullptr, QWidget *parent = nullptr);
     ~GNSSWindow();
-
+    void sendUbxCfgPrtResponse();
     void setSocket(QTcpSocket *socket);
     void onConnectionStatusChanged(bool connected);
+    void sendUbxMonHw();
+
+public slots:
+    void appendToLog(const QString &message, const QString &type = "info");
 
 private slots:
     void updateAvailableIds();
     void on_btnClearLog_clicked();
-    void appendToLog(const QString &message, const QString &type = "info");
     void onReadyRead();
     void onSendButtonClicked();
     void onAutoSendToggled(bool checked);
@@ -44,9 +50,21 @@ private slots:
     void saveLogToFile();
     void clearLog();
     void pauseLog(bool paused);
+    void sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate);
+    void sendUbxCfgDynModel(quint8 model);
+    void sendUbxCfgAntSettings(bool openDet, bool shortDet, bool recover);
+    void sendUbxSecUniqidReq();
+    void onError(QAbstractSocket::SocketError error);
+
+signals:
+    void secUniqidReceived(const UbxParser::SecUniqid &data);
 
 private:
+    Dialog* m_parentDialog;
     Ui::GNSSWindow *ui;
+    QTimer *m_ackTimeoutTimer;
+    bool m_waitingForAck = false;
+    QTimer *m_initTimer;
     QTcpSocket *m_socket;
     QTimer *m_timer;
     UbxParser m_ubxParser;
@@ -54,7 +72,10 @@ private:
     QLabel *m_antennaStatusLabel;
     QCustomPlot *m_signalPlot;
     QMap<quint8, QMap<int, QString>> m_classIdMap;
-
+    bool m_initializationComplete = false;
+    void sendUbxAck(quint8 msgClass, quint8 msgId);
+    void sendUbxNack(quint8 msgClass, quint8 msgId);
+    void sendInitialConfiguration();
     void setupConnections();
     void setupSatelliteView();
     void setupSignalPlot();

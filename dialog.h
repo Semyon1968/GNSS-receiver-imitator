@@ -19,9 +19,11 @@ public:
     ~Dialog();
 
     QTcpSocket* getSocket() const { return m_socket; }
+    void appendToLog(const QString &message, const QString &type = "info");
 
 signals:
     void connectionStatusChanged(bool connected);
+    void logMessage(const QString &message, const QString &type = "info");
 
 private slots:
     void on_connectButton_clicked();

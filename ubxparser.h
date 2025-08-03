@@ -76,14 +76,14 @@ public:
         quint32 pinBank;
         quint32 pinDir;
         quint32 pinVal;
-        quint32 noisePerMS;
-        quint32 agcCnt;
+        quint16 noisePerMS;
+        quint16 agcCnt;
         quint8 aStatus;
         quint8 aPower;
         quint8 flags;
         quint8 reserved1;
         quint32 usedMask;
-        quint8 VP[25];
+        quint8 VP[17];
         quint8 jamInd;
         quint8 reserved2[2];
         quint32 pinIrq;
@@ -108,6 +108,17 @@ public:
         quint16 pins;
     };
 
+    struct CfgMsg {
+        quint8 msgClass;
+        quint8 msgId;
+        quint8 rate;
+    };
+
+    struct SecUniqid {
+        quint8 version;
+        quint32 uniqueId;
+    };
+
 signals:
     void navPvtReceived(const NavPvt &data);
     void navSatReceived(const NavSat &data);
@@ -116,6 +127,8 @@ signals:
     void monHwReceived(const MonHw &data);
     void cfgPrtReceived(const CfgPrt &data);
     void infErrorReceived(const QString &msg);
+    void secUniqidReceived(const SecUniqid &data);
+    void cfgMsgReceived(const CfgMsg &data);
 
 public:
     static bool isUbxMessage(const QByteArray &data) {
@@ -134,6 +147,8 @@ public:
     static NavStatus parseNavStatus(const QByteArray &payload);
     static CfgPrt parseCfgPrt(const QByteArray &payload);
     static MonVer parseMonVer(const QByteArray &payload);
+    static SecUniqid parseSecUniqid(const QByteArray &payload);
+    static CfgMsg parseCfgMsg(const QByteArray &payload);
 };
 
 #endif // UBX_PARSER_H

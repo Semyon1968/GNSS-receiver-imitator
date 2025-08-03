@@ -18,26 +18,19 @@ bool UbxParser::parseUbxMessage(const QByteArray &data, quint8 &msgClass, quint8
         return false;
     }
 
-    // 3. Извлечение заголовочных полей
+    // 3. Извлечение заголовочных полей (убрано повторное объявление length)
     msgClass = static_cast<quint8>(data[2]);
     msgId = static_cast<quint8>(data[3]);
     quint16 length = static_cast<quint8>(data[4]) | (static_cast<quint8>(data[5]) << 8);
 
-    // 4. Специальная обработка для CFG-PRT ACK
-    if(msgClass == 0x06 && msgId == 0x00 && length == 0) {
-        qDebug() << "ACK received for CFG-PRT message";
-        payload.clear();
-        return true;
-    }
-
-    // 5. Проверка полного размера сообщения
+    // 4. Проверка полного размера сообщения
     if(data.size() != 6 + length + 2) {
         qDebug() << "UBX message length mismatch. Expected" << 6 + length + 2
                  << "bytes, got" << data.size() << "bytes";
         return false;
     }
 
-    // 6. Проверка контрольной суммы
+    // 5. Проверка контрольной суммы
     quint8 ck_a = 0, ck_b = 0;
     for(int i = 2; i < data.size() - 2; i++) {
         ck_a += static_cast<quint8>(data[i]);
@@ -50,7 +43,7 @@ bool UbxParser::parseUbxMessage(const QByteArray &data, quint8 &msgClass, quint8
         return false;
     }
 
-    // 7. Извлечение payload
+    // 6. Извлечение payload
     payload = data.mid(6, length);
 
     qDebug() << "Successfully parsed UBX message:"
@@ -150,6 +143,25 @@ UbxParser::AckPacket UbxParser::parseAck(const QByteArray &payload)
     return ack;
 }
 
+UbxParser::SecUniqid UbxParser::parseSecUniqid(const QByteArray &payload) {
+    SecUniqid result = {};
+    if(payload.size() < 5) return result;
+
+    result.version = static_cast<quint8>(payload[0]);
+    result.uniqueId = qFromLittleEndian<quint32>(payload.mid(1, 4).constData());
+    return result;
+}
+
+UbxParser::CfgMsg UbxParser::parseCfgMsg(const QByteArray &payload) {
+    CfgMsg result = {};
+    if(payload.size() < 3) return result;
+
+    result.msgClass = static_cast<quint8>(payload[0]);
+    result.msgId = static_cast<quint8>(payload[1]);
+    result.rate = static_cast<quint8>(payload[2]);
+    return result;
+}
+
 UbxParser::MonVer UbxParser::parseMonVer(const QByteArray &payload)
 {
     MonVer result;
@@ -169,6 +181,65 @@ UbxParser::MonVer UbxParser::parseMonVer(const QByteArray &payload)
         if(ext.isEmpty()) break;
         result.extensions.append(ext);
         pos += ext.length() + 1;
+    }
+
+    return result;
+}
+
+UbxParser::MonHw UbxParser::parseMonHw(const QByteArray &payload) {
+    MonHw result = {};
+    const int minSize = 28 + 4 + 17 + 1 + 2; // Основные поля до pinIrq
+
+    if(payload.size() < minSize) {
+        qWarning() << "MON-HW payload too small:" << payload.size() << "bytes, expected at least" << minSize;
+        return result;
+    }
+
+    // Чтение 32-битных значений
+    result.pinSel = qFromLittleEndian<quint32>(payload.mid(0, 4).constData());
+    result.pinBank = qFromLittleEndian<quint32>(payload.mid(4, 4).constData());
+    result.pinDir = qFromLittleEndian<quint32>(payload.mid(8, 4).constData());
+    result.pinVal = qFromLittleEndian<quint32>(payload.mid(12, 4).constData());
+
+    // Чтение 16-битных значений
+    result.noisePerMS = qFromLittleEndian<quint16>(payload.mid(16, 2).constData());
+    result.agcCnt = qFromLittleEndian<quint16>(payload.mid(18, 2).constData());
+
+    // Чтение 8-битных значений
+    result.aStatus = static_cast<quint8>(payload[20]);
+    result.aPower = static_cast<quint8>(payload[21]);
+    result.flags = static_cast<quint8>(payload[22]);
+    result.reserved1 = static_cast<quint8>(payload[23]);
+
+    // Чтение usedMask (32 бита)
+    result.usedMask = qFromLittleEndian<quint32>(payload.mid(24, 4).constData());
+
+    // Чтение массива VP (17 байт)
+    const int vpStart = 28;
+    for(int i = 0; i < 17 && (vpStart + i) < payload.size(); i++) {
+        result.VP[i] = static_cast<quint8>(payload[vpStart + i]);
+    }
+
+    // Чтение оставшихся полей
+    const int jamIndPos = vpStart + 17;
+    if(payload.size() > jamIndPos) {
+        result.jamInd = static_cast<quint8>(payload[jamIndPos]);
+    }
+
+    if(payload.size() > jamIndPos + 1) {
+        result.reserved2[0] = static_cast<quint8>(payload[jamIndPos + 1]);
+    }
+
+    if(payload.size() > jamIndPos + 2) {
+        result.reserved2[1] = static_cast<quint8>(payload[jamIndPos + 2]);
+    }
+
+    // Чтение дополнительных 32-битных полей (если есть)
+    const int pinIrqPos = jamIndPos + 3;
+    if(payload.size() >= pinIrqPos + 12) {
+        result.pinIrq = qFromLittleEndian<quint32>(payload.mid(pinIrqPos, 4).constData());
+        result.pullH = qFromLittleEndian<quint32>(payload.mid(pinIrqPos + 4, 4).constData());
+        result.pullL = qFromLittleEndian<quint32>(payload.mid(pinIrqPos + 8, 4).constData());
     }
 
     return result;
