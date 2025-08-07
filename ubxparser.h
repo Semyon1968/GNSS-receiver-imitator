@@ -14,27 +14,36 @@ public:
     explicit UbxParser(QObject *parent = nullptr);
 
     struct NavPvt {
-        quint32 iTOW;
-        quint16 year;
-        quint8 month, day, hour, min, sec;
-        quint8 valid;
-        quint32 tAcc;
-        qint32 nano;
-        quint8 fixType;
-        quint8 flags;
-        quint8 flags2;
-        quint8 numSV;
-        qint32 lon, lat;
-        qint32 height, hMSL;
-        quint32 hAcc, vAcc;
-        qint32 velN, velE, velD;
-        quint32 speed;
-        quint32 gSpeed;
-        quint32 headMot;
-        quint32 sAcc;
-        quint32 headAcc;
-        quint16 pDOP;
-        quint8 reserved[6];
+        quint32 iTOW;        // GPS time of week (ms)
+        quint16 year;        // Year (UTC)
+        quint8 month;        // Month (1-12, UTC)
+        quint8 day;          // Day (1-31, UTC)
+        quint8 hour;         // Hour (0-23, UTC)
+        quint8 min;          // Minute (0-59, UTC)
+        quint8 sec;          // Second (0-59, UTC)
+        quint8 valid;        // Validity flags
+        quint32 tAcc;        // Time accuracy estimate (ns)
+        qint32 nano;         // Fraction of second (ns)
+        quint8 fixType;      // GNSS fix type
+        quint8 flags;        // Fix status flags
+        quint8 flags2;       // Additional flags
+        quint8 numSV;        // Number of satellites used
+        qint32 lon;          // Longitude (deg * 1e-7)
+        qint32 lat;          // Latitude (deg * 1e-7)
+        qint32 height;       // Height above ellipsoid (mm)
+        qint32 hMSL;         // Height above mean sea level (mm)
+        quint32 hAcc;        // Horizontal accuracy estimate (mm)
+        quint32 vAcc;        // Vertical accuracy estimate (mm)
+        qint32 velN;         // Velocity North (mm/s)
+        qint32 velE;         // Velocity East (mm/s)
+        qint32 velD;         // Velocity Down (mm/s)
+        quint32 speed;       // Speed (3D, mm/s)
+        quint32 gSpeed;      // Ground speed (2D, mm/s)
+        quint32 headMot;     // Heading of motion (deg * 1e-5)
+        quint32 sAcc;        // Speed accuracy estimate (mm/s)
+        quint32 headAcc;     // Heading accuracy estimate (deg * 1e-5)
+        quint16 pDOP;        // Position DOP (0.01)
+        quint8 reserved[6];  // Reserved
     };
 
     struct NavSat {

@@ -44,6 +44,7 @@ private slots:
     void sendUbxMonVer();
     void sendUbxSecUniqid();
     void sendUbxNavStatus();
+    void onClassIdChanged();
     void sendUbxCfgItfm();
     void sendUbxCfgRate(quint16 measRate, quint16 navRate);
     void sendUbxCfgAnt(bool enablePower);
@@ -73,6 +74,9 @@ private:
     QCustomPlot *m_signalPlot;
     QMap<quint8, QMap<int, QString>> m_classIdMap;
     bool m_initializationComplete = false;
+    void setupNavPvtFields();
+    void setupNavStatusFields();
+    void hideAllParameterFields();
     void sendUbxAck(quint8 msgClass, quint8 msgId);
     void sendUbxNack(quint8 msgClass, quint8 msgId);
     void sendInitialConfiguration();
