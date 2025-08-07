@@ -15,30 +15,10 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     m_timer(new QTimer(this)),
     m_initTimer(new QTimer(this)),
     m_ackTimeoutTimer(new QTimer(this)),
-    m_satModel(new QStandardItemModel(this)),
-    m_antennaStatusLabel(new QLabel("Antenna Status: Unknown", this)),
-    m_signalPlot(new QCustomPlot(this)),
     m_initializationComplete(false),
     m_waitingForAck(false)
 {
     ui->setupUi(this);
-
-    // Initialize UI components first
-    try {
-        setupSatelliteView();
-        setupSignalPlot();
-
-        // Add widgets to layout
-        ui->antennaLayout->addWidget(m_antennaStatusLabel);
-        ui->plotLayout->addWidget(m_signalPlot);
-
-        // Configure antenna status label
-        m_antennaStatusLabel->setAlignment(Qt::AlignCenter);
-        m_antennaStatusLabel->setStyleSheet("QLabel { color: gray; font-weight: bold; }");
-    } catch (...) {
-        qCritical() << "Failed to initialize UI components";
-        throw;
-    }
 
     // Configure timers
     m_timer->setInterval(1000); // Default 1Hz rate
@@ -81,7 +61,7 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     }
 
     connect(ui->cbClass, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &GNSSWindow::onClassIdChanged);
+            this, &GNSSWindow::updateAvailableIds);
     connect(ui->cbId, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &GNSSWindow::onClassIdChanged);
 
@@ -102,6 +82,7 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
         connect(m_parentDialog, &Dialog::connectionStatusChanged,
                 this, &GNSSWindow::onConnectionStatusChanged);
     }
+    setupMonRfFields();
 
     // Initial status
     appendToLog("GNSS Window initialized successfully", "system");
@@ -120,25 +101,29 @@ void GNSSWindow::initClassIdMapping()
 
     // NAV класс (0x01)
     QMap<int, QString> navIds;
-    navIds.insert(0x07, "PVT");
+    navIds.insert(0x01, "POSECEF");
+    navIds.insert(0x02, "POSLLH");
     navIds.insert(0x03, "STATUS");
+    navIds.insert(0x04, "DOP");
+    navIds.insert(0x05, "ATT");
+    navIds.insert(0x06, "SOL");
+    navIds.insert(0x07, "PVT");
     navIds.insert(0x24, "DYNMODEL");
     m_classIdMap.insert(0x01, navIds);
 
     // RXM класс (0x02)
     QMap<int, QString> rxmIds;
     rxmIds.insert(0x15, "MEASX");
+    rxmIds.insert(0x32, "RAWX");
     m_classIdMap.insert(0x02, rxmIds);
 
     // MON класс (0x0A)
     QMap<int, QString> monIds;
     monIds.insert(0x04, "VER");
+    monIds.insert(0x09, "HW");
+    monIds.insert(0x0B, "IO");
+    monIds.insert(0x28, "RF");
     m_classIdMap.insert(0x0A, monIds);
-
-    // SEC класс (0x27)
-    QMap<int, QString> secIds;
-    secIds.insert(0x03, "UNIQID");
-    m_classIdMap.insert(0x27, secIds);
 
     // CFG класс (0x06)
     QMap<int, QString> cfgIds;
@@ -149,6 +134,11 @@ void GNSSWindow::initClassIdMapping()
     cfgIds.insert(0x39, "ITFM");
     m_classIdMap.insert(0x06, cfgIds);
 
+    // SEC класс (0x27)
+    QMap<int, QString> secIds;
+    secIds.insert(0x03, "UNIQID");
+    m_classIdMap.insert(0x27, secIds);
+
     // Заполняем comboBox классов
     ui->cbClass->clear();
     ui->cbClass->addItem("NAV (0x01)", 0x01);
@@ -156,6 +146,8 @@ void GNSSWindow::initClassIdMapping()
     ui->cbClass->addItem("CFG (0x06)", 0x06);
     ui->cbClass->addItem("MON (0x0A)", 0x0A);
     ui->cbClass->addItem("SEC (0x27)", 0x27);
+
+    updateAvailableIds(); // Инициализируем список ID
 }
 
 void GNSSWindow::updateAvailableIds()
@@ -166,18 +158,19 @@ void GNSSWindow::updateAvailableIds()
     ui->cbId->clear();
 
     if (m_classIdMap.contains(classId)) {
-        QMapIterator<int, QString> it(m_classIdMap[classId]);
+        const QMap<int, QString>& ids = m_classIdMap[classId];
+        QMapIterator<int, QString> it(ids);
         while (it.hasNext()) {
             it.next();
-            ui->cbId->addItem(QString("%1 (0x%2)").arg(it.value()).arg(it.key(), 2, 16, QLatin1Char('0')), it.key());
+            ui->cbId->addItem(QString("%1 (0x%2)")
+                                  .arg(it.value())
+                                  .arg(it.key(), 2, 16, QLatin1Char('0')),
+                              it.key());
         }
     }
 
     ui->cbId->blockSignals(false);
-
-    if (ui->cbId->count() > 0) {
-        ui->cbId->setCurrentIndex(0);
-    }
+    onClassIdChanged(); // Обновляем отображаемые поля
 }
 
 GNSSWindow::~GNSSWindow()
@@ -239,12 +232,29 @@ void GNSSWindow::onClassIdChanged()
     int classId = ui->cbClass->currentData().toInt();
     int msgId = ui->cbId->currentData().toInt();
 
-    if (classId == 0x01) { // NAV
+    switch(classId) {
+    case 0x01: // NAV
         if (msgId == 0x07) { // PVT
             setupNavPvtFields();
+            ui->gbNavPvtFields->setVisible(true);
         } else if (msgId == 0x03) { // STATUS
             setupNavStatusFields();
+            ui->gbNavStatusFields->setVisible(true);
         }
+        break;
+    case 0x0A: // MON
+        if (msgId == 0x28) { // RF
+            setupMonRfFields();
+            ui->gbMonRfFields->setVisible(true);
+        }
+        break;
+    }
+
+    // Показываем поле payload, если нет специальных полей
+    if (!ui->gbNavPvtFields->isVisible() &&
+        !ui->gbNavStatusFields->isVisible() &&
+        !ui->gbMonRfFields->isVisible()) {
+        ui->tePayload->setVisible(true);
     }
 }
 
@@ -252,7 +262,8 @@ void GNSSWindow::hideAllParameterFields()
 {
     ui->gbNavPvtFields->setVisible(false);
     ui->gbNavStatusFields->setVisible(false);
-    ui->tePayload->setVisible(true);
+    ui->gbMonRfFields->setVisible(false);
+    ui->tePayload->setVisible(false);
 }
 
 void GNSSWindow::setupConnections()
@@ -381,12 +392,12 @@ void GNSSWindow::registerHandlers()
 {
     // NAV класс
     connect(&m_ubxParser, &UbxParser::navPvtReceived, this, &GNSSWindow::displayNavPvt);
-    connect(&m_ubxParser, &UbxParser::navSatReceived, this, &GNSSWindow::processNavSat);
     connect(&m_ubxParser, &UbxParser::navStatusReceived, this, &GNSSWindow::displayNavStatus);
 
     // MON класс
     connect(&m_ubxParser, &UbxParser::monVerReceived, this, &GNSSWindow::displayMonVer);
     connect(&m_ubxParser, &UbxParser::monHwReceived, this, &GNSSWindow::processMonHw);
+    connect(&m_ubxParser, &UbxParser::monRfReceived, this, &GNSSWindow::displayMonRf);
 
     // CFG класс
     connect(&m_ubxParser, &UbxParser::cfgPrtReceived, this, &GNSSWindow::displayCfgPrt);
@@ -401,6 +412,60 @@ void GNSSWindow::registerHandlers()
         ui->leChipId->setText(QString("0x%1").arg(data.uniqueId, 8, 16, QLatin1Char('0')));
         appendToLog(QString("SEC-UNIQID: 0x%1").arg(data.uniqueId, 8, 16, QLatin1Char('0')), "info");
     });
+}
+
+void GNSSWindow::setupMonRfFields()
+{
+    // Установим значения по умолчанию
+    ui->sbRfVersion->setValue(0);
+    ui->dsbRfNoise->setValue(50.0);
+    ui->dsbRfAgc->setValue(120.0);
+    ui->sbRfJamInd->setValue(0);
+}
+
+void GNSSWindow::displayMonRf(const UbxParser::MonRf &data)
+{
+    QString info = QString("MON-RF: Version=%1 Blocks=%2")
+                       .arg(data.version)
+                       .arg(data.nBlocks);
+
+    for(int i = 0; i < data.nBlocks && i < 4; i++) {
+        info += QString("\nBlock %1: AntID=%2 Noise=%3 AGC=%4 Jam=%5")
+                    .arg(i)
+                    .arg(data.blocks[i].antId)
+                    .arg(data.blocks[i].noisePerMS)
+                    .arg(data.blocks[i].agcCnt)
+                    .arg(data.blocks[i].jamInd);
+    }
+
+    appendToLog(info, "status");
+}
+
+void GNSSWindow::sendUbxMonRf()
+{
+    QByteArray payload(4 + 16, 0x00); // Header + 1 block
+
+    // Version and number of blocks (fixed to 1 block)
+    payload[0] = static_cast<quint8>(ui->sbRfVersion->value());
+    payload[1] = 1; // We'll send 1 block
+    payload[2] = 0; // Reserved
+    payload[3] = 0; // Reserved
+
+    // Fill block data
+    int offset = 4;
+    payload[offset] = 0; // Antenna ID
+    payload[offset+1] = 0; // Flags
+
+    float noise = static_cast<float>(ui->dsbRfNoise->value());
+    float agc = static_cast<float>(ui->dsbRfAgc->value());
+
+    qToLittleEndian<float>(noise, payload.data() + offset + 4);
+    qToLittleEndian<float>(agc, payload.data() + offset + 8);
+
+    payload[offset+12] = static_cast<quint8>(ui->sbRfJamInd->value());
+
+    createUbxPacket(0x0A, 0x38, payload);
+    appendToLog("Sent MON-RF message", "out");
 }
 
 void GNSSWindow::sendUbxCfgDynModel(quint8 model)
@@ -827,97 +892,13 @@ void GNSSWindow::displayMonVer(const UbxParser::MonVer &data)
         5000);
 }
 
-void GNSSWindow::setupSatelliteView()
-{
-    // Настройка модели данных
-    m_satModel->setHorizontalHeaderLabels({"System", "PRN", "CNR", "Elev.", "Azim."});
-
-    // Настройка таблицы
-    ui->tvSatellites->setModel(m_satModel);
-    ui->tvSatellites->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->tvSatellites->verticalHeader()->hide();
-    ui->tvSatellites->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-}
-
-void GNSSWindow::processNavSat(const UbxParser::NavSat &sat)
-{
-    m_satModel->removeRows(0, m_satModel->rowCount());
-
-    for(int i = 0; i < sat.numSvs; i++) {
-        QString system;
-        switch(sat.sats[i].gnssId) {
-        case 0: system = "GPS"; break;
-        case 1: system = "SBAS"; break;
-        case 2: system = "GAL"; break;
-        case 3: system = "BEID"; break;
-        case 4: system = "IMES"; break;
-        case 5: system = "QZSS"; break;
-        case 6: system = "GLON"; break;
-        default: system = "UNK"; break;
-        }
-
-        QList<QStandardItem*> items;
-        items << new QStandardItem(system);
-        items << new QStandardItem(QString::number(sat.sats[i].svId));
-        items << new QStandardItem(QString::number(sat.sats[i].cno));
-        items << new QStandardItem(QString::number(sat.sats[i].elev));
-        items << new QStandardItem(QString::number(sat.sats[i].azim));
-
-        // Цвет в зависимости от уровня сигнала
-        if(sat.sats[i].cno > 30) {
-            for(auto item : items) {
-                item->setBackground(QBrush(QColor(200,255,200)));
-            }
-        }
-
-        m_satModel->appendRow(items);
-    }
-
-    updateSignalPlot();
-}
-
-void GNSSWindow::updateSignalPlot()
-{
-    m_signalPlot->clearGraphs();
-
-    QMap<QString, QVector<double>> cnrData;
-    for(int i = 0; i < m_satModel->rowCount(); i++) {
-        QString system = m_satModel->item(i, 0)->text();
-        double cnr = m_satModel->item(i, 2)->text().toDouble();
-        cnrData[system].append(cnr);
-    }
-
-    int colorIndex = 0;
-    const QList<QColor> colors = {Qt::blue, Qt::red, Qt::green, Qt::cyan, Qt::magenta};
-
-    for(auto it = cnrData.begin(); it != cnrData.end(); ++it) {
-        m_signalPlot->addGraph();
-        m_signalPlot->graph()->setName(it.key());
-
-        QVector<double> xValues;
-        for(int i = 0; i < it.value().size(); i++) {
-            xValues.append(i+1);
-        }
-
-        m_signalPlot->graph()->setData(xValues, it.value());
-        m_signalPlot->graph()->setBrush(QBrush(colors[colorIndex++ % colors.size()]));
-    }
-
-    m_signalPlot->xAxis->setLabel("Satellite");
-    m_signalPlot->yAxis->setLabel("CNR (dB-Hz)");
-    m_signalPlot->rescaleAxes();
-    m_signalPlot->replot();
-}
-
 void GNSSWindow::processMonHw(const UbxParser::MonHw &hw)
 {
     QString status;
     if(hw.aPower == 1) {
         status = "Active (Powered)";
-        m_antennaStatusLabel->setPixmap(QPixmap(":/icons/antenna_green.png"));
     } else {
         status = "Inactive";
-        m_antennaStatusLabel->setPixmap(QPixmap(":/icons/antenna_red.png"));
     }
 
     QString info = QString("Antenna: %1\nJamming: %2%\nNoise: %3\nAGC: %4")
@@ -926,7 +907,6 @@ void GNSSWindow::processMonHw(const UbxParser::MonHw &hw)
                        .arg(hw.noisePerMS)
                        .arg(hw.agcCnt);
 
-    ui->lbAntennaStatus->setText(info);
     appendToLog(QString("MON-HW: %1").arg(info), "status");
 }
 
@@ -951,11 +931,9 @@ void GNSSWindow::sendUbxCfgAnt(bool enablePower) {
 
 void GNSSWindow::onSendButtonClicked()
 {
-    // Получаем выбранные Class и ID
     quint8 msgClass = static_cast<quint8>(ui->cbClass->currentData().toInt());
     quint8 msgId = static_cast<quint8>(ui->cbId->currentData().toInt());
 
-    // Отправка в зависимости от выбранного типа сообщения
     switch(msgClass) {
     case 0x01: // NAV
         if (msgId == 0x07) sendUbxNavPvt();
@@ -967,6 +945,7 @@ void GNSSWindow::onSendButtonClicked()
         break;
     case 0x0A: // MON
         if (msgId == 0x04) sendUbxMonVer();
+        else if (msgId == 0x38) sendUbxMonRf();
         break;
     case 0x27: // SEC
         if (msgId == 0x03) sendUbxSecUniqid();
@@ -1169,23 +1148,6 @@ void GNSSWindow::sendUbxCfgItfm()
     // Создаем payload размером 8 байт (как указано в спецификации UBX-CFG-ITFM)
     QByteArray payload(8, 0x00);
 
-    // Конфигурация защиты от помех (jamming/interference monitor):
-    // Структура payload:
-    // uint32 config - битовая маска конфигурации
-    // uint32 config2 - расширенная конфигурация
-
-    // Базовые настройки (config):
-    // Бит 0: enable - 0=выключено (по умолчанию)
-    // Бит 1: general - общие настройки
-    // Бит 2: bbThreshold - порог для широкополосных помех
-    // Бит 3: cwThreshold - порог для узкополосных помех
-
-    // Устанавливаем значения по умолчанию:
-    // BBThreshold = 0 (disabled)
-    // CWThreshold = 0 (disabled)
-    // Enable = 0 (disabled)
-    // General = 0 (no special config)
-
     // Записываем config (первые 4 байта)
     qToLittleEndian<quint32>(0x00000000, payload.data());
 
@@ -1265,27 +1227,6 @@ void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId)
                     .arg(msgClass, 2, 16, QLatin1Char('0'))
                     .arg(msgId, 2, 16, QLatin1Char('0')),
                 "error");
-}
-
-void GNSSWindow::setupSignalPlot()
-{
-    m_signalPlot = new QCustomPlot(this);
-
-    // Basic plot setup
-    m_signalPlot->xAxis->setLabel("Satellite");
-    m_signalPlot->yAxis->setLabel("CNR (dB-Hz)");
-    m_signalPlot->legend->setVisible(true);
-
-    // Enable antialiasing
-    m_signalPlot->setAntialiasedElements(QCP::aeAll);
-
-    // Make axis rects' left and right axes transfer ranges to each other:
-    connect(m_signalPlot->xAxis, SIGNAL(rangeChanged(QCPRange)), m_signalPlot->xAxis2, SLOT(setRange(QCPRange)));
-    connect(m_signalPlot->yAxis, SIGNAL(rangeChanged(QCPRange)), m_signalPlot->yAxis2, SLOT(setRange(QCPRange)));
-
-    // Initial empty plot
-    m_signalPlot->addGraph();
-    m_signalPlot->replot();
 }
 
 void GNSSWindow::sendUbxMonHw()

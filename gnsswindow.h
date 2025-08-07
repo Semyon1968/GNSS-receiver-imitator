@@ -69,10 +69,10 @@ private:
     QTcpSocket *m_socket;
     QTimer *m_timer;
     UbxParser m_ubxParser;
-    QStandardItemModel *m_satModel;
-    QLabel *m_antennaStatusLabel;
-    QCustomPlot *m_signalPlot;
     QMap<quint8, QMap<int, QString>> m_classIdMap;
+    void setupMonRfFields();
+    void displayMonRf(const UbxParser::MonRf &data);
+    void sendUbxMonRf();
     bool m_initializationComplete = false;
     void setupNavPvtFields();
     void setupNavStatusFields();
@@ -81,14 +81,12 @@ private:
     void sendUbxNack(quint8 msgClass, quint8 msgId);
     void sendInitialConfiguration();
     void setupConnections();
-    void setupSatelliteView();
-    void setupSignalPlot();
+
+
     void registerHandlers();
     void initClassIdMapping();
     void processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArray& payload);
-    void processNavSat(const UbxParser::NavSat &sat);
     void processMonHw(const UbxParser::MonHw &hw);
-    void updateSignalPlot();
     void displayNavPvt(const UbxParser::NavPvt &data);
     void displayNavStatus(const UbxParser::NavStatus &data);
     void displayCfgPrt(const UbxParser::CfgPrt &data);

@@ -162,6 +162,48 @@ UbxParser::CfgMsg UbxParser::parseCfgMsg(const QByteArray &payload) {
     return result;
 }
 
+UbxParser::MonRf UbxParser::parseMonRf(const QByteArray &payload) {
+    MonRf result = {};
+    const int headerSize = 4;
+
+    if(payload.size() < headerSize) {
+        qWarning() << "MON-RF payload too small:" << payload.size() << "bytes, expected at least" << headerSize;
+        return result;
+    }
+
+    result.version = static_cast<quint8>(payload[0]);
+    result.nBlocks = static_cast<quint8>(payload[1]);
+    result.reserved1[0] = static_cast<quint8>(payload[2]);
+    result.reserved1[1] = static_cast<quint8>(payload[3]);
+
+    const int blockSize = 16;
+    int maxBlocks = qMin(static_cast<int>(result.nBlocks), 4);
+    int expectedSize = headerSize + maxBlocks * blockSize;
+
+    if(payload.size() < expectedSize) {
+        qWarning() << "MON-RF payload too small for blocks:" << payload.size() << "bytes, expected" << expectedSize;
+        return result;
+    }
+
+    for(int i = 0; i < maxBlocks; i++) {
+        int offset = headerSize + i * blockSize;
+        result.blocks[i].antId = static_cast<quint8>(payload[offset]);
+        result.blocks[i].flags = static_cast<quint8>(payload[offset+1]);
+        result.blocks[i].reserved2[0] = static_cast<quint8>(payload[offset+2]);
+        result.blocks[i].reserved2[1] = static_cast<quint8>(payload[offset+3]);
+
+        result.blocks[i].noisePerMS = qFromLittleEndian<float>(payload.mid(offset+4, 4).constData());
+        result.blocks[i].agcCnt = qFromLittleEndian<float>(payload.mid(offset+8, 4).constData());
+
+        result.blocks[i].jamInd = static_cast<quint8>(payload[offset+12]);
+        result.blocks[i].ofsI = static_cast<quint8>(payload[offset+13]);
+        result.blocks[i].magI = static_cast<quint8>(payload[offset+14]);
+        result.blocks[i].reserved3 = static_cast<quint8>(payload[offset+15]);
+    }
+
+    return result;
+}
+
 UbxParser::MonVer UbxParser::parseMonVer(const QByteArray &payload)
 {
     MonVer result;

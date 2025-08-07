@@ -100,6 +100,27 @@ public:
         quint32 pullL;
     };
 
+    struct MonRf {
+        quint8 version;
+        quint8 nBlocks;
+        quint8 reserved1[2];
+
+        struct RfBlock {
+            quint8 antId;
+            quint8 flags;
+            quint8 reserved2[2];
+            float noisePerMS;
+            float agcCnt;
+            quint8 jamInd;
+            quint8 ofsI;
+            quint8 magI;
+            quint8 reserved3;
+            quint8 ofsQ;
+            quint8 magQ;
+            quint8 reserved4[2];
+        } blocks[4]; // Maximum 4 RF blocks
+    };
+
     struct AckPacket {
         quint8 ackClass;
         quint8 ackId;
@@ -137,6 +158,7 @@ signals:
     void cfgPrtReceived(const CfgPrt &data);
     void infErrorReceived(const QString &msg);
     void secUniqidReceived(const SecUniqid &data);
+    void monRfReceived(const MonRf &data);
     void cfgMsgReceived(const CfgMsg &data);
 
 public:
@@ -146,6 +168,7 @@ public:
                static_cast<quint8>(data[1]) == 0x62;
     };
 
+    static MonRf parseMonRf(const QByteArray &payload);
     static NavSat parseNavSat(const QByteArray &payload);
     static MonHw parseMonHw(const QByteArray &payload);
     static CfgRate parseCfgRate(const QByteArray &payload);

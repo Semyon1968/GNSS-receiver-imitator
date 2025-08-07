@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>1068</height>
+    <height>1245</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,20 +15,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <layout class="QHBoxLayout" name="antennaLayout">
-      <item>
-       <widget class="QLabel" name="lbAntennaStatus">
-        <property name="text">
-         <string>Antenna Status</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="plotLayout"/>
-    </item>
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
@@ -92,32 +78,7 @@
             <widget class="QComboBox" name="cbId">
              <item>
               <property name="text">
-               <string>PVT (0x07)</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>STATUS (0x03)</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>PRT (0x00)</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>VER (0x04)</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>UNIQID (0x03)</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>ITFM (0x39)</string>
+               <string>Select message</string>
               </property>
              </item>
             </widget>
@@ -235,7 +196,7 @@
            <item row="5" column="0">
             <widget class="QLabel" name="labelSats_2">
              <property name="text">
-              <string>Satellites:</string>
+              <string>SV_Num:</string>
              </property>
             </widget>
            </item>
@@ -382,6 +343,63 @@
              </property>
              <property name="maximum">
               <number>60000</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbMonRfFields">
+          <property name="title">
+           <string>MON-RF Parameters</string>
+          </property>
+          <layout class="QFormLayout" name="formLayout_4">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelRfVersion">
+             <property name="text">
+              <string>Version:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbRfVersion">
+             <property name="maximum">
+              <number>255</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelRfNoise">
+             <property name="text">
+              <string>Noise (dB):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="dsbRfNoise"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelRfAgc">
+             <property name="text">
+              <string>AGC Count:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="dsbRfAgc"/>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelRfJamInd">
+             <property name="text">
+              <string>Jamming Indicator:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="sbRfJamInd">
+             <property name="maximum">
+              <number>100</number>
              </property>
             </widget>
            </item>
@@ -630,16 +648,6 @@
         </item>
        </layout>
       </widget>
-     </widget>
-    </item>
-    <item>
-     <widget class="QTableView" name="tvSatellites">
-      <property name="selectionMode">
-       <enum>QAbstractItemView::SingleSelection</enum>
-      </property>
-      <property name="selectionBehavior">
-       <enum>QAbstractItemView::SelectRows</enum>
-      </property>
      </widget>
     </item>
    </layout>
