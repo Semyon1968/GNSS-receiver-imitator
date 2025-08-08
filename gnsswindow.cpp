@@ -282,21 +282,23 @@ void GNSSWindow::setupConnections()
     connect(ui->autoSendCheck, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendToggled);
 }
 
-void GNSSWindow::sendInitialConfiguration()
-{
+void GNSSWindow::sendInitialConfiguration() {
     if (m_waitingForAck) return;
 
     m_waitingForAck = true;
     m_ackTimeoutTimer->start();
-    m_initTimer->start(20000); // Increase timeout to 20 seconds
+    m_initTimer->start(20000);
 
-    // Send critical configuration first
+    // Основная конфигурация
     sendUbxCfgPrtResponse();
-    sendUbxCfgMsg(0x01, 0x07, 1); // NAV-PVT at 1Hz
-    sendUbxCfgRate(1000, 1);      // Measurement rate 1Hz
-    sendUbxCfgAnt(true);          // Enable antenna power
+    sendUbxCfgMsg(0x01, 0x07, 1);  // NAV-PVT
+    sendUbxCfgMsg(0x0A, 0x28, 1);  // MON-RF
+    sendUbxCfgRate(1000, 1);       // 1Hz
+    sendUbxCfgDynModel(4);         // Automotive
+    sendUbxCfgAntSettings(true, true, true); // Antenna settings
+    sendUbxCfgItfm(true);          // Включить обнаружение помех
 
-    // Send less critical info with delays
+    // Информационные запросы с задержкой
     QTimer::singleShot(500, this, &GNSSWindow::sendUbxMonVer);
     QTimer::singleShot(1000, this, &GNSSWindow::sendUbxMonHw);
     QTimer::singleShot(1500, this, &GNSSWindow::sendUbxSecUniqidReq);
@@ -414,6 +416,17 @@ void GNSSWindow::registerHandlers()
     });
 }
 
+void GNSSWindow::sendUbxCfgItfm(bool enableDetection) {
+    QByteArray payload(8, 0x00);
+    quint32 config = enableDetection ? 0x00000001 : 0x00000000;
+    qToLittleEndian<quint32>(config, payload.data());
+    qToLittleEndian<quint32>(0x00000000, payload.data()+4);
+
+    createUbxPacket(0x06, 0x39, payload);
+    appendToLog(QString("CFG-ITFM: Jamming detection %1")
+                    .arg(enableDetection ? "enabled" : "disabled"), "config");
+}
+
 void GNSSWindow::setupMonRfFields()
 {
     // Установим значения по умолчанию
@@ -439,6 +452,22 @@ void GNSSWindow::displayMonRf(const UbxParser::MonRf &data)
     }
 
     appendToLog(info, "status");
+}
+
+void GNSSWindow::processCfgValGet(const QByteArray &payload) {
+    if(payload.size() >= 8) {
+        quint32 key = qFromLittleEndian<quint32>(payload.mid(4, 4).constData());
+        QByteArray response = payload.left(4);
+        response.append(0x01); // Пример значения
+
+        createUbxPacket(0x06, 0x8B, response);
+        appendToLog(QString("CFG-VALGET response for key 0x%1").arg(key, 8, 16, QLatin1Char('0')), "config");
+    }
+}
+
+void GNSSWindow::processCfgValSet(const QByteArray &payload) {
+    sendUbxAck(0x06, 0x8A);
+    appendToLog("CFG-VALSET processed", "config");
 }
 
 void GNSSWindow::sendUbxMonRf()
@@ -468,11 +497,9 @@ void GNSSWindow::sendUbxMonRf()
     appendToLog("Sent MON-RF message", "out");
 }
 
-void GNSSWindow::sendUbxCfgDynModel(quint8 model)
-{
+void GNSSWindow::sendUbxCfgDynModel(quint8 model) {
     QByteArray payload(4, 0x00);
-    payload[0] = model; // Dynamic model (e.g., 4 for Automotive)
-
+    payload[0] = model;
     createUbxPacket(0x06, 0x24, payload);
     appendToLog(QString("CFG-DYNMODEL: Model=%1").arg(model), "config");
 }
@@ -564,6 +591,7 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
             sendInitialConfiguration();
             return;
         }
+        /*
         case 0x8A: { // CFG-VALGET
             qDebug() << "CFG-VALGET request received, sending response";
             QByteArray response;
@@ -587,6 +615,17 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
             messageInfo = "CFG-ITFM: Jamming/interference config processed";
             break;
         }
+        */
+        case 0x8A: // CFG-VALGET
+            processCfgValGet(payload);
+            break;
+        case 0x8B: // CFG-VALSET
+            processCfgValSet(payload);
+            break;
+        case 0x39: // CFG-ITFM
+            sendUbxAck(msgClass, msgId);
+            sendUbxCfgItfm(true); // Включаем обнаружение помех
+            break;
         default:
             qDebug() << "Unknown CFG message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             messageInfo = QString("Unknown CFG message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
@@ -661,6 +700,22 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
         default:
             qDebug() << "Unknown RXM message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
             messageInfo = QString("Unknown RXM message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+            break;
+        }
+        break;
+
+    case 0x04: // INF класс
+        switch(msgId) {
+        case 0x00: // INF-ERROR
+            emit infErrorReceived(QString::fromLatin1(payload));
+            break;
+        case 0x01: // INF-WARNING
+            appendToLog("INF-WARNING: " + QString::fromLatin1(payload), "warning");
+            break;
+        case 0x02: // INF-NOTICE
+            appendToLog("INF-NOTICE: " + QString::fromLatin1(payload), "info");
+            break;
+        default:
             break;
         }
         break;

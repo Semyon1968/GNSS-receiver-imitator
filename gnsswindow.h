@@ -59,6 +59,7 @@ private slots:
 
 signals:
     void secUniqidReceived(const UbxParser::SecUniqid &data);
+    void infErrorReceived(const QString &msg);
 
 private:
     Dialog* m_parentDialog;
@@ -81,8 +82,9 @@ private:
     void sendUbxNack(quint8 msgClass, quint8 msgId);
     void sendInitialConfiguration();
     void setupConnections();
-
-
+    void sendUbxCfgItfm(bool enableDetection);
+    void processCfgValGet(const QByteArray &payload);
+    void processCfgValSet(const QByteArray &payload);
     void registerHandlers();
     void initClassIdMapping();
     void processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArray& payload);

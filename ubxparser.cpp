@@ -54,6 +54,15 @@ bool UbxParser::parseUbxMessage(const QByteArray &data, quint8 &msgClass, quint8
     return true;
 }
 
+UbxParser::CfgItfm UbxParser::parseCfgItfm(const QByteArray &payload) {
+    CfgItfm result = {};
+    if(payload.size() >= 8) {
+        result.config = qFromLittleEndian<quint32>(payload.mid(0, 4).constData());
+        result.config2 = qFromLittleEndian<quint32>(payload.mid(4, 4).constData());
+    }
+    return result;
+}
+
 UbxParser::NavPvt UbxParser::parseNavPvt(const QByteArray &payload)
 {
     NavPvt result = {};

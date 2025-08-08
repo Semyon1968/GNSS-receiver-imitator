@@ -74,6 +74,16 @@ public:
         quint16 outProtoMask;
     };
 
+    struct CfgItfm {
+        quint32 config;
+        quint32 config2;
+    };
+
+    struct CfgVal {
+        quint32 key;
+        QByteArray value;
+    };
+
     struct MonVer {
         QString swVersion;
         QString hwVersion;
@@ -156,10 +166,10 @@ signals:
     void monVerReceived(const MonVer &data);
     void monHwReceived(const MonHw &data);
     void cfgPrtReceived(const CfgPrt &data);
-    void infErrorReceived(const QString &msg);
     void secUniqidReceived(const SecUniqid &data);
     void monRfReceived(const MonRf &data);
     void cfgMsgReceived(const CfgMsg &data);
+    void infErrorReceived(const QString &msg);
 
 public:
     static bool isUbxMessage(const QByteArray &data) {
@@ -167,7 +177,7 @@ public:
                static_cast<quint8>(data[0]) == 0xB5 &&
                static_cast<quint8>(data[1]) == 0x62;
     };
-
+    static CfgItfm parseCfgItfm(const QByteArray &payload);
     static MonRf parseMonRf(const QByteArray &payload);
     static NavSat parseNavSat(const QByteArray &payload);
     static MonHw parseMonHw(const QByteArray &payload);
