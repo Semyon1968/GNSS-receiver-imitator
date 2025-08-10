@@ -108,6 +108,28 @@ UbxParser::NavPvt UbxParser::parseNavPvt(const QByteArray &payload)
     return result;
 }
 
+UbxParser::NavSat UbxParser::parseNavSat(const QByteArray &payload)
+{
+    NavSat result = {};
+    if(payload.size() < 8) return result;
+
+    result.iTOW = qFromLittleEndian<quint32>(payload.mid(0, 4).constData());
+    result.version = static_cast<quint8>(payload[4]);
+    result.numSvs = static_cast<quint8>(payload[5]);
+
+    const int satSize = 12;
+    for(int i = 0; i < result.numSvs && (8 + i*satSize + satSize) <= payload.size(); i++) {
+        int offset = 8 + i*satSize;
+        result.sats[i].gnssId = static_cast<quint8>(payload[offset]);
+        result.sats[i].svId = static_cast<quint8>(payload[offset+1]);
+        result.sats[i].cno = static_cast<quint8>(payload[offset+2]);
+        result.sats[i].elev = static_cast<quint8>(payload[offset+3]);
+        result.sats[i].azim = qFromLittleEndian<qint16>(payload.mid(offset+4, 2).constData());
+        result.sats[i].flags = qFromLittleEndian<quint32>(payload.mid(offset+8, 4).constData());
+    }
+    return result;
+}
+
 UbxParser::NavStatus UbxParser::parseNavStatus(const QByteArray &payload)
 {
     NavStatus result = {};

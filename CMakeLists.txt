@@ -32,6 +32,9 @@ set(PROJECT_SOURCES
     ${QCP_SOURCES}
 )
 
+# Check for duplicate source files
+list(REMOVE_DUPLICATES PROJECT_SOURCES)
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(ImitatorGNSS
         MANUAL_FINALIZATION
@@ -69,8 +72,9 @@ add_custom_command(TARGET ImitatorGNSS POST_BUILD
 )
 
 # macOS bundle settings
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.ImitatorGNSS)
+set(BUNDLE_ID_OPTION "")
+if(APPLE AND ${QT_VERSION} VERSION_LESS 6.1.0)
+    set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.ImitatorGNSS)
 endif()
 
 set_target_properties(ImitatorGNSS PROPERTIES
@@ -93,3 +97,9 @@ install(TARGETS ImitatorGNSS
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(ImitatorGNSS)
 endif()
+
+# Add definitions to avoid multiple declarations
+target_compile_definitions(ImitatorGNSS PRIVATE
+    QT_DEPRECATED_WARNINGS
+    QT_DISABLE_DEPRECATED_BEFORE=0x050F00  # Disable deprecation warnings before Qt 5.15
+)

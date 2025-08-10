@@ -64,6 +64,8 @@ signals:
 private:
     Dialog* m_parentDialog;
     Ui::GNSSWindow *ui;
+    QTimer *m_pvtTimer;    // Таймер для NAV-PVT
+    QTimer *m_statusTimer; // Таймер для NAV-STATUS
     QTimer *m_ackTimeoutTimer;
     bool m_waitingForAck = false;
     QTimer *m_initTimer;
@@ -71,12 +73,23 @@ private:
     QTimer *m_timer;
     UbxParser m_ubxParser;
     QMap<quint8, QMap<int, QString>> m_classIdMap;
+    void processAckNack(quint8 msgId, const QByteArray& payload);
+    void completeInitialization();
+    void processCfgMessages(quint8 msgId, const QByteArray& payload);
+    bool processInfoRequests(quint8 msgClass, quint8 msgId);
+    QString processNavMessages(quint8 msgId, const QByteArray& payload);
+    QString processRxmMessages(quint8 msgId, const QByteArray& payload);
+    QString processMonMessages(quint8 msgId, const QByteArray& payload);
+    QString processSecMessages(quint8 msgId, const QByteArray& payload);
+    void processInfMessages(quint8 msgId, const QByteArray& payload);
     void setupMonRfFields();
     void displayMonRf(const UbxParser::MonRf &data);
     void sendUbxMonRf();
     bool m_initializationComplete = false;
     void setupNavPvtFields();
     void setupNavStatusFields();
+    void setupNavSatFields();
+    void sendUbxNavSat();
     void hideAllParameterFields();
     void sendUbxAck(quint8 msgClass, quint8 msgId);
     void sendUbxNack(quint8 msgClass, quint8 msgId);

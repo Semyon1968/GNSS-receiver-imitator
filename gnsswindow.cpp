@@ -12,86 +12,84 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     ui(new Ui::GNSSWindow),
     m_parentDialog(parentDialog),
     m_socket(nullptr),
-    m_timer(new QTimer(this)),
-    m_initTimer(new QTimer(this)),
-    m_ackTimeoutTimer(new QTimer(this)),
+    m_pvtTimer(new QTimer(this)),      // Таймер для NAV-PVT
+    m_statusTimer(new QTimer(this)),   // Таймер для NAV-STATUS
+    m_initTimer(new QTimer(this)),     // Таймер инициализации
+    m_ackTimeoutTimer(new QTimer(this)), // Таймер ожидания ACK
     m_initializationComplete(false),
     m_waitingForAck(false)
 {
     ui->setupUi(this);
 
-    // Configure timers
-    m_timer->setInterval(1000); // Default 1Hz rate
+    // Настройка интервалов таймеров (по умолчанию 1 Гц)
+    m_pvtTimer->setInterval(1000);     // NAV-PVT
+    m_statusTimer->setInterval(1000);  // NAV-STATUS
     m_initTimer->setSingleShot(true);
-    m_initTimer->setInterval(15000); // 15 секунд
+    m_initTimer->setInterval(15000);   // 15 секунд на инициализацию
     m_ackTimeoutTimer->setSingleShot(true);
-    m_ackTimeoutTimer->setInterval(3000); // 3 sec ACK timeout
+    m_ackTimeoutTimer->setInterval(3000); // 3 секунды на ожидание ACK
 
-    // Connect signals with error handling
-    try {
-        // Timer connections
-        connect(m_timer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
-        connect(m_initTimer, &QTimer::timeout, this, [this]() {
-            if (!m_initializationComplete) {
-                appendToLog("Configuration timeout - proceeding without ACK", "warning");
-                m_initializationComplete = true; // Proceed anyway
-                m_timer->start();
-            }
-        });
+    // Подключение сигналов таймеров
+    connect(m_pvtTimer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
+    connect(m_statusTimer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavStatus);
 
-        connect(m_ackTimeoutTimer, &QTimer::timeout, this, [this]() {
-            if (m_waitingForAck) {
-                appendToLog("ACK timeout - configuration may be incomplete", "error");
-                m_waitingForAck = false;
-                // Consider whether to retry or proceed
-            }
-        });
+    connect(m_initTimer, &QTimer::timeout, this, [this]() {
+        if (!m_initializationComplete) {
+            appendToLog("Configuration timeout - proceeding without ACK", "warning");
+            m_initializationComplete = true;
+            // Запускаем оба таймера при таймауте
+            int rate = ui->rateSpin->value();
+            m_pvtTimer->start(1000 / rate);
+            m_statusTimer->start(1000 / rate);
+        }
+    });
 
-        // UI connections
-        connect(ui->sendButton, &QPushButton::clicked,
-                this, &GNSSWindow::onSendButtonClicked);
-        connect(ui->autoSendCheck, &QCheckBox::toggled,
-                this, &GNSSWindow::onAutoSendToggled);
-        connect(ui->btnClearLog, &QPushButton::clicked,
-                this, &GNSSWindow::on_btnClearLog_clicked);
+    connect(m_ackTimeoutTimer, &QTimer::timeout, this, [this]() {
+        if (m_waitingForAck) {
+            appendToLog("ACK timeout - configuration may be incomplete", "error");
+            m_waitingForAck = false;
+        }
+    });
 
-    } catch (...) {
-        qCritical() << "Failed to connect signals";
-        throw;
-    }
-
+    // Подключение сигналов выбора сообщений
     connect(ui->cbClass, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &GNSSWindow::updateAvailableIds);
     connect(ui->cbId, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &GNSSWindow::onClassIdChanged);
 
-    // Initialize message system
-    try {
-        initClassIdMapping();
-        updateAvailableIds();
-        registerHandlers();
-    } catch (...) {
-        qCritical() << "Failed to initialize message system";
-        throw;
-    }
+    // Подключение UI элементов
+    connect(ui->sendButton, &QPushButton::clicked,
+            this, &GNSSWindow::onSendButtonClicked);
+    connect(ui->autoSendCheck, &QCheckBox::toggled,
+            this, &GNSSWindow::onAutoSendToggled);
+    connect(ui->btnClearLog, &QPushButton::clicked,
+            this, &GNSSWindow::on_btnClearLog_clicked);
 
-    // Connect to parent dialog if exists
+    // Инициализация системы сообщений
+    initClassIdMapping();
+    updateAvailableIds();
+    registerHandlers();
+
+    // Подключение к родительскому диалогу
     if (m_parentDialog) {
         connect(m_parentDialog, &Dialog::logMessage,
                 this, &GNSSWindow::appendToLog);
         connect(m_parentDialog, &Dialog::connectionStatusChanged,
                 this, &GNSSWindow::onConnectionStatusChanged);
     }
+
+    // Настройка полей
+    setupNavSatFields();
     setupMonRfFields();
+    setupNavPvtFields();
+    setupNavStatusFields();
 
-    // Initial status
+    // Начальное состояние
     appendToLog("GNSS Window initialized successfully", "system");
-    qDebug() << "GNSSWindow initialized in" << QDateTime::currentDateTime().toString("hh:mm:ss");
+    qDebug() << "GNSSWindow initialized at" << QDateTime::currentDateTime().toString("hh:mm:ss");
 
-    // Set initial UI state
     ui->autoSendCheck->setChecked(false);
     ui->statusbar->showMessage("Waiting for connection...", 3000);
-    // Initialize chip ID display
     ui->leChipId->setText("0x00000000");
 }
 
@@ -108,6 +106,7 @@ void GNSSWindow::initClassIdMapping()
     navIds.insert(0x05, "ATT");
     navIds.insert(0x06, "SOL");
     navIds.insert(0x07, "PVT");
+    navIds.insert(0x35, "SAT");
     navIds.insert(0x24, "DYNMODEL");
     m_classIdMap.insert(0x01, navIds);
 
@@ -225,6 +224,13 @@ void GNSSWindow::onError(QAbstractSocket::SocketError error)
     ui->statusbar->showMessage("Connection error: " + errorMsg, 5000);
 }
 
+void GNSSWindow::setupNavSatFields()
+{
+    // Установка значений по умолчанию
+    ui->sbSatVersion->setValue(1);
+    ui->sbNumSatsSat->setValue(10);
+}
+
 void GNSSWindow::onClassIdChanged()
 {
     hideAllParameterFields();
@@ -240,6 +246,9 @@ void GNSSWindow::onClassIdChanged()
         } else if (msgId == 0x03) { // STATUS
             setupNavStatusFields();
             ui->gbNavStatusFields->setVisible(true);
+        } else if (msgId == 0x35) { // SAT
+            setupNavSatFields();
+            ui->gbNavSatFields->setVisible(true);
         }
         break;
     case 0x0A: // MON
@@ -250,10 +259,10 @@ void GNSSWindow::onClassIdChanged()
         break;
     }
 
-    // Показываем поле payload, если нет специальных полей
     if (!ui->gbNavPvtFields->isVisible() &&
         !ui->gbNavStatusFields->isVisible() &&
-        !ui->gbMonRfFields->isVisible()) {
+        !ui->gbMonRfFields->isVisible() &&
+        !ui->gbNavSatFields->isVisible()) {
         ui->tePayload->setVisible(true);
     }
 }
@@ -263,6 +272,7 @@ void GNSSWindow::hideAllParameterFields()
     ui->gbNavPvtFields->setVisible(false);
     ui->gbNavStatusFields->setVisible(false);
     ui->gbMonRfFields->setVisible(false);
+    ui->gbNavSatFields->setVisible(false);
     ui->tePayload->setVisible(false);
 }
 
@@ -292,6 +302,7 @@ void GNSSWindow::sendInitialConfiguration() {
     // Основная конфигурация
     sendUbxCfgPrtResponse();
     sendUbxCfgMsg(0x01, 0x07, 1);  // NAV-PVT
+    sendUbxCfgMsg(0x01, 0x03, 1);  // NAV-STATUS (добавлено)
     sendUbxCfgMsg(0x0A, 0x28, 1);  // MON-RF
     sendUbxCfgRate(1000, 1);       // 1Hz
     sendUbxCfgDynModel(4);         // Automotive
@@ -540,243 +551,265 @@ void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate)
 void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArray& payload)
 {
     QString messageInfo;
-    QString timestamp = QDateTime::currentDateTime().toString("[hh:mm:ss]");
+    QString timestamp = QDateTime::currentDateTime().toString("[hh:mm:ss.zzz]");
 
-    qDebug() << "Processing UBX message - Class:" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'))
-             << "ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'))
-             << "Payload size:" << payload.size();
+    // 1. Логирование входящего сообщения
+    qDebug().nospace() << timestamp << " Processing UBX message: "
+                       << "Class=0x" << QString("%1").arg(msgClass, 2, 16, QLatin1Char('0')).toUpper()
+                       << " ID=0x" << QString("%1").arg(msgId, 2, 16, QLatin1Char('0')).toUpper()
+                       << " Size=" << payload.size() << " bytes";
 
-    // Логирование содержимого payload
-    qDebug() << "Payload hex dump:";
-    qDebug() << payload.toHex(' ');
+    qDebug() << "Payload hex:" << payload.toHex(' ');
 
-    // 1. Обработка ACK/NACK сообщений
+    // 2. Обработка ACK/NACK сообщений
     if (msgClass == 0x05) {
-        UbxParser::AckPacket ack = m_ubxParser.parseAck(payload);
-        QString ackType = (msgId == 0x01) ? "ACK" : "NACK";
+        processAckNack(msgId, payload);
+        return;
+    }
 
-        qDebug() << "Received" << ackType << "for message:"
-                 << "Class:" << QString("0x%1").arg(ack.ackClass, 2, 16, QLatin1Char('0'))
-                 << "ID:" << QString("0x%1").arg(ack.ackId, 2, 16, QLatin1Char('0'));
+    // 3. Обработка CFG сообщений
+    if (msgClass == 0x06) {
+        processCfgMessages(msgId, payload);
+        return;
+    }
 
-        messageInfo = QString("%1 for %2 (0x%3) ID: 0x%4")
+    // 4. Обработка информационных запросов
+    if (processInfoRequests(msgClass, msgId)) {
+        return;
+    }
+
+    // 5. Обработка основных сообщений по классам
+    switch (msgClass) {
+    case 0x01: messageInfo = processNavMessages(msgId, payload); break;
+    case 0x02: messageInfo = processRxmMessages(msgId, payload); break;
+    case 0x04: processInfMessages(msgId, payload); return;
+    case 0x0A: messageInfo = processMonMessages(msgId, payload); break;
+    case 0x27: messageInfo = processSecMessages(msgId, payload); break;
+    default:
+        messageInfo = QString("Unknown message class: 0x%1").arg(msgClass, 2, 16, QLatin1Char('0'));
+        qWarning() << messageInfo;
+        break;
+    }
+
+    // 6. Логирование результата обработки
+    if (!messageInfo.isEmpty()) {
+        appendToLog(messageInfo, "in");
+    }
+}
+
+// Вспомогательные методы для обработки разных типов сообщений:
+
+void GNSSWindow::processAckNack(quint8 msgId, const QByteArray& payload)
+{
+    UbxParser::AckPacket ack = m_ubxParser.parseAck(payload);
+    QString ackType = (msgId == 0x01) ? "ACK" : "NACK";
+
+    QString message = QString("%1 for %2 (0x%3) ID: 0x%4")
                           .arg(ackType)
                           .arg(getMessageName(ack.ackClass, ack.ackId))
                           .arg(ack.ackClass, 2, 16, QLatin1Char('0'))
                           .arg(ack.ackId, 2, 16, QLatin1Char('0'));
 
-        if (msgId == 0x01 && ack.ackClass == 0x06) {
-            // Критические ACK на конфигурационные сообщения
-            if (ack.ackId == 0x00 || ack.ackId == 0x01 || ack.ackId == 0x08 || ack.ackId == 0x13) {
-                m_initializationComplete = true;
-                m_waitingForAck = false;
-                m_ackTimeoutTimer->stop();
-                m_initTimer->stop();
-                m_timer->start(1000);
-                qDebug() << "Critical configuration ACK received. Starting NAV-PVT.";
-                appendToLog("Critical configuration ACK received. Starting NAV-PVT.", "system");
-            }
+    if (msgId == 0x01 && ack.ackClass == 0x06) {
+        if (ack.ackId == 0x00 || ack.ackId == 0x01 || ack.ackId == 0x08 || ack.ackId == 0x13) {
+            completeInitialization();
         }
-
-        appendToLog(messageInfo, "in");
-        return;
     }
 
-    // 2. Обработка запросов конфигурации
-    if (msgClass == 0x06) {
-        switch(msgId) {
-        case 0x00: { // CFG-PRT
-            qDebug() << "CFG-PRT request received, sending response";
-            sendUbxCfgPrtResponse();
-            sendInitialConfiguration();
-            return;
-        }
-        /*
-        case 0x8A: { // CFG-VALGET
-            qDebug() << "CFG-VALGET request received, sending response";
-            QByteArray response;
-            response.append(payload.mid(0, 4)); // Копируем первые 4 байта (версия, слои и т.д.)
-            response.append(0x01); // Добавляем значение конфигурации
-            createUbxPacket(0x06, 0x8B, response); // Отправляем CFG-VALGET ответ
-            sendUbxAck(msgClass, msgId); // Отправляем ACK
-            messageInfo = "CFG-VALGET: Configuration value request handled";
-            break;
-        }
-        case 0x8B: { // CFG-VALSET
-            qDebug() << "CFG-VALSET request received, sending ACK";
-            sendUbxAck(msgClass, msgId);
-            messageInfo = "CFG-VALSET: Configuration values updated";
-            break;
-        }
-        case 0x39: { // CFG-ITFM
-            qDebug() << "CFG-ITFM request received, sending response";
-            sendUbxAck(msgClass, msgId);
-            sendUbxCfgItfm();
-            messageInfo = "CFG-ITFM: Jamming/interference config processed";
-            break;
-        }
-        */
-        case 0x8A: // CFG-VALGET
-            processCfgValGet(payload);
-            break;
-        case 0x8B: // CFG-VALSET
-            processCfgValSet(payload);
-            break;
-        case 0x39: // CFG-ITFM
-            sendUbxAck(msgClass, msgId);
-            sendUbxCfgItfm(true); // Включаем обнаружение помех
-            break;
-        default:
-            qDebug() << "Unknown CFG message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            messageInfo = QString("Unknown CFG message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            break;
-        }
-        appendToLog(messageInfo, "in");
-        return;
-    }
+    appendToLog(message, "in");
+}
 
-    // 3. Обработка запроса версии (MON-VER)
-    if (msgClass == 0x0A && msgId == 0x04) {
-        qDebug() << "MON-VER request received, sending version info";
-        sendUbxMonVer();
-        return;
-    }
+void GNSSWindow::completeInitialization()
+{
+    m_initializationComplete = true;
+    m_waitingForAck = false;
+    m_ackTimeoutTimer->stop();
+    m_initTimer->stop();
 
-    // 4. Обработка запроса аппаратного состояния (MON-HW)
-    if (msgClass == 0x0A && msgId == 0x09) {
-        qDebug() << "MON-HW request received, sending hardware info";
-        sendUbxMonHw();
-        return;
-    }
+    int rate = ui->rateSpin->value();
+    m_pvtTimer->start(1000 / rate);
+    m_statusTimer->start(1000 / rate);
 
-    // 5. Обработка запроса уникального ID (SEC-UNIQID)
-    if (msgClass == 0x27 && msgId == 0x03) {
-        qDebug() << "SEC-UNIQID request received, sending chip ID";
-        sendUbxSecUniqid();
-        return;
-    }
+    appendToLog("Configuration complete. Starting NAV-PVT and NAV-STATUS.", "system");
+}
 
-    // 6. Основной обработчик сообщений по классам
-    switch(msgClass) {
-    case 0x01: // NAV класс
-        switch(msgId) {
-        case 0x07: { // NAV-PVT
-            UbxParser::NavPvt pvt = UbxParser::parseNavPvt(payload);
-            qDebug() << "NAV-PVT data:"
-                     << "Lat:" << pvt.lat/1e7 << "Lon:" << pvt.lon/1e7
-                     << "Fix:" << pvt.fixType << "Sats:" << pvt.numSV;
-            displayNavPvt(pvt);
-            messageInfo = QString("NAV-PVT: Lat=%1 Lon=%2 Fix=%3 Sats=%4")
-                              .arg(pvt.lat/1e7, 0, 'f', 7)
-                              .arg(pvt.lon/1e7, 0, 'f', 7)
-                              .arg(pvt.fixType)
-                              .arg(pvt.numSV);
-            break;
-        }
-        case 0x03: { // NAV-STATUS
-            UbxParser::NavStatus status = UbxParser::parseNavStatus(payload);
-            qDebug() << "NAV-STATUS data:"
-                     << "Fix:" << status.fixType
-                     << "TTFF:" << status.ttff << "ms";
-            displayNavStatus(status);
-            messageInfo = QString("NAV-STATUS: Fix=%1 TTFF=%2ms")
-                              .arg(status.fixType)
-                              .arg(status.ttff);
-            break;
-        }
-        default:
-            qDebug() << "Unknown NAV message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            messageInfo = QString("Unknown NAV message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            break;
-        }
+void GNSSWindow::processCfgMessages(quint8 msgId, const QByteArray& payload)
+{
+    QString message;
+
+    switch (msgId) {
+    case 0x00: // CFG-PRT
+        sendUbxCfgPrtResponse();
+        sendInitialConfiguration();
+        return;
+
+    case 0x8A: // CFG-VALGET
+        processCfgValGet(payload);
         break;
 
-    case 0x02: // RXM класс
-        switch(msgId) {
-        case 0x15: // RXM-MEASX
-            qDebug() << "RXM-MEASX measurement data received";
-            messageInfo = "RXM-MEASX: Measurement data";
-            break;
-        default:
-            qDebug() << "Unknown RXM message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            messageInfo = QString("Unknown RXM message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            break;
-        }
+    case 0x8B: // CFG-VALSET
+        processCfgValSet(payload);
         break;
 
-    case 0x04: // INF класс
-        switch(msgId) {
-        case 0x00: // INF-ERROR
-            emit infErrorReceived(QString::fromLatin1(payload));
-            break;
-        case 0x01: // INF-WARNING
-            appendToLog("INF-WARNING: " + QString::fromLatin1(payload), "warning");
-            break;
-        case 0x02: // INF-NOTICE
-            appendToLog("INF-NOTICE: " + QString::fromLatin1(payload), "info");
-            break;
-        default:
-            break;
-        }
-        break;
-
-    case 0x0A: // MON класс
-        switch(msgId) {
-        case 0x04: { // MON-VER
-            UbxParser::MonVer ver = UbxParser::parseMonVer(payload);
-            qDebug() << "MON-VER data:"
-                     << "SW:" << ver.swVersion
-                     << "HW:" << ver.hwVersion;
-            displayMonVer(ver);
-            messageInfo = QString("MON-VER: SW=%1 HW=%2")
-                              .arg(ver.swVersion)
-                              .arg(ver.hwVersion);
-            break;
-        }
-        case 0x09: { // MON-HW
-            UbxParser::MonHw hw = UbxParser::parseMonHw(payload);
-            qDebug() << "MON-HW data:"
-                     << "Antenna:" << (hw.aPower ? "ON" : "OFF")
-                     << "Jamming:" << hw.jamInd << "%";
-            processMonHw(hw);
-            messageInfo = QString("MON-HW: Antenna=%1 Jamming=%2%")
-                              .arg(hw.aPower ? "ON" : "OFF")
-                              .arg(hw.jamInd);
-            break;
-        }
-        default:
-            qDebug() << "Unknown MON message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            messageInfo = QString("Unknown MON message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            break;
-        }
-        break;
-
-    case 0x27: // SEC класс
-        switch(msgId) {
-        case 0x03: { // SEC-UNIQID
-            UbxParser::SecUniqid uniqid = UbxParser::parseSecUniqid(payload);
-            qDebug() << "SEC-UNIQID data:"
-                     << "ID:" << QString("0x%1").arg(uniqid.uniqueId, 8, 16, QLatin1Char('0'));
-            emit secUniqidReceived(uniqid);
-            messageInfo = QString("SEC-UNIQID: 0x%1").arg(uniqid.uniqueId, 8, 16, QLatin1Char('0'));
-            break;
-        }
-        default:
-            qDebug() << "Unknown SEC message ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            messageInfo = QString("Unknown SEC message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
-            break;
-        }
+    case 0x39: // CFG-ITFM
+        sendUbxAck(0x06, 0x39);
+        sendUbxCfgItfm(true);
         break;
 
     default:
-        qDebug() << "Unknown message class:" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'));
-        messageInfo = QString("Unknown message class: 0x%1").arg(msgClass, 2, 16, QLatin1Char('0'));
+        message = QString("Unknown CFG message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+        qWarning() << message;
         break;
     }
 
-    if (!messageInfo.isEmpty()) {
-        qDebug() << "Processed message:" << messageInfo;
-        appendToLog(messageInfo, "in");
+    if (!message.isEmpty()) {
+        appendToLog(message, "in");
+    }
+}
+
+bool GNSSWindow::processInfoRequests(quint8 msgClass, quint8 msgId)
+{
+    if (msgClass == 0x0A && msgId == 0x04) { // MON-VER
+        sendUbxMonVer();
+        return true;
+    }
+
+    if (msgClass == 0x0A && msgId == 0x09) { // MON-HW
+        sendUbxMonHw();
+        return true;
+    }
+
+    if (msgClass == 0x27 && msgId == 0x03) { // SEC-UNIQID
+        sendUbxSecUniqid();
+        return true;
+    }
+
+    return false;
+}
+
+QString GNSSWindow::processNavMessages(quint8 msgId, const QByteArray& payload)
+{
+    switch (msgId) {
+    case 0x07: { // NAV-PVT
+        UbxParser::NavPvt pvt = UbxParser::parseNavPvt(payload);
+        displayNavPvt(pvt);
+        return QString("NAV-PVT: Lat=%1 Lon=%2 Fix=%3 Sats=%4")
+            .arg(pvt.lat/1e7, 0, 'f', 7)
+            .arg(pvt.lon/1e7, 0, 'f', 7)
+            .arg(pvt.fixType)
+            .arg(pvt.numSV);
+    }
+
+    case 0x03: { // NAV-STATUS
+        UbxParser::NavStatus status = UbxParser::parseNavStatus(payload);
+        displayNavStatus(status);
+        return QString("NAV-STATUS: Fix=%1 TTFF=%2ms")
+            .arg(status.fixType)
+            .arg(status.ttff);
+    }
+
+    case 0x35: { // NAV-SAT
+        UbxParser::NavSat sat = UbxParser::parseNavSat(payload);
+        return QString("NAV-SAT: Version=%1 SVs=%2")
+            .arg(sat.version)
+            .arg(sat.numSvs);
+    }
+
+    default:
+        return QString("Unknown NAV message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+    }
+}
+
+QString GNSSWindow::processRxmMessages(quint8 msgId, const QByteArray& payload)
+{
+    switch (msgId) {
+    case 0x15: { // RXM-MEASX
+        qDebug() << "RXM-MEASX measurement data received";
+        return "RXM-MEASX: Measurement data received";
+    }
+
+    case 0x32: { // RXM-RAWX
+        qDebug() << "RXM-RAWX raw measurement data received";
+        return "RXM-RAWX: Raw measurement data received";
+    }
+
+    default:
+        return QString("Unknown RXM message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+    }
+}
+
+QString GNSSWindow::processMonMessages(quint8 msgId, const QByteArray& payload)
+{
+    switch (msgId) {
+    case 0x04: { // MON-VER
+        UbxParser::MonVer ver = UbxParser::parseMonVer(payload);
+        displayMonVer(ver);
+        return QString("MON-VER: SW=%1 HW=%2")
+            .arg(ver.swVersion)
+            .arg(ver.hwVersion);
+    }
+
+    case 0x09: { // MON-HW
+        UbxParser::MonHw hw = UbxParser::parseMonHw(payload);
+        processMonHw(hw);
+        return QString("MON-HW: Antenna=%1 Jamming=%2%")
+            .arg(hw.aPower ? "ON" : "OFF")
+            .arg(hw.jamInd);
+    }
+
+    case 0x0B: { // MON-IO
+        qDebug() << "MON-IO I/O system status received";
+        return "MON-IO: I/O system status";
+    }
+
+    case 0x28: { // MON-RF
+        UbxParser::MonRf rf = UbxParser::parseMonRf(payload);
+        displayMonRf(rf);
+        return QString("MON-RF: %1 RF blocks").arg(rf.nBlocks);
+    }
+
+    default:
+        return QString("Unknown MON message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+    }
+}
+
+QString GNSSWindow::processSecMessages(quint8 msgId, const QByteArray& payload)
+{
+    switch (msgId) {
+    case 0x03: { // SEC-UNIQID
+        UbxParser::SecUniqid uniqid = UbxParser::parseSecUniqid(payload);
+        emit secUniqidReceived(uniqid);
+        return QString("SEC-UNIQID: 0x%1").arg(uniqid.uniqueId, 8, 16, QLatin1Char('0'));
+    }
+
+    case 0x04: { // SEC-SESSION
+        qDebug() << "SEC-SESSION session management message received";
+        return "SEC-SESSION: Session management";
+    }
+
+    default:
+        return QString("Unknown SEC message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+    }
+}
+
+void GNSSWindow::processInfMessages(quint8 msgId, const QByteArray& payload)
+{
+    switch (msgId) {
+    case 0x00: // INF-ERROR
+        emit infErrorReceived(QString::fromLatin1(payload));
+        break;
+
+    case 0x01: // INF-WARNING
+        appendToLog("INF-WARNING: " + QString::fromLatin1(payload), "warning");
+        break;
+
+    case 0x02: // INF-NOTICE
+        appendToLog("INF-NOTICE: " + QString::fromLatin1(payload), "info");
+        break;
+
+    default:
+        appendToLog(QString("Unknown INF message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0')), "warning");
+        break;
     }
 }
 
@@ -856,27 +889,6 @@ void GNSSWindow::displayNavPvt(const UbxParser::NavPvt &data)
                          .arg(data.fixType)
                          .arg(data.numSV);
     ui->statusbar->showMessage(status, 5000);
-}
-
-UbxParser::NavSat UbxParser::parseNavSat(const QByteArray &payload) {
-    NavSat result = {};
-    if(payload.size() < 8) return result;
-
-    result.iTOW = qFromLittleEndian<quint32>(payload.mid(0, 4));
-    result.version = payload[4];
-    result.numSvs = payload[5];
-
-    const int satSize = 12; // Размер блока одного спутника
-    for(int i = 0; i < result.numSvs && (8 + i*satSize + satSize) <= payload.size(); i++) {
-        int offset = 8 + i*satSize;
-        result.sats[i].gnssId = payload[offset];
-        result.sats[i].svId = payload[offset+1];
-        result.sats[i].cno = payload[offset+2];
-        result.sats[i].elev = payload[offset+3];
-        result.sats[i].azim = qFromLittleEndian<qint16>(payload.mid(offset+4, 2));
-        result.sats[i].flags = qFromLittleEndian<quint32>(payload.mid(offset+8, 4));
-    }
-    return result;
 }
 
 void GNSSWindow::appendToLog(const QString &message, const QString &type)
@@ -984,6 +996,38 @@ void GNSSWindow::sendUbxCfgAnt(bool enablePower) {
     appendToLog(QString("Antenna power %1").arg(enablePower ? "ON" : "OFF"), "config");
 }
 
+void GNSSWindow::sendUbxNavSat()
+{
+    QByteArray payload;
+    QRandomGenerator *generator = QRandomGenerator::global();
+
+    // Заголовок (8 байт)
+    payload.append("\x00\x00\x00\x00", 4); // iTOW (заполним позже)
+    payload.append(static_cast<char>(ui->sbSatVersion->value())); // version
+    payload.append(static_cast<char>(ui->sbNumSatsSat->value())); // numSvs
+    payload.append("\x00\x00", 2); // reserved
+
+    // Добавляем спутники (по 12 байт каждый)
+    for(int i = 0; i < ui->sbNumSatsSat->value(); i++) {
+        payload.append(static_cast<char>(1)); // gnssId (GPS)
+        payload.append(static_cast<char>(i+1)); // svId
+        payload.append(static_cast<char>(35 + generator->bounded(20))); // cno (35-55 dBHz)
+        payload.append(static_cast<char>(30 + generator->bounded(50))); // elev (30-80 deg)
+        qint16 azim = generator->bounded(360);
+        payload.append(static_cast<char>(azim & 0xFF));
+        payload.append(static_cast<char>((azim >> 8) & 0xFF));
+        payload.append("\x00\x00\x00\x01", 4); // flags (используется)
+    }
+
+    // Обновляем iTOW (время недели GPS в мс)
+    QDateTime currentTime = QDateTime::currentDateTimeUtc(); // Используем UTC время
+    quint32 iTOW = static_cast<quint32>(currentTime.toMSecsSinceEpoch() % (7 * 24 * 60 * 60 * 1000));
+    qToLittleEndian<quint32>(iTOW, payload.data());
+
+    createUbxPacket(0x01, 0x35, payload);
+    appendToLog("Sent NAV-SAT message", "out");
+}
+
 void GNSSWindow::onSendButtonClicked()
 {
     quint8 msgClass = static_cast<quint8>(ui->cbClass->currentData().toInt());
@@ -993,6 +1037,7 @@ void GNSSWindow::onSendButtonClicked()
     case 0x01: // NAV
         if (msgId == 0x07) sendUbxNavPvt();
         else if (msgId == 0x03) sendUbxNavStatus();
+        else if (msgId == 0x35) sendUbxNavSat();
         break;
     case 0x06: // CFG
         if (msgId == 0x00) sendUbxCfgPrtResponse();
@@ -1008,20 +1053,21 @@ void GNSSWindow::onSendButtonClicked()
     }
 }
 
-void GNSSWindow::onAutoSendToggled(bool checked)
-{
+void GNSSWindow::onAutoSendToggled(bool checked) {
     if (checked && !m_initializationComplete) {
         QMessageBox::warning(this, "Warning",
-                             "Cannot start sending NAV-PVT - initialization not complete");
+                             "Cannot start sending - initialization not complete");
         ui->autoSendCheck->setChecked(false);
         return;
     }
 
     if (checked) {
         int rate = ui->rateSpin->value();
-        m_timer->start(1000 / rate);
+        m_pvtTimer->start(1000 / rate);
+        m_statusTimer->start(1000 / rate); // Запускаем второй таймер
     } else {
-        m_timer->stop();
+        m_pvtTimer->stop();
+        m_statusTimer->stop(); // Останавливаем оба таймера
     }
 }
 
@@ -1114,7 +1160,7 @@ void GNSSWindow::sendUbxSecUniqid()
     // Version
     payload[0] = 0x01;
 
-    // Unique chip ID - use a realistic value
+    // Unique chip ID
     payload[1] = 0x12;
     payload[2] = 0x34;
     payload[3] = 0x56;
@@ -1123,7 +1169,6 @@ void GNSSWindow::sendUbxSecUniqid()
     createUbxPacket(0x27, 0x03, payload);
     appendToLog("Sent SEC-UNIQID with valid chip ID", "config");
 
-    // Also update the UI
     ui->leChipId->setText("0x12345678");
 }
 
@@ -1212,13 +1257,9 @@ void GNSSWindow::sendUbxCfgItfm()
     // Формируем и отправляем UBX пакет
     createUbxPacket(0x06, 0x39, payload);
 
-    // Логируем действие
     appendToLog("Sent CFG-ITFM with default config (jamming detection disabled)", "config");
 
     qDebug() << "CFG-ITFM packet sent with payload:" << payload.toHex(' ');
-
-    // Дополнительно можно отправить ACK, если требуется
-    // sendUbxAck(0x06, 0x39);
 }
 
 void GNSSWindow::sendUbxAck(quint8 msgClass, quint8 msgId)
@@ -1378,94 +1419,118 @@ void GNSSWindow::sendUbxNavPvt()
 
     createUbxPacket(0x01, 0x07, payload);
     appendToLog("Sent NAV-PVT", "out");
-}
 
+}
 
 void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload)
 {
-    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        qWarning() << "Cannot send - socket not ready. State:"
-                   << (m_socket ? m_socket->state() : QAbstractSocket::UnconnectedState);
-        return;
-    }
-
-    // 1. Проверка входных параметров
-    if (msgClass > 0xFF || msgId > 0xFF) {
-        qWarning() << "Invalid UBX class or ID values (class:" << msgClass << "id:" << msgId << ")";
-        return;
-    }
-
-    // 2. Формирование пакета
-    QByteArray packet;
-
-    // 2.1. Синхробайты
-    packet.append('\xB5'); // Sync char 1
-    packet.append('\x62'); // Sync char 2
-
-    // 2.2. Заголовок
-    packet.append(static_cast<char>(msgClass));
-    packet.append(static_cast<char>(msgId));
-
-    // 2.3. Длина payload (little-endian)
-    quint16 length = payload.size();
-    packet.append(static_cast<char>(length & 0xFF));
-    packet.append(static_cast<char>((length >> 8) & 0xFF));
-
-    // 2.4. Payload
-    packet.append(payload);
-
-    // 2.5. Расчет контрольной суммы
-    quint8 ck_a = 0, ck_b = 0;
-    for (int i = 2; i < packet.size(); i++) {
-        ck_a += static_cast<quint8>(packet[i]);
-        ck_b += ck_a;
-    }
-    packet.append(ck_a);
-    packet.append(ck_b);
-
-    // 3. Подробное логирование
-    QString logMessage = QString("Prepared UBX packet: Class=0x%1 ID=0x%2 Length=%3")
-                             .arg(msgClass, 2, 16, QLatin1Char('0'))
-                             .arg(msgId, 2, 16, QLatin1Char('0'))
-                             .arg(packet.size());
-
-    qDebug() << logMessage;
-    qDebug() << "Full packet:" << packet.toHex(' ');
-    appendToLog(logMessage, "debug");
-
-    // 4. Отправка через сокет
+    // 1. Проверка состояния сокета
     if (!m_socket) {
-        qCritical() << "Socket is null! Cannot send packet.";
+        qCritical() << "[UBX] Socket is null! Cannot send packet.";
         appendToLog("Error: Socket not initialized", "error");
         return;
     }
 
     if (m_socket->state() != QAbstractSocket::ConnectedState) {
-        qWarning() << "Socket not connected. Current state:" << m_socket->state();
+        qWarning() << "[UBX] Socket not connected. Current state:" << m_socket->state();
         appendToLog(QString("Error: Socket state %1").arg(m_socket->state()), "error");
         return;
     }
 
+    // 2. Проверка входных параметров
+    if (msgClass > 0xFF || msgId > 0xFF) {
+        qWarning() << "[UBX] Invalid class or ID (class:" << msgClass << "id:" << msgId << ")";
+        return;
+    }
+
+    // 3. Формирование пакета
+    QByteArray packet;
+
+    // 3.1. Синхробайты
+    packet.append('\xB5'); // Sync char 1
+    packet.append('\x62'); // Sync char 2
+
+    // 3.2. Заголовок
+    packet.append(static_cast<char>(msgClass));
+    packet.append(static_cast<char>(msgId));
+
+    // 3.3. Длина payload (little-endian)
+    quint16 length = payload.size();
+    packet.append(static_cast<char>(length & 0xFF));
+    packet.append(static_cast<char>((length >> 8) & 0xFF));
+
+    // 3.4. Payload
+    packet.append(payload);
+
+    // 3.5. Расчет контрольной суммы
+    quint8 ck_a = 0, ck_b = 0;
+    for (int i = 2; i < packet.size(); i++) {
+        quint8 byte = static_cast<quint8>(packet[i]);
+        ck_a += byte;
+        ck_b += ck_a;
+    }
+    packet.append(ck_a);
+    packet.append(ck_b);
+
+    // 4. Подробное логирование
+    QString logMessage = QString("[UBX] Prepared packet: Class=0x%1 ID=0x%2 Length=%3 (%4 bytes total)")
+                             .arg(msgClass, 2, 16, QLatin1Char('0'))
+                             .arg(msgId, 2, 16, QLatin1Char('0'))
+                             .arg(length)
+                             .arg(packet.size());
+
+    // Детальное логирование содержимого
+    qDebug().noquote() << logMessage;
+    qDebug() << "Sync bytes:" << packet.mid(0, 2).toHex();
+    qDebug() << "Header:" << packet.mid(2, 2).toHex()
+             << "(Class=0x" << QString::number(msgClass, 16)
+             << " ID=0x" << QString::number(msgId, 16) << ")";
+    qDebug() << "Length:" << packet.mid(4, 2).toHex() << "(" << length << "bytes)";
+
+    if (length > 0) {
+        qDebug() << "Payload:" << payload.toHex(' ');
+    } else {
+        qDebug() << "Payload: [empty]";
+    }
+
+    qDebug() << "Checksum:" << QString("0x%1 0x%2").arg(ck_a, 2, 16, QLatin1Char('0'))
+                                   .arg(ck_b, 2, 16, QLatin1Char('0'));
+    qDebug() << "Full packet:" << packet.toHex(' ');
+
+    appendToLog(logMessage, "debug");
+    appendToLog(QString("Packet details: %1 bytes payload, checksum=0x%2 0x%3")
+                    .arg(length)
+                    .arg(ck_a, 2, 16, QLatin1Char('0'))
+                    .arg(ck_b, 2, 16, QLatin1Char('0')),
+                "debug");
+
+    // 5. Отправка пакета
     qint64 bytesWritten = m_socket->write(packet);
+
     if (bytesWritten == -1) {
-        qWarning() << "Socket write error:" << m_socket->errorString();
-        appendToLog(QString("Write error: %1").arg(m_socket->errorString()), "error");
+        QString errorMsg = QString("[UBX] Write error: %1").arg(m_socket->errorString());
+        qCritical() << errorMsg;
+        appendToLog(errorMsg, "error");
     }
     else if (bytesWritten != packet.size()) {
-        qWarning() << "Partial write:" << bytesWritten << "of" << packet.size() << "bytes";
-        appendToLog(QString("Warning: Partial write (%1/%2 bytes)")
-                        .arg(bytesWritten).arg(packet.size()), "warning");
+        QString warnMsg = QString("[UBX] Partial write: %1/%2 bytes")
+                              .arg(bytesWritten).arg(packet.size());
+        qWarning() << warnMsg;
+        appendToLog(warnMsg, "warning");
     }
     else {
-        qDebug() << "Successfully sent" << bytesWritten << "bytes";
-        appendToLog(QString("Sent: Class=0x%1 ID=0x%2 (%3 bytes)")
-                        .arg(msgClass, 2, 16, QLatin1Char('0'))
-                        .arg(msgId, 2, 16, QLatin1Char('0'))
-                        .arg(bytesWritten), "out");
+        QString successMsg = QString("[UBX] Successfully sent %1 bytes (Class=0x%2 ID=0x%3)")
+                                 .arg(bytesWritten)
+                                 .arg(msgClass, 2, 16, QLatin1Char('0'))
+                                 .arg(msgId, 2, 16, QLatin1Char('0'));
+        qDebug() << successMsg;
+        appendToLog(successMsg, "out");
 
-        // Принудительная отправка буфера
+        // Принудительная отправка буфера с проверкой
         if (!m_socket->flush()) {
-            qWarning() << "Flush failed:" << m_socket->errorString();
+            QString flushError = QString("[UBX] Flush failed: %1").arg(m_socket->errorString());
+            qWarning() << flushError;
+            appendToLog(flushError, "warning");
         }
     }
 }
