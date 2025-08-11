@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>157</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,38 +57,9 @@
       <string>Connect</string>
      </property>
      <property name="icon">
-      <iconset resource="../resources.qrc">
+      <iconset>
        <normaloff>:/icons/connect.png</normaloff>:/icons/connect.png</iconset>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="groupBox_2">
-     <property name="title">
-      <string>Connection Status</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <widget class="QLabel" name="statusLabel">
-        <property name="text">
-         <string>Disconnected</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QTextEdit" name="logText">
-        <property name="readOnly">
-         <bool>true</bool>
-        </property>
-        <property name="placeholderText">
-         <string>Connection logs will appear here...</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </widget>
    </item>
   </layout>

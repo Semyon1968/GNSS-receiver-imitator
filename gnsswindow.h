@@ -56,6 +56,9 @@ private slots:
     void sendUbxCfgAntSettings(bool openDet, bool shortDet, bool recover);
     void sendUbxSecUniqidReq();
     void onError(QAbstractSocket::SocketError error);
+    void onActionSaveLogTriggered();
+    void onActionClearLogTriggered();
+    void onActionAboutTriggered();
 
 signals:
     void secUniqidReceived(const UbxParser::SecUniqid &data);
@@ -73,6 +76,8 @@ private:
     QTimer *m_timer;
     UbxParser m_ubxParser;
     QMap<quint8, QMap<int, QString>> m_classIdMap;
+    QTimer *m_utcTimer;
+    void updateUTCTime();
     void processAckNack(quint8 msgId, const QByteArray& payload);
     void completeInitialization();
     void processCfgMessages(quint8 msgId, const QByteArray& payload);

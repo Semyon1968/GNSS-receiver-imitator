@@ -16,6 +16,7 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     m_statusTimer(new QTimer(this)),   // Timer for NAV-STATUS
     m_initTimer(new QTimer(this)),     // Initialization timer
     m_ackTimeoutTimer(new QTimer(this)), // ACK wait timer
+    m_utcTimer(new QTimer(this)),
     m_initializationComplete(false),
     m_waitingForAck(false)
 {
@@ -41,6 +42,7 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
             int rate = ui->rateSpin->value();
             m_pvtTimer->start(1000 / rate);
             m_statusTimer->start(1000 / rate);
+            ui->autoSendCheck->setChecked(true);
         }
     });
 
@@ -50,6 +52,11 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
             m_waitingForAck = false;
         }
     });
+
+    // Menu signals
+    connect(ui->actionSaveLog, &QAction::triggered, this, &GNSSWindow::onActionSaveLogTriggered);
+    connect(ui->actionClearLog, &QAction::triggered, this, &GNSSWindow::onActionClearLogTriggered);
+    connect(ui->actionAbout, &QAction::triggered, this, &GNSSWindow::onActionAboutTriggered);
 
     // Connect message selection signals
     connect(ui->cbClass, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -64,6 +71,11 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
             this, &GNSSWindow::onAutoSendToggled);
     connect(ui->btnClearLog, &QPushButton::clicked,
             this, &GNSSWindow::on_btnClearLog_clicked);
+
+    // Real time signal
+    connect(m_utcTimer, &QTimer::timeout, this, &GNSSWindow::updateUTCTime);
+    m_utcTimer->start(1000);
+    updateUTCTime();
 
     // Initialize message system
     initClassIdMapping();
@@ -88,7 +100,7 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     appendToLog("GNSS Window initialized successfully", "system");
     qDebug() << "GNSSWindow initialized at" << QDateTime::currentDateTime().toString("hh:mm:ss");
 
-    ui->autoSendCheck->setChecked(false);
+    //ui->autoSendCheck->setChecked(false);
     ui->statusbar->showMessage("Waiting for connection...", 3000);
     ui->leChipId->setText("0x00000000");
 }
@@ -217,6 +229,43 @@ void GNSSWindow::onError(QAbstractSocket::SocketError error) {
     }
 
     ui->statusbar->showMessage("Connection error: " + errorMsg, 5000);
+}
+
+void GNSSWindow::updateUTCTime()
+{
+    QDateTime utcTime = QDateTime::currentDateTimeUtc();
+    QString timeString = utcTime.toString("yyyy-MM-dd hh:mm:ss UTC");
+    ui->leUTCTimeView->setText(timeString);
+}
+
+void GNSSWindow::onActionSaveLogTriggered()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "Save Log", "", "Text Files (*.txt);;All Files (*)");
+    if (fileName.isEmpty()) return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Error", "Could not save file");
+        return;
+    }
+
+    QTextStream out(&file);
+    out << ui->teReceived->toPlainText();
+    file.close();
+}
+
+void GNSSWindow::onActionClearLogTriggered()
+{
+    ui->teReceived->clear();
+    appendToLog("Log cleared by user", "system");
+}
+
+void GNSSWindow::onActionAboutTriggered()
+{
+    QMessageBox::about(this, "About GNSS Simulator",
+                       "Application simulates GNSS receiver\n"
+                       "Version: 1.0\n"
+                       "Uses the u-blox UBX protocol");
 }
 
 void GNSSWindow::setupNavSatFields() {
@@ -442,67 +491,6 @@ void GNSSWindow::setupMonRfFields()
     ui->sbRfCwSuppression->setValue(0);
 }
 
-void GNSSWindow::displayMonRf(const UbxParser::MonRf &data)
-{
-    QString info = QString("MON-RF: Version=%1 Blocks=%2")
-                       .arg(data.version)
-                       .arg(data.nBlocks);
-
-    for(int i = 0; i < data.nBlocks && i < 4; i++) {
-        const auto& block = data.blocks[i];
-        QString jammingState;
-        switch(block.flags & 0x03) {
-        case 0: jammingState = "Unknown"; break;
-        case 1: jammingState = "OK"; break;
-        case 2: jammingState = "Warning"; break;
-        case 3: jammingState = "Critical"; break;
-        }
-
-        QString antStatus;
-        switch(block.antStatus) {
-        case 0: antStatus = "INIT"; break;
-        case 1: antStatus = "DONTKNOW"; break;
-        case 2: antStatus = "OK"; break;
-        case 3: antStatus = "SHORT"; break;
-        case 4: antStatus = "OPEN"; break;
-        default: antStatus = QString("Unknown (%1)").arg(block.antStatus); break;
-        }
-
-        QString antPower;
-        switch(block.antPower) {
-        case 0: antPower = "OFF"; break;
-        case 1: antPower = "ON"; break;
-        case 2: antPower = "DONTKNOW"; break;
-        default: antPower = QString("Unknown (%1)").arg(block.antPower); break;
-        }
-
-        info += QString("\nBlock %1 (ID=%2):\n"
-                        "  JammingState=%3\n"
-                        "  AntStatus=%4\n"
-                        "  AntPower=%5\n"
-                        "  POSTStatus=0x%6\n"
-                        "  Noise=%7 dB\n"
-                        "  AGC=%8%%\n"
-                        "  CWSuppression=%9\n"
-                        "  I/Q: ofsI=%10 magI=%11 ofsQ=%12 magQ=%13")
-                    .arg(i)
-                    .arg(block.antId)
-                    .arg(jammingState)
-                    .arg(antStatus)
-                    .arg(antPower)
-                    .arg(block.postStatus, 8, 16, QLatin1Char('0'))
-                    .arg(block.noisePerMS / 100.0, 0, 'f', 2)
-                    .arg(block.agcCnt / 100.0, 0, 'f', 2)
-                    .arg(block.cwSuppression)
-                    .arg(block.ofsI)
-                    .arg(block.magI)
-                    .arg(block.ofsQ)
-                    .arg(block.magQ);
-    }
-
-    appendToLog(info, "status");
-}
-
 void GNSSWindow::processCfgValGet(const QByteArray &payload) {
     if(payload.size() >= 8) {
         quint32 key = qFromLittleEndian<quint32>(payload.mid(4, 4).constData());
@@ -703,6 +691,8 @@ void GNSSWindow::completeInitialization() {
     m_pvtTimer->start(1000 / rate);
     m_statusTimer->start(1000 / rate);
 
+    ui->autoSendCheck->setChecked(true);
+
     appendToLog("Configuration complete. Starting NAV-PVT and NAV-STATUS.", "system");
 }
 
@@ -878,8 +868,68 @@ void GNSSWindow::displayNavStatus(const UbxParser::NavStatus &data) {
     qDebug() << "Updating UI with NAV-STATUS data:"
              << "Fix:" << data.fixType << "TTFF:" << data.ttff << "ms";
 
-    ui->leFixType->setText(QString::number(data.fixType));
     ui->statusbar->showMessage(QString("Fix status: %1, TTFF: %2ms").arg(data.fixType).arg(data.ttff), 5000);
+}
+
+void GNSSWindow::displayMonRf(const UbxParser::MonRf &data)
+{
+    QString info = QString("MON-RF: Version=%1 Blocks=%2")
+                       .arg(data.version)
+                       .arg(data.nBlocks);
+
+    for(int i = 0; i < data.nBlocks && i < 4; i++) {
+        const auto& block = data.blocks[i];
+        QString jammingState;
+        switch(block.flags & 0x03) {
+        case 0: jammingState = "Unknown"; break;
+        case 1: jammingState = "OK"; break;
+        case 2: jammingState = "Warning"; break;
+        case 3: jammingState = "Critical"; break;
+        }
+
+        QString antStatus;
+        switch(block.antStatus) {
+        case 0: antStatus = "INIT"; break;
+        case 1: antStatus = "DONTKNOW"; break;
+        case 2: antStatus = "OK"; break;
+        case 3: antStatus = "SHORT"; break;
+        case 4: antStatus = "OPEN"; break;
+        default: antStatus = QString("Unknown (%1)").arg(block.antStatus); break;
+        }
+
+        QString antPower;
+        switch(block.antPower) {
+        case 0: antPower = "OFF"; break;
+        case 1: antPower = "ON"; break;
+        case 2: antPower = "DONTKNOW"; break;
+        default: antPower = QString("Unknown (%1)").arg(block.antPower); break;
+        }
+
+        info += QString("\nBlock %1 (ID=%2):\n"
+                        "  JammingState=%3\n"
+                        "  AntStatus=%4\n"
+                        "  AntPower=%5\n"
+                        "  POSTStatus=0x%6\n"
+                        "  Noise=%7 dB\n"
+                        "  AGC=%8%%\n"
+                        "  CWSuppression=%9\n"
+                        "  I/Q: ofsI=%10 magI=%11 ofsQ=%12 magQ=%13")
+                    .arg(i)
+                    .arg(block.antId)
+                    .arg(jammingState)
+                    .arg(antStatus)
+                    .arg(antPower)
+                    .arg(block.postStatus, 8, 16, QLatin1Char('0'))
+                    .arg(block.noisePerMS / 100.0, 0, 'f', 2)
+                    .arg(block.agcCnt / 100.0, 0, 'f', 2)
+                    .arg(block.cwSuppression)
+                    .arg(block.ofsI)
+                    .arg(block.magI)
+                    .arg(block.ofsQ)
+                    .arg(block.magQ);
+    }
+
+    appendToLog(info, "status");
 }
 
 void GNSSWindow::displayCfgPrt(const UbxParser::CfgPrt &data) {
@@ -897,28 +947,6 @@ void GNSSWindow::displayCfgPrt(const UbxParser::CfgPrt &data) {
 }
 
 void GNSSWindow::displayNavPvt(const UbxParser::NavPvt &data) {
-    qDebug() << "Updating UI with NAV-PVT data:"
-             << "Lat:" << data.lat/1e7 << "Lon:" << data.lon/1e7
-             << "Fix:" << data.fixType << "Sats:" << data.numSV;
-
-    // Update position fields
-    ui->leLatitude->setText(QString::number(data.lat / 1e7, 'f', 7));
-    ui->leLongitude->setText(QString::number(data.lon / 1e7, 'f', 7));
-    ui->leHeight->setText(QString::number(data.height / 1000.0, 'f', 2));
-    ui->leSpeed->setText(QString::number(data.gSpeed / 1000.0, 'f', 2));
-    ui->leFixType->setText(QString::number(data.fixType));
-    ui->leSats->setText(QString::number(data.numSV));
-
-    // Format time
-    QString timeStr = QString("%1-%2-%3 %4:%5:%6 UTC")
-                          .arg(data.year)
-                          .arg(data.month, 2, 10, QChar('0'))
-                          .arg(data.day, 2, 10, QChar('0'))
-                          .arg(data.hour, 2, 10, QChar('0'))
-                          .arg(data.min, 2, 10, QChar('0'))
-                          .arg(data.sec, 2, 10, QChar('0'));
-    ui->leTime->setText(timeStr);
-
     // Status bar
     QString status = QString("Position: Lat=%1 Lon=%2 Fix=%3D Sats=%4")
                          .arg(data.lat / 1e7, 0, 'f', 7)
@@ -926,6 +954,12 @@ void GNSSWindow::displayNavPvt(const UbxParser::NavPvt &data) {
                          .arg(data.fixType)
                          .arg(data.numSV);
     ui->statusbar->showMessage(status, 5000);
+}
+
+void GNSSWindow::displayMonVer(const UbxParser::MonVer &data) {
+    ui->statusbar->showMessage(
+        QString("Version: SW %1, HW %2").arg(data.swVersion).arg(data.hwVersion),
+        5000);
 }
 
 void GNSSWindow::appendToLog(const QString &message, const QString &type) {
@@ -976,14 +1010,6 @@ void GNSSWindow::appendToLog(const QString &message, const QString &type) {
                               .arg(timestamp)
                               .arg(type.toUpper())
                               .arg(message);
-}
-
-void GNSSWindow::displayMonVer(const UbxParser::MonVer &data) {
-    ui->leSwVer->setText(data.swVersion);
-    ui->leHwVer->setText(data.hwVersion);
-    ui->statusbar->showMessage(
-        QString("Version: SW %1, HW %2").arg(data.swVersion).arg(data.hwVersion),
-        5000);
 }
 
 void GNSSWindow::processMonHw(const UbxParser::MonHw &hw) {
@@ -1085,8 +1111,6 @@ void GNSSWindow::sendUbxNavSat() {
     createUbxPacket(0x01, 0x35, payload);
     appendToLog("Sent NAV-SAT message", "out");
 }
-
-
 
 void GNSSWindow::onSendButtonClicked() {
     quint8 msgClass = static_cast<quint8>(ui->cbClass->currentData().toInt());

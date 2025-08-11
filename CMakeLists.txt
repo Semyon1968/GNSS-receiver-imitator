@@ -64,13 +64,6 @@ target_include_directories(ImitatorGNSS PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Copy Models.txt
-add_custom_command(TARGET ImitatorGNSS POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/Models.txt
-        $<TARGET_FILE_DIR:ImitatorGNSS>/Models.txt
-)
-
 # macOS bundle settings
 set(BUNDLE_ID_OPTION "")
 if(APPLE AND ${QT_VERSION} VERSION_LESS 6.1.0)

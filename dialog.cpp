@@ -14,10 +14,6 @@ Dialog::Dialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    // Configure log text
-    ui->logText->setReadOnly(true);
-    ui->logText->setFont(QFont("Monospace", 10));
-
     // Setup connection timer (10 sec timeout)
     m_connectionTimer->setSingleShot(true);
     m_connectionTimer->setInterval(10000);
@@ -38,7 +34,6 @@ Dialog::Dialog(QWidget *parent) :
     // Set default UI values
     ui->leIpAddress->setText("192.168.2.22");
     ui->lePort->setText("40001");
-    ui->statusLabel->setText("Disconnected");
 
     qDebug() << "Dialog initialized, socket state:" << m_socket->state();
 }
@@ -57,7 +52,6 @@ void Dialog::onDisconnected()
         m_gnssWindow->close();
     }
 
-    ui->statusLabel->setText("Disconnected");
     qDebug() << "Disconnected from host";
 
     if (m_socket) {
@@ -86,7 +80,6 @@ void Dialog::appendToLog(const QString &message, const QString &type)
                                    .arg(type.toUpper())
                                    .arg(message);
 
-    ui->logText->append(formattedMessage);
     qDebug() << formattedMessage;
 }
 
@@ -114,7 +107,6 @@ void Dialog::on_connectButton_clicked()
         }
     }
 
-    ui->statusLabel->setText("Connecting...");
     m_socket->connectToHost(host, port);
     m_connectionTimer->start(10000);
 }
@@ -126,7 +118,6 @@ void Dialog::onError(QAbstractSocket::SocketError error)
 
     QString errorMsg = m_socket->errorString();
     QMessageBox::critical(this, "Connection Error", errorMsg);
-    ui->statusLabel->setText("Error: " + errorMsg);
 
     if (m_gnssWindow) {
         m_gnssWindow->close();
