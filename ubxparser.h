@@ -57,7 +57,7 @@ public:
             qint8 elev;
             qint16 azim;
             quint32 flags;
-        } sats[128]; // Максимум 128 спутников
+        } sats[128];
     };
 
     struct NavStatus {
@@ -118,19 +118,20 @@ public:
         struct RfBlock {
             quint8 antId;
             quint8 flags;
-            quint8 reserved2[2];
-            float noisePerMS;
-            float agcCnt;
-            quint8 jamInd;
-            quint8 ofsI;
-            quint8 magI;
-            quint8 reserved3;
-            quint8 ofsQ;
-            quint8 magQ;
-            quint8 reserved4[2];
+            quint8 antStatus;  // Добавлено
+            quint8 antPower;   // Добавлено
+            quint32 postStatus; // Добавлено
+            quint8 reserved1[4]; // Добавлено
+            quint16 noisePerMS;
+            quint16 agcCnt;
+            quint8 cwSuppression; // Добавлено
+            qint8 ofsI;          // Добавлено
+            quint8 magI;         // Добавлено
+            qint8 ofsQ;          // Добавлено
+            quint8 magQ;         // Добавлено
+            quint8 reserved2[3]; // Добавлено
         } blocks[4]; // Maximum 4 RF blocks
     };
-
     struct AckPacket {
         quint8 ackClass;
         quint8 ackId;

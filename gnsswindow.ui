@@ -354,7 +354,7 @@
           <property name="title">
             <string>NAV-SAT Parameters</string>
           </property>
-          <layout class="QFormLayout" name="formLayout_5">
+          <layout class="QGridLayout" name="gridLayout_5">
             <item row="0" column="0">
               <widget class="QLabel" name="labelSatVersion">
                 <property name="text">
@@ -386,65 +386,357 @@
                 </property>
               </widget>
             </item>
+            <!-- Добавленные поля для флагов -->
+            <item row="2" column="0">
+              <widget class="QLabel" name="labelQualityInd">
+                <property name="text">
+                  <string>Quality Indicator:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="1">
+              <widget class="QComboBox" name="cbQualityInd">
+                <item>
+                  <property name="text">
+                    <string>No signal (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Searching (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Acquired (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Detected (3)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Code locked (4)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Code+Carrier locked (5)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="3" column="0">
+              <widget class="QLabel" name="labelHealth">
+                <property name="text">
+                  <string>Health:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="1">
+              <widget class="QComboBox" name="cbHealth">
+                <item>
+                  <property name="text">
+                    <string>Unknown (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Healthy (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Unhealthy (2)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="4" column="0">
+              <widget class="QLabel" name="labelPrRes">
+                <property name="text">
+                  <string>PrRes Range (m):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="1">
+              <widget class="QDoubleSpinBox" name="dsbPrResMin">
+                <property name="minimum">
+                  <double>-10.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>0.000000000000000</double>
+                </property>
+                <property name="value">
+                  <double>-2.000000000000000</double>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="2">
+              <widget class="QDoubleSpinBox" name="dsbPrResMax">
+                <property name="minimum">
+                  <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>10.000000000000000</double>
+                </property>
+                <property name="value">
+                  <double>2.000000000000000</double>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="0">
+              <widget class="QLabel" name="labelFlags">
+                <property name="text">
+                  <string>Flags:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="1" colspan="2">
+              <widget class="QCheckBox" name="cbSvUsed">
+                <property name="text">
+                  <string>SV Used</string>
+                </property>
+                <property name="checked">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="1" colspan="2">
+              <widget class="QCheckBox" name="cbDiffCorr">
+                <property name="text">
+                  <string>Diff Correction</string>
+                </property>
+              </widget>
+            </item>
+            <item row="7" column="1" colspan="2">
+              <widget class="QCheckBox" name="cbSmoothed">
+                <property name="text">
+                  <string>Smoothed</string>
+                </property>
+              </widget>
+            </item>
+            <item row="8" column="0">
+              <widget class="QLabel" name="labelOrbitSource">
+                <property name="text">
+                  <string>Orbit Source:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="8" column="1" colspan="2">
+              <widget class="QComboBox" name="cbOrbitSource">
+                <item>
+                  <property name="text">
+                    <string>None (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Ephemeris (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Almanac (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>AssistNow Offline (3)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>AssistNow Autonomous (4)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
           </layout>
         </widget>
         </item>
         <item>
-         <widget class="QGroupBox" name="gbMonRfFields">
+        <widget class="QGroupBox" name="gbMonRfFields">
           <property name="title">
-           <string>MON-RF Parameters</string>
+            <string>MON-RF Parameters</string>
           </property>
-          <layout class="QFormLayout" name="formLayout_4">
-           <item row="0" column="0">
-            <widget class="QLabel" name="labelRfVersion">
-             <property name="text">
-              <string>Version:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QSpinBox" name="sbRfVersion">
-             <property name="maximum">
-              <number>255</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="labelRfNoise">
-             <property name="text">
-              <string>Noise (dB):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="dsbRfNoise"/>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="labelRfAgc">
-             <property name="text">
-              <string>AGC Count:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QDoubleSpinBox" name="dsbRfAgc"/>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="labelRfJamInd">
-             <property name="text">
-              <string>Jamming Indicator:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QSpinBox" name="sbRfJamInd">
-             <property name="maximum">
-              <number>100</number>
-             </property>
-            </widget>
-           </item>
+          <layout class="QGridLayout" name="gridLayout_6">
+            <item row="0" column="0">
+              <widget class="QLabel" name="labelRfVersion">
+                <property name="text">
+                  <string>Version:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="0" column="1">
+              <widget class="QSpinBox" name="sbRfVersion">
+                <property name="maximum">
+                  <number>255</number>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="0">
+              <widget class="QLabel" name="labelRfBlocks">
+                <property name="text">
+                  <string>Number of Blocks:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1">
+              <widget class="QSpinBox" name="sbRfBlocks">
+                <property name="minimum">
+                  <number>1</number>
+                </property>
+                <property name="maximum">
+                  <number>4</number>
+                </property>
+                <property name="value">
+                  <number>1</number>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="0">
+              <widget class="QLabel" name="labelRfNoise">
+                <property name="text">
+                  <string>Noise (dB):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="1">
+              <widget class="QDoubleSpinBox" name="dsbRfNoise">
+                <property name="value">
+                  <double>50.0</double>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="0">
+              <widget class="QLabel" name="labelRfAgc">
+                <property name="text">
+                  <string>AGC (%):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="1">
+              <widget class="QDoubleSpinBox" name="dsbRfAgc">
+                <property name="maximum">
+                  <double>100.0</double>
+                </property>
+                <property name="value">
+                  <double>75.0</double>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="0">
+              <widget class="QLabel" name="labelRfJamState">
+                <property name="text">
+                  <string>Jamming State:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="1">
+              <widget class="QComboBox" name="cbRfJamState">
+                <item>
+                  <property name="text">
+                    <string>Unknown (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>OK (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Warning (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Critical (3)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="5" column="0">
+              <widget class="QLabel" name="labelRfAntStatus">
+                <property name="text">
+                  <string>Antenna Status:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="1">
+              <widget class="QComboBox" name="cbRfAntStatus">
+                <item>
+                  <property name="text">
+                    <string>INIT (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>DONTKNOW (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>OK (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>SHORT (3)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>OPEN (4)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="6" column="0">
+              <widget class="QLabel" name="labelRfAntPower">
+                <property name="text">
+                  <string>Antenna Power:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="1">
+              <widget class="QComboBox" name="cbRfAntPower">
+                <item>
+                  <property name="text">
+                    <string>OFF (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>ON (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>DONTKNOW (2)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="7" column="0">
+              <widget class="QLabel" name="labelRfCwSuppression">
+                <property name="text">
+                  <string>CW Suppression:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="7" column="1">
+              <widget class="QSpinBox" name="sbRfCwSuppression">
+                <property name="maximum">
+                  <number>255</number>
+                </property>
+              </widget>
+            </item>
           </layout>
-         </widget>
+        </widget>
         </item>
         <item>
          <widget class="QGroupBox" name="groupBox_2">

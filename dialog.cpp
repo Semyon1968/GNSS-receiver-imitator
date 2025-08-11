@@ -8,26 +8,26 @@
 Dialog::Dialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::Dialog),
-    m_socket(new QTcpSocket(this)),  // Инициализация сокета
+    m_socket(new QTcpSocket(this)),
     m_gnssWindow(nullptr),
     m_connectionTimer(new QTimer(this))
 {
     ui->setupUi(this);
 
-    // Настройка текстового лога
+    // Configure log text
     ui->logText->setReadOnly(true);
     ui->logText->setFont(QFont("Monospace", 10));
 
-    // 1. Настройка таймера соединения
+    // Setup connection timer (10 sec timeout)
     m_connectionTimer->setSingleShot(true);
-    m_connectionTimer->setInterval(10000); // 10 секунд
+    m_connectionTimer->setInterval(10000);
     connect(m_connectionTimer, &QTimer::timeout, this, &Dialog::onConnectionTimeout);
 
-    // 2. Настройка соединений сокета
+    // Setup socket connections
     connect(m_socket, &QTcpSocket::connected, this, &Dialog::onConnected);
     connect(m_socket, &QTcpSocket::disconnected, this, &Dialog::onDisconnected);
     connect(m_socket, &QTcpSocket::stateChanged, this, [this](QAbstractSocket::SocketState state) {
-        qDebug() << "Socket state changed:" << state;
+        qDebug() << "Socket state changed to:" << state;
     });
     connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
             this, &Dialog::onError);
@@ -35,18 +35,17 @@ Dialog::Dialog(QWidget *parent) :
         qDebug() << "Data available:" << m_socket->bytesAvailable() << "bytes";
     });
 
-    // 3. Настройка UI
-    ui->leIpAddress->setText("192.168.2.22");  // Значение по умолчанию
+    // Set default UI values
+    ui->leIpAddress->setText("192.168.2.22");
     ui->lePort->setText("40001");
     ui->statusLabel->setText("Disconnected");
 
-    // 4. Дополнительные проверки
     qDebug() << "Dialog initialized, socket state:" << m_socket->state();
 }
 
 void Dialog::onConnectionTimeout()
 {
-    if(m_socket->state() == QAbstractSocket::ConnectingState) {
+    if (m_socket->state() == QAbstractSocket::ConnectingState) {
         m_socket->abort();
         QMessageBox::warning(this, "Timeout", "Connection timed out");
     }
@@ -61,7 +60,6 @@ void Dialog::onDisconnected()
     ui->statusLabel->setText("Disconnected");
     qDebug() << "Disconnected from host";
 
-    // Сбрасываем состояние сокета
     if (m_socket) {
         m_socket->abort();
     }
@@ -72,7 +70,7 @@ void Dialog::onConnected()
     m_connectionTimer->stop();
 
     if (!m_gnssWindow) {
-        m_gnssWindow = new GNSSWindow(this); // Передаем this (Dialog) как parentDialog
+        m_gnssWindow = new GNSSWindow(this);
         m_gnssWindow->setSocket(m_socket);
         m_gnssWindow->show();
         this->hide();
@@ -118,7 +116,7 @@ void Dialog::on_connectButton_clicked()
 
     ui->statusLabel->setText("Connecting...");
     m_socket->connectToHost(host, port);
-    m_connectionTimer->start(10000); // 10 секунд таймаут
+    m_connectionTimer->start(10000);
 }
 
 void Dialog::onError(QAbstractSocket::SocketError error)
