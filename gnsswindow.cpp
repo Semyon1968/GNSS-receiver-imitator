@@ -307,12 +307,19 @@ void GNSSWindow::onClassIdChanged() {
             ui->gbMonRfFields->setVisible(true);
         }
         break;
+    case 0x06: // CFG
+        if (msgId == 0x00) { // PRT
+            setupCfgPrtFields();
+            ui->gbCfgPrtFields->setVisible(true);
+        }
+        break;
     }
 
     if (!ui->gbNavPvtFields->isVisible() &&
         !ui->gbNavStatusFields->isVisible() &&
         !ui->gbMonRfFields->isVisible() &&
-        !ui->gbNavSatFields->isVisible()) {
+        !ui->gbNavSatFields->isVisible() &&
+        !ui->gbCfgPrtFields->isVisible()) {
         ui->tePayload->setVisible(true);
     }
 }
@@ -322,6 +329,7 @@ void GNSSWindow::hideAllParameterFields() {
     ui->gbNavStatusFields->setVisible(false);
     ui->gbMonRfFields->setVisible(false);
     ui->gbNavSatFields->setVisible(false);
+    ui->gbCfgPrtFields->setVisible(false);
     ui->tePayload->setVisible(false);
 }
 
@@ -1123,7 +1131,7 @@ void GNSSWindow::onSendButtonClicked() {
         else if (msgId == 0x35) sendUbxNavSat();
         break;
     case 0x06: // CFG
-        if (msgId == 0x00) sendUbxCfgPrtResponse();
+        if (msgId == 0x00) sendUbxCfgPrt();
         else if (msgId == 0x39) sendUbxCfgItfm();
         break;
     case 0x0A: // MON
@@ -1306,6 +1314,17 @@ void GNSSWindow::setupNavStatusFields() {
     ui->sbTtff->setValue(5000); // 5 seconds
 }
 
+void GNSSWindow::setupCfgPrtFields()
+{
+    ui->gbCfgPrtFields->setVisible(true);
+    ui->cbPortId->setCurrentIndex(0); // UART1 by default
+    ui->cbBaudRate->setCurrentText("115200");
+    ui->cbInUbx->setChecked(true);
+    ui->cbInNmea->setChecked(true);
+    ui->cbOutUbx->setChecked(true);
+    ui->cbOutNmea->setChecked(true);
+}
+
 void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId) {
     QByteArray payload;
     payload.append(static_cast<char>(msgClass));
@@ -1317,7 +1336,7 @@ void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId) {
                     .arg(msgId, 2, 16, QLatin1Char('0')),
                 "error");
 }
-
+/*
 void GNSSWindow::sendUbxCfgPrt() {
     QByteArray payload(20, 0x00);
 
@@ -1348,6 +1367,48 @@ void GNSSWindow::sendUbxCfgPrt() {
 
     createUbxPacket(0x06, 0x00, payload);
     appendToLog("Sent CFG-PRT configuration", "config");
+}
+*/
+
+void GNSSWindow::sendUbxCfgPrt()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send CFG-PRT", "error");
+        return;
+    }
+
+    QByteArray payload(20, 0x00);
+
+    // Port ID
+    quint8 portId = static_cast<quint8>(ui->cbPortId->currentIndex() + 1);
+    payload[0] = portId;
+
+    // Baud Rate
+    quint32 baudRate = ui->cbBaudRate->currentText().toUInt();
+    qToLittleEndian<quint32>(baudRate, payload.data() + 8);
+
+    // Protocol masks
+    quint16 inProtoMask = 0;
+    if (ui->cbInUbx->isChecked()) inProtoMask |= 0x0001;
+    if (ui->cbInNmea->isChecked()) inProtoMask |= 0x0002;
+    if (ui->cbInRtcm->isChecked()) inProtoMask |= 0x0004;
+    qToLittleEndian<quint16>(inProtoMask, payload.data() + 12);
+
+    quint16 outProtoMask = 0;
+    if (ui->cbOutUbx->isChecked()) outProtoMask |= 0x0001;
+    if (ui->cbOutNmea->isChecked()) outProtoMask |= 0x0002;
+    if (ui->cbOutRtcm->isChecked()) outProtoMask |= 0x0004;
+    qToLittleEndian<quint16>(outProtoMask, payload.data() + 14);
+
+    // Mode: 8N1, no parity (0x000008D0)
+    qToLittleEndian<quint32>(0x000008D0, payload.data() + 4);
+
+    createUbxPacket(0x06, 0x00, payload);
+    appendToLog(QString("Sent CFG-PRT: Port=%1, Baud=%2, InProto=0x%3, OutProto=0x%4")
+                    .arg(portId)
+                    .arg(baudRate)
+                    .arg(inProtoMask, 4, 16, QLatin1Char('0'))
+                    .arg(outProtoMask, 4, 16, QLatin1Char('0')), "config");
 }
 
 void GNSSWindow::sendUbxMonHw() {

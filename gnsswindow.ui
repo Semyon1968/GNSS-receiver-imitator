@@ -557,6 +557,170 @@
          </widget>
         </item>
         <item>
+        <widget class="QGroupBox" name="gbCfgPrtFields">
+          <property name="title">
+            <string>CFG-PRT Parameters</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_7">
+            <item row="0" column="0">
+              <widget class="QLabel" name="labelPortId">
+                <property name="text">
+                  <string>Port ID:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="0" column="1">
+              <widget class="QComboBox" name="cbPortId">
+                <item>
+                  <property name="text">
+                    <string>UART1 (0x01)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>UART2 (0x02)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>USB (0x03)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>I2C (0x04)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>SPI (0x05)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="1" column="0">
+              <widget class="QLabel" name="labelBaudRate">
+                <property name="text">
+                  <string>Baud Rate:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1">
+              <widget class="QComboBox" name="cbBaudRate">
+                <item>
+                  <property name="text">
+                    <string>4800</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>9600</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>19200</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>38400</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>57600</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>115200</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>230400</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>460800</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="2" column="0">
+              <widget class="QLabel" name="labelInProto">
+                <property name="text">
+                  <string>Input Protocols:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="1">
+              <widget class="QCheckBox" name="cbInUbx">
+                <property name="text">
+                  <string>UBX</string>
+                </property>
+                <property name="checked">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="1">
+              <widget class="QCheckBox" name="cbInNmea">
+                <property name="text">
+                  <string>NMEA</string>
+                </property>
+                <property name="checked">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="1">
+              <widget class="QCheckBox" name="cbInRtcm">
+                <property name="text">
+                  <string>RTCM</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="0">
+              <widget class="QLabel" name="labelOutProto">
+                <property name="text">
+                  <string>Output Protocols:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="1">
+              <widget class="QCheckBox" name="cbOutUbx">
+                <property name="text">
+                  <string>UBX</string>
+                </property>
+                <property name="checked">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="1">
+              <widget class="QCheckBox" name="cbOutNmea">
+                <property name="text">
+                  <string>NMEA</string>
+                </property>
+                <property name="checked">
+                  <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="7" column="1">
+              <widget class="QCheckBox" name="cbOutRtcm">
+                <property name="text">
+                  <string>RTCM</string>
+                </property>
+              </widget>
+            </item>
+          </layout>
+        </widget>
+        </item>
+        <item>
          <widget class="QGroupBox" name="gbMonRfFields">
           <property name="title">
            <string>MON-RF Parameters</string>

@@ -94,6 +94,7 @@ private:
     void setupNavPvtFields();
     void setupNavStatusFields();
     void setupNavSatFields();
+    void setupCfgPrtFields();
     void sendUbxNavSat();
     void hideAllParameterFields();
     void sendUbxAck(quint8 msgClass, quint8 msgId);
