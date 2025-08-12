@@ -67,6 +67,7 @@ private:
     QTimer *m_ackTimeoutTimer;
     bool m_waitingForAck = false;
     QTimer *m_initTimer;
+    float m_protocolVersion = 0.0f;
     QTcpSocket *m_socket;
     QTimer *m_timer;
     UbxParser m_ubxParser;

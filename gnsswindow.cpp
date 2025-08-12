@@ -1155,15 +1155,53 @@ void GNSSWindow::sendUbxSecUniqid()
 }
 
 void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate) {
-    QByteArray payload;
-    payload.append(msgClass);
-    payload.append(msgId);
-    payload.append(rate);
+    // По умолчанию используем старый метод (для совместимости)
+    bool useLegacyMethod = true;
 
-    createUbxPacket(0x06, 0x01, payload);
-    qDebug() << "CFG-MSG: Class=" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'))
-             << "ID=" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'))
-             << "Rate=" << rate;
+    // Если версия протокола известна и > 23.01, используем новый метод
+    if (m_protocolVersion > 23.01f) {
+        useLegacyMethod = false;
+    }
+
+    if (!useLegacyMethod) {
+        // Use UBX-CFG-VALSET for modern receivers
+        QByteArray payload;
+        payload.append(0x01); // Version 1
+        payload.append(0x07); // RAM + BBR + Flash layers
+        payload.append('\0'); // Reserved
+        payload.append('\0'); // Reserved
+
+        // Key for message rate configuration
+        quint32 key = 0x20910000 | (msgClass << 8) | msgId;
+        payload.append(static_cast<char>(key & 0xFF));
+        payload.append(static_cast<char>((key >> 8) & 0xFF));
+        payload.append(static_cast<char>((key >> 16) & 0xFF));
+        payload.append(static_cast<char>((key >> 24) & 0xFF));
+
+        // Value (rate)
+        payload.append(static_cast<char>(rate));
+        payload.append('\0'); // Padding
+        payload.append('\0'); // Padding
+        payload.append('\0'); // Padding
+
+        createUbxPacket(0x06, 0x8A, payload); // UBX-CFG-VALSET
+        appendToLog(QString("CFG-VALSET for MSG: Class=0x%1 ID=0x%2 Rate=%3")
+                        .arg(msgClass, 2, 16, QLatin1Char('0'))
+                        .arg(msgId, 2, 16, QLatin1Char('0'))
+                        .arg(rate), "config");
+    } else {
+        // Legacy method for older receivers
+        QByteArray payload;
+        payload.append(static_cast<char>(msgClass));
+        payload.append(static_cast<char>(msgId));
+        payload.append(static_cast<char>(rate));
+
+        createUbxPacket(0x06, 0x01, payload);
+        appendToLog(QString("CFG-MSG: Class=0x%1 ID=0x%2 Rate=%3")
+                        .arg(msgClass, 2, 16, QLatin1Char('0'))
+                        .arg(msgId, 2, 16, QLatin1Char('0'))
+                        .arg(rate), "config");
+    }
 }
 
 void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArray& payload) {
@@ -1506,6 +1544,18 @@ void GNSSWindow::displayNavPvt(const UbxParser::NavPvt &data) {
 }
 
 void GNSSWindow::displayMonVer(const UbxParser::MonVer &data) {
+    // Обновляем UI
+    ui->leSwVersion->setText(data.swVersion);
+    ui->leHwVersion->setText(data.hwVersion);
+    ui->teExtensions->setPlainText(data.extensions.join("\n"));
+
+    QRegularExpression re("PROTVER=(\\d+\\.\\d+)");
+    QRegularExpressionMatch match = re.match(data.swVersion);
+    if (match.hasMatch()) {
+        m_protocolVersion = match.captured(1).toFloat();
+        appendToLog(QString("Protocol version detected: %1").arg(m_protocolVersion), "system");
+    }
+
     ui->statusbar->showMessage(
         QString("Version: SW %1, HW %2").arg(data.swVersion).arg(data.hwVersion),
         5000);
