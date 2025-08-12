@@ -28,10 +28,10 @@ public:
     void sendUbxCfgPrtResponse();
     void setSocket(QTcpSocket *socket);
     void onConnectionStatusChanged(bool connected);
-    void sendUbxMonHw();
 
 public slots:
     void appendToLog(const QString &message, const QString &type = "info");
+    void sendUbxCfgItfm();
 
 private slots:
     void updateAvailableIds();
@@ -45,7 +45,6 @@ private slots:
     void sendUbxSecUniqid();
     void sendUbxNavStatus();
     void onClassIdChanged();
-    void sendUbxCfgItfm();
     void sendUbxCfgRate(quint16 measRate, quint16 navRate);
     void sendUbxCfgAnt(bool enablePower);
     void saveLogToFile();
@@ -95,13 +94,19 @@ private:
     void setupNavStatusFields();
     void setupNavSatFields();
     void setupCfgPrtFields();
+    void setupMonVerFields();
+    void setupSecUniqidFields();
+    void setupCfgItfmFields();
+    void setupNavTimeUtcFields();
+    void setupMonHwFields();
+    void sendUbxMonHw();
+    void sendUbxNavTimeUtc();
     void sendUbxNavSat();
     void hideAllParameterFields();
     void sendUbxAck(quint8 msgClass, quint8 msgId);
     void sendUbxNack(quint8 msgClass, quint8 msgId);
     void sendInitialConfiguration();
     void setupConnections();
-    void sendUbxCfgItfm(bool enableDetection);
     void processCfgValGet(const QByteArray &payload);
     void processCfgValSet(const QByteArray &payload);
     void registerHandlers();

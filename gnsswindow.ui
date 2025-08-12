@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>1594</height>
+    <height>2178</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -557,168 +557,623 @@
          </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbCfgPrtFields">
+        <widget class="QGroupBox" name="gbCfgItfmFields">
           <property name="title">
-            <string>CFG-PRT Parameters</string>
+            <string>CFG-ITFM Parameters</string>
           </property>
-          <layout class="QGridLayout" name="gridLayout_7">
+          <layout class="QGridLayout" name="gridLayout_10">
             <item row="0" column="0">
-              <widget class="QLabel" name="labelPortId">
+              <widget class="QLabel" name="labelBbThreshold">
                 <property name="text">
-                  <string>Port ID:</string>
+                  <string>BB Threshold (0-15):</string>
                 </property>
               </widget>
             </item>
             <item row="0" column="1">
-              <widget class="QComboBox" name="cbPortId">
-                <item>
-                  <property name="text">
-                    <string>UART1 (0x01)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>UART2 (0x02)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>USB (0x03)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>I2C (0x04)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>SPI (0x05)</string>
-                  </property>
-                </item>
+              <widget class="QSpinBox" name="sbBbThreshold">
+                <property name="minimum">
+                  <number>0</number>
+                </property>
+                <property name="maximum">
+                  <number>15</number>
+                </property>
+                <property name="value">
+                  <number>0</number>
+                </property>
               </widget>
             </item>
             <item row="1" column="0">
-              <widget class="QLabel" name="labelBaudRate">
+              <widget class="QLabel" name="labelCwThreshold">
                 <property name="text">
-                  <string>Baud Rate:</string>
+                  <string>CW Threshold (0-31):</string>
                 </property>
               </widget>
             </item>
             <item row="1" column="1">
-              <widget class="QComboBox" name="cbBaudRate">
-                <item>
-                  <property name="text">
-                    <string>4800</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>9600</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>19200</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>38400</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>57600</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>115200</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>230400</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>460800</string>
-                  </property>
-                </item>
+              <widget class="QSpinBox" name="sbCwThreshold">
+                <property name="minimum">
+                  <number>0</number>
+                </property>
+                <property name="maximum">
+                  <number>31</number>
+                </property>
+                <property name="value">
+                  <number>0</number>
+                </property>
               </widget>
             </item>
             <item row="2" column="0">
-              <widget class="QLabel" name="labelInProto">
+              <widget class="QLabel" name="labelEnable">
                 <property name="text">
-                  <string>Input Protocols:</string>
+                  <string>Enable Detection:</string>
                 </property>
               </widget>
             </item>
             <item row="2" column="1">
-              <widget class="QCheckBox" name="cbInUbx">
-                <property name="text">
-                  <string>UBX</string>
-                </property>
+              <widget class="QCheckBox" name="cbEnable">
                 <property name="checked">
                   <bool>true</bool>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="0">
+              <widget class="QLabel" name="labelAntSetting">
+                <property name="text">
+                  <string>Antenna Setting:</string>
                 </property>
               </widget>
             </item>
             <item row="3" column="1">
-              <widget class="QCheckBox" name="cbInNmea">
+              <widget class="QComboBox" name="cbAntSetting">
+                <item>
+                  <property name="text">
+                    <string>Unknown (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Passive (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Active (2)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="4" column="0">
+              <widget class="QLabel" name="labelEnable2">
                 <property name="text">
-                  <string>NMEA</string>
-                </property>
-                <property name="checked">
-                  <bool>true</bool>
+                  <string>Scan Aux Bands:</string>
                 </property>
               </widget>
             </item>
             <item row="4" column="1">
-              <widget class="QCheckBox" name="cbInRtcm">
+              <widget class="QCheckBox" name="cbEnable2">
+              </widget>
+            </item>
+          </layout>
+        </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbCfgPrtFields">
+          <property name="title">
+           <string>CFG-PRT Parameters</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_7">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelPortId">
+             <property name="text">
+              <string>Port ID:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="cbPortId">
+             <item>
+              <property name="text">
+               <string>UART1 (0x01)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>UART2 (0x02)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>USB (0x03)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>I2C (0x04)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>SPI (0x05)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelBaudRate">
+             <property name="text">
+              <string>Baud Rate:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="cbBaudRate">
+             <item>
+              <property name="text">
+               <string>4800</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>9600</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>19200</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>38400</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>57600</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>115200</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>230400</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>460800</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelInProto">
+             <property name="text">
+              <string>Input Protocols:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QCheckBox" name="cbInUbx">
+             <property name="text">
+              <string>UBX</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="cbInNmea">
+             <property name="text">
+              <string>NMEA</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QCheckBox" name="cbInRtcm">
+             <property name="text">
+              <string>RTCM</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="labelOutProto">
+             <property name="text">
+              <string>Output Protocols:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QCheckBox" name="cbOutUbx">
+             <property name="text">
+              <string>UBX</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QCheckBox" name="cbOutNmea">
+             <property name="text">
+              <string>NMEA</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QCheckBox" name="cbOutRtcm">
+             <property name="text">
+              <string>RTCM</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+        <widget class="QGroupBox" name="gbNavTimeUtcFields">
+          <property name="title">
+            <string>NAV-TIMEUTC Parameters</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_11">
+            <item row="0" column="0">
+              <widget class="QLabel" name="labelTimeUtcTAcc">
                 <property name="text">
-                  <string>RTCM</string>
+                  <string>Time Accuracy (ns):</string>
                 </property>
               </widget>
             </item>
-            <item row="5" column="0">
-              <widget class="QLabel" name="labelOutProto">
-                <property name="text">
-                  <string>Output Protocols:</string>
+            <item row="0" column="1">
+              <widget class="QSpinBox" name="sbTimeUtcTAcc">
+                <property name="maximum">
+                  <number>1000000000</number>
                 </property>
               </widget>
             </item>
-            <item row="5" column="1">
-              <widget class="QCheckBox" name="cbOutUbx">
+            <item row="1" column="0">
+              <widget class="QLabel" name="labelTimeUtcNano">
                 <property name="text">
-                  <string>UBX</string>
-                </property>
-                <property name="checked">
-                  <bool>true</bool>
+                  <string>Nano seconds:</string>
                 </property>
               </widget>
             </item>
-            <item row="6" column="1">
-              <widget class="QCheckBox" name="cbOutNmea">
-                <property name="text">
-                  <string>NMEA</string>
+            <item row="1" column="1">
+              <widget class="QSpinBox" name="sbTimeUtcNano">
+                <property name="minimum">
+                  <number>-1000000000</number>
                 </property>
-                <property name="checked">
-                  <bool>true</bool>
+                <property name="maximum">
+                  <number>1000000000</number>
                 </property>
               </widget>
             </item>
-            <item row="7" column="1">
-              <widget class="QCheckBox" name="cbOutRtcm">
+            <item row="2" column="0">
+              <widget class="QLabel" name="labelTimeUtcValid">
                 <property name="text">
-                  <string>RTCM</string>
+                  <string>Validity Flags:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="1">
+              <widget class="QComboBox" name="cbTimeUtcValid">
+                <item>
+                  <property name="text">
+                    <string>Valid TOW (0x01)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Valid WKN (0x02)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Valid UTC (0x04)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Authenticated (0x08)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="3" column="0">
+              <widget class="QLabel" name="labelTimeUtcStandard">
+                <property name="text">
+                  <string>UTC Standard:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="1">
+              <widget class="QComboBox" name="cbTimeUtcStandard">
+                <item>
+                  <property name="text">
+                    <string>Not available (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>CRL Tokyo (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>NIST (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>USNO (3)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>BIPM (4)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>European labs (5)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+          </layout>
+        </widget>
+        </item>
+        <item>
+        <widget class="QGroupBox" name="gbSecUniqidFields">
+          <property name="title">
+            <string>SEC-UNIQID Parameters</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_9">
+            <item row="0" column="0">
+              <widget class="QLabel" name="labelUniqidVersion">
+                <property name="text">
+                  <string>Version:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="0" column="1">
+              <widget class="QSpinBox" name="sbUniqidVersion">
+                <property name="minimum">
+                  <number>0</number>
+                </property>
+                <property name="maximum">
+                  <number>255</number>
+                </property>
+                <property name="value">
+                  <number>1</number>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="0">
+              <widget class="QLabel" name="labelChipId">
+                <property name="text">
+                  <string>Chip ID (hex):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1">
+              <widget class="QLineEdit" name="leChipId">
+                <property name="text">
+                  <string>12345678</string>
+                </property>
+                <property name="inputMask" stdset="0">
+                  <string>HHHHHHHH</string>
                 </property>
               </widget>
             </item>
           </layout>
         </widget>
+        </item>
+        <item>
+        <widget class="QGroupBox" name="gbMonHwFields">
+          <property name="title">
+            <string>MON-HW Parameters</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_12">
+            <item row="0" column="0">
+              <widget class="QLabel" name="labelHwNoise">
+                <property name="text">
+                  <string>Noise Level:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="0" column="1">
+              <widget class="QSpinBox" name="sbHwNoise">
+                <property name="maximum">
+                  <number>8191</number>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="0">
+              <widget class="QLabel" name="labelHwAgc">
+                <property name="text">
+                  <string>AGC (%):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1">
+              <widget class="QSpinBox" name="sbHwAgc">
+                <property name="maximum">
+                  <number>100</number>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="0">
+              <widget class="QLabel" name="labelHwAntStatus">
+                <property name="text">
+                  <string>Antenna Status:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="1">
+              <widget class="QComboBox" name="cbHwAntStatus">
+                <item>
+                  <property name="text">
+                    <string>INIT (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>DONTKNOW (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>OK (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>SHORT (3)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>OPEN (4)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="3" column="0">
+              <widget class="QLabel" name="labelHwAntPower">
+                <property name="text">
+                  <string>Antenna Power:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="1">
+              <widget class="QComboBox" name="cbHwAntPower">
+                <item>
+                  <property name="text">
+                    <string>OFF (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>ON (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>DONTKNOW (2)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="4" column="0">
+              <widget class="QLabel" name="labelHwJamming">
+                <property name="text">
+                  <string>Jamming State:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="1">
+              <widget class="QComboBox" name="cbHwJamming">
+                <item>
+                  <property name="text">
+                    <string>Unknown (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>OK (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Warning (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Critical (3)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="5" column="0">
+              <widget class="QLabel" name="labelHwCwSuppression">
+                <property name="text">
+                  <string>CW Suppression:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="1">
+              <widget class="QSpinBox" name="sbHwCwSuppression">
+                <property name="maximum">
+                  <number>255</number>
+                </property>
+              </widget>
+            </item>
+          </layout>
+        </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbMonVerFields">
+          <property name="title">
+           <string>MON-VER Parameters</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_8">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelSwVersion">
+             <property name="text">
+              <string>Software Version:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="leSwVersion">
+             <property name="text">
+              <string>ROM CORE 3.01 (107888)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelHwVersion">
+             <property name="text">
+              <string>Hardware Version:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="leHwVersion">
+             <property name="text">
+              <string>00080000</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelExtensions">
+             <property name="text">
+              <string>Extensions:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QPlainTextEdit" name="teExtensions">
+             <property name="plainText">
+              <string>PROTVER=18.00
+        GPS;GLO;GAL;BDS
+        SBAS;IMES;QZSS</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
          <widget class="QGroupBox" name="gbMonRfFields">
@@ -963,34 +1418,24 @@
           <property name="title">
            <string>Information</string>
           </property>
-          <layout class="QFormLayout" name="formLayout_2">
+          <layout class="QGridLayout" name="gridLayout_2">
            <item row="0" column="0">
-            <widget class="QLabel" name="labelSwVer">
-             <property name="text">
-              <string>UTC Time:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="leUTCTimeView">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="labelChipId">
-             <property name="text">
-              <string>Chip ID:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLineEdit" name="leChipId">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="0" column="0">
+              <widget class="QLabel" name="labelSwVer">
+               <property name="text">
+                <string>UTC Time:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="leUTCTimeView">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
