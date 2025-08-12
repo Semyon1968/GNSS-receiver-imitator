@@ -100,7 +100,6 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     appendToLog("GNSS Window initialized successfully", "system");
     qDebug() << "GNSSWindow initialized at" << QDateTime::currentDateTime().toString("hh:mm:ss");
 
-    //ui->autoSendCheck->setChecked(false);
     ui->statusbar->showMessage("Waiting for connection...", 3000);
 }
 
@@ -109,29 +108,16 @@ void GNSSWindow::initClassIdMapping() {
 
     // NAV class (0x01)
     QMap<int, QString> navIds;
-    navIds.insert(0x01, "POSECEF");
-    navIds.insert(0x02, "POSLLH");
     navIds.insert(0x03, "STATUS");
-    navIds.insert(0x04, "DOP");
-    navIds.insert(0x05, "ATT");
-    navIds.insert(0x06, "SOL");
     navIds.insert(0x07, "PVT");
     navIds.insert(0x21, "TIMEUTC");
     navIds.insert(0x35, "SAT");
-    navIds.insert(0x24, "DYNMODEL");
     m_classIdMap.insert(0x01, navIds);
-
-    // RXM class (0x02)
-    QMap<int, QString> rxmIds;
-    rxmIds.insert(0x15, "MEASX");
-    rxmIds.insert(0x32, "RAWX");
-    m_classIdMap.insert(0x02, rxmIds);
 
     // MON class (0x0A)
     QMap<int, QString> monIds;
     monIds.insert(0x04, "VER");
     monIds.insert(0x09, "HW");
-    monIds.insert(0x0B, "IO");
     monIds.insert(0x38, "RF");
     m_classIdMap.insert(0x0A, monIds);
 
@@ -140,8 +126,11 @@ void GNSSWindow::initClassIdMapping() {
     cfgIds.insert(0x00, "PRT");
     cfgIds.insert(0x01, "MSG");
     cfgIds.insert(0x13, "ANT");
-    cfgIds.insert(0x24, "DYNMODEL");
+    cfgIds.insert(0x24, "NAV5");
     cfgIds.insert(0x39, "ITFM");
+    cfgIds.insert(0x08, "RATE");
+    cfgIds.insert(0x8b, "VALGET");
+    cfgIds.insert(0x8a, "VALSET");
     m_classIdMap.insert(0x06, cfgIds);
 
     // SEC class (0x27)
@@ -149,13 +138,29 @@ void GNSSWindow::initClassIdMapping() {
     secIds.insert(0x03, "UNIQID");
     m_classIdMap.insert(0x27, secIds);
 
+    // INF class (0x04)
+    QMap<int, QString> infIds;
+    secIds.insert(0x04, "DEBUG");
+    secIds.insert(0x00, "ERROR");
+    secIds.insert(0x02, "NOTICE");
+    secIds.insert(0x03, "TEST");
+    secIds.insert(0x01, "WARNING");
+    m_classIdMap.insert(0x04, infIds);
+
+    // ACK class (0x05)
+    QMap<int, QString> ackIds;
+    secIds.insert(0x01, "ACK");
+    secIds.insert(0x00, "NAK");
+    m_classIdMap.insert(0x05, ackIds);
+
     // Fill class comboBox
     ui->cbClass->clear();
     ui->cbClass->addItem("NAV (0x01)", 0x01);
-    ui->cbClass->addItem("RXM (0x02)", 0x02);
     ui->cbClass->addItem("CFG (0x06)", 0x06);
     ui->cbClass->addItem("MON (0x0A)", 0x0A);
     ui->cbClass->addItem("SEC (0x27)", 0x27);
+    ui->cbClass->addItem("INF (0x04)", 0x04);
+    ui->cbClass->addItem("ACK (0x05)", 0x05);
 
     updateAvailableIds(); // Initialize ID list
 }
@@ -282,6 +287,28 @@ void GNSSWindow::setupNavSatFields() {
     ui->cbOrbitSource->setCurrentIndex(1); // Ephemeris
 }
 
+void GNSSWindow::setupCfgNav5Fields()
+{
+    ui->gbCfgNav5Fields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    // Set default values
+    ui->cbDynModel->setCurrentIndex(4); // Automotive
+    ui->cbFixMode->setCurrentIndex(2); // Auto 2D/3D
+    ui->dsbFixedAlt->setValue(0.0);
+    ui->sbMinElev->setValue(5);
+    ui->dsbPDOP->setValue(2.5);
+    ui->dsbTDOP->setValue(2.5);
+    ui->dsbPAcc->setValue(0.0);
+    ui->dsbTAcc->setValue(0.0);
+    ui->dsbStaticHoldThresh->setValue(0.0);
+    ui->sbDgnssTimeout->setValue(60);
+    ui->sbCnoThresh->setValue(0);
+    ui->sbCnoThreshNumSVs->setValue(0);
+    ui->cbUtcStandard->setCurrentIndex(0); // Automatic
+    ui->dsbStaticHoldMaxDist->setValue(0.0);
+}
+
 void GNSSWindow::onClassIdChanged() {
     hideAllParameterFields();
 
@@ -323,6 +350,9 @@ void GNSSWindow::onClassIdChanged() {
         } else if (msgId == 0x39) { // ITFM
             setupCfgItfmFields();
             ui->gbCfgItfmFields->setVisible(true);
+        } else if (msgId == 0x24) { // NAV5
+            setupCfgNav5Fields();
+            ui->gbCfgNav5Fields->setVisible(true);
         }
         break;
     case 0x27: // SEC
@@ -342,6 +372,7 @@ void GNSSWindow::onClassIdChanged() {
         !ui->gbNavTimeUtcFields->isVisible() &&
         !ui->gbMonHwFields->isVisible() &&
         !ui->gbCfgItfmFields->isVisible() &&
+        !ui->gbCfgNav5Fields->isVisible() &&
         !ui->gbSecUniqidFields->isVisible()) {
         ui->tePayload->setVisible(true);
     }
@@ -358,6 +389,7 @@ void GNSSWindow::hideAllParameterFields() {
     ui->gbMonHwFields->setVisible(false);
     ui->gbSecUniqidFields->setVisible(false);
     ui->gbCfgItfmFields->setVisible(false);
+    ui->gbCfgNav5Fields->setVisible(false);
     ui->tePayload->setVisible(false);
 }
 
@@ -383,9 +415,10 @@ void GNSSWindow::sendInitialConfiguration() {
     sendUbxCfgMsg(0x01, 0x03, 1);  // NAV-STATUS
     sendUbxCfgMsg(0x0A, 0x28, 1);  // MON-RF
     sendUbxCfgRate(1000, 1);       // 1Hz
+    sendUbxCfgNav5();              // Add this line for NAV5 configuration
     sendUbxCfgDynModel(4);         // Automotive
     sendUbxCfgAntSettings(true, true, true); // Antenna settings
-    sendUbxCfgItfm();          // Enable interference detection
+    sendUbxCfgItfm();              // Enable interference detection
 
     // Delayed info requests
     QTimer::singleShot(500, this, &GNSSWindow::sendUbxMonVer);
@@ -1298,6 +1331,7 @@ void GNSSWindow::onSendButtonClicked() {
     case 0x06: // CFG
         if (msgId == 0x00) sendUbxCfgPrt();
         else if (msgId == 0x39) sendUbxCfgItfm();
+        else if (msgId == 0x24) sendUbxCfgNav5();
         break;
     case 0x0A: // MON
         if (msgId == 0x04) sendUbxMonVer();
@@ -1341,24 +1375,73 @@ void GNSSWindow::sendUbxCfgPrtResponse() {
     createUbxPacket(0x06, 0x00, payload);
     appendToLog("Sent UART1 configuration", "config");
 }
-/*
-void GNSSWindow::sendUbxMonVer() {
-    QByteArray payload;
-    payload.append("ROM CORE 3.01 (107888)");
-    payload.append('\0');
-    payload.append("00080000");
-    payload.append('\0');
-    payload.append("PROTVER=18.00");
-    payload.append('\0');
-    payload.append("GPS;GLO;GAL;BDS");
-    payload.append('\0');
-    payload.append("SBAS;IMES;QZSS");
-    payload.append('\0');
 
-    createUbxPacket(0x0A, 0x04, payload);
-    appendToLog("Sent version information", "config");
+void GNSSWindow::sendUbxCfgNav5()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send CFG-NAV5", "error");
+        return;
+    }
+
+    QByteArray payload(36, 0x00);
+
+    // Set mask - enable all parameters
+    quint16 mask = 0x05FF; // Enable all parameters except reserved bits
+    qToLittleEndian<quint16>(mask, payload.data());
+
+    // Dynamic model
+    payload[2] = static_cast<quint8>(ui->cbDynModel->currentIndex());
+
+    // Fix mode
+    payload[3] = static_cast<quint8>(ui->cbFixMode->currentIndex() + 1); // Fix modes start at 1
+
+    // Fixed altitude (cm)
+    qint32 fixedAlt = static_cast<qint32>(ui->dsbFixedAlt->value() * 100);
+    qToLittleEndian<qint32>(fixedAlt, payload.data() + 4);
+
+    // Fixed altitude variance (0.0001 m^2)
+    quint32 fixedAltVar = 10000; // Default 1 m^2
+    qToLittleEndian<quint32>(fixedAltVar, payload.data() + 8);
+
+    // Minimum elevation
+    payload[12] = static_cast<quint8>(ui->sbMinElev->value());
+
+    // PDOP mask (0.1 units)
+    quint16 pDop = static_cast<quint16>(ui->dsbPDOP->value() * 10);
+    qToLittleEndian<quint16>(pDop, payload.data() + 14);
+
+    // TDOP mask (0.1 units)
+    quint16 tDop = static_cast<quint16>(ui->dsbTDOP->value() * 10);
+    qToLittleEndian<quint16>(tDop, payload.data() + 16);
+
+    // Position accuracy mask (m)
+    quint16 pAcc = static_cast<quint16>(ui->dsbPAcc->value());
+    qToLittleEndian<quint16>(pAcc, payload.data() + 18);
+
+    // Time accuracy mask (m)
+    quint16 tAcc = static_cast<quint16>(ui->dsbTAcc->value());
+    qToLittleEndian<quint16>(tAcc, payload.data() + 20);
+
+    // Static hold threshold (cm/s)
+    payload[22] = static_cast<quint8>(ui->dsbStaticHoldThresh->value());
+
+    // DGNSS timeout (s)
+    payload[23] = static_cast<quint8>(ui->sbDgnssTimeout->value());
+
+    // CNO threshold and number of SVs
+    payload[24] = static_cast<quint8>(ui->sbCnoThreshNumSVs->value());
+    payload[25] = static_cast<quint8>(ui->sbCnoThresh->value());
+
+    // Static hold max distance (m)
+    quint16 staticHoldMaxDist = static_cast<quint16>(ui->dsbStaticHoldMaxDist->value());
+    qToLittleEndian<quint16>(staticHoldMaxDist, payload.data() + 28);
+
+    // UTC standard
+    payload[30] = static_cast<quint8>(ui->cbUtcStandard->currentIndex());
+
+    createUbxPacket(0x06, 0x24, payload);
+    appendToLog("Sent CFG-NAV5 configuration", "config");
 }
-*/
 
 void GNSSWindow::sendUbxMonVer() {
     QByteArray payload;

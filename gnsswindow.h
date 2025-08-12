@@ -99,6 +99,8 @@ private:
     void setupCfgItfmFields();
     void setupNavTimeUtcFields();
     void setupMonHwFields();
+    void setupCfgNav5Fields();
+    void sendUbxCfgNav5();
     void sendUbxMonHw();
     void sendUbxNavTimeUtc();
     void sendUbxNavSat();

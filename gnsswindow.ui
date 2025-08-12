@@ -1176,6 +1176,355 @@
          </widget>
         </item>
         <item>
+        <widget class="QGroupBox" name="gbCfgNav5Fields">
+          <property name="title">
+            <string>CFG-NAV5 Parameters</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_13">
+            <item row="0" column="0">
+              <widget class="QLabel" name="labelDynModel">
+                <property name="text">
+                  <string>Dynamic Model:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="0" column="1">
+              <widget class="QComboBox" name="cbDynModel">
+                <item>
+                  <property name="text">
+                    <string>Portable (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Stationary (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Pedestrian (3)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Automotive (4)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Sea (5)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Airborne &lt;1g (6)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Airborne &lt;2g (7)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Airborne &lt;4g (8)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Wrist-worn (9)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Motorbike (10)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="1" column="0">
+              <widget class="QLabel" name="labelFixMode">
+                <property name="text">
+                  <string>Fix Mode:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1">
+              <widget class="QComboBox" name="cbFixMode">
+                <item>
+                  <property name="text">
+                    <string>2D only (1)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>3D only (2)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>Auto 2D/3D (3)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="2" column="0">
+              <widget class="QLabel" name="labelFixedAlt">
+                <property name="text">
+                  <string>Fixed Altitude (m):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="1">
+              <widget class="QDoubleSpinBox" name="dsbFixedAlt">
+                <property name="decimals">
+                  <number>2</number>
+                </property>
+                <property name="minimum">
+                  <double>-1000.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>10000.000000000000000</double>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="0">
+              <widget class="QLabel" name="labelMinElev">
+                <property name="text">
+                  <string>Min Elevation (deg):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="1">
+              <widget class="QSpinBox" name="sbMinElev">
+                <property name="minimum">
+                  <number>0</number>
+                </property>
+                <property name="maximum">
+                  <number>90</number>
+                </property>
+                <property name="value">
+                  <number>5</number>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="0">
+              <widget class="QLabel" name="labelPDOP">
+                <property name="text">
+                  <string>PDOP Mask:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="1">
+              <widget class="QDoubleSpinBox" name="dsbPDOP">
+                <property name="decimals">
+                  <number>1</number>
+                </property>
+                <property name="minimum">
+                  <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>100.000000000000000</double>
+                </property>
+                <property name="value">
+                  <double>2.500000000000000</double>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="0">
+              <widget class="QLabel" name="labelTDOP">
+                <property name="text">
+                  <string>TDOP Mask:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="1">
+              <widget class="QDoubleSpinBox" name="dsbTDOP">
+                <property name="decimals">
+                  <number>1</number>
+                </property>
+                <property name="minimum">
+                  <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>100.000000000000000</double>
+                </property>
+                <property name="value">
+                  <double>2.500000000000000</double>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="0">
+              <widget class="QLabel" name="labelPAcc">
+                <property name="text">
+                  <string>Pos Accuracy Mask (m):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="1">
+              <widget class="QDoubleSpinBox" name="dsbPAcc">
+                <property name="decimals">
+                  <number>1</number>
+                </property>
+                <property name="minimum">
+                  <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>1000.000000000000000</double>
+                </property>
+              </widget>
+            </item>
+            <item row="7" column="0">
+              <widget class="QLabel" name="labelTAcc">
+                <property name="text">
+                  <string>Time Accuracy Mask (m):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="7" column="1">
+              <widget class="QDoubleSpinBox" name="dsbTAcc">
+                <property name="decimals">
+                  <number>1</number>
+                </property>
+                <property name="minimum">
+                  <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>1000.000000000000000</double>
+                </property>
+              </widget>
+            </item>
+            <item row="8" column="0">
+              <widget class="QLabel" name="labelStaticHoldThresh">
+                <property name="text">
+                  <string>Static Hold Thresh (cm/s):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="8" column="1">
+              <widget class="QDoubleSpinBox" name="dsbStaticHoldThresh">
+                <property name="decimals">
+                  <number>1</number>
+                </property>
+                <property name="minimum">
+                  <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>1000.000000000000000</double>
+                </property>
+              </widget>
+            </item>
+            <item row="9" column="0">
+              <widget class="QLabel" name="labelDgnssTimeout">
+                <property name="text">
+                  <string>DGNSS Timeout (s):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="9" column="1">
+              <widget class="QSpinBox" name="sbDgnssTimeout">
+                <property name="minimum">
+                  <number>0</number>
+                </property>
+                <property name="maximum">
+                  <number>255</number>
+                </property>
+              </widget>
+            </item>
+            <item row="10" column="0">
+              <widget class="QLabel" name="labelCnoThresh">
+                <property name="text">
+                  <string>CNO Threshold (dBHz):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="10" column="1">
+              <widget class="QSpinBox" name="sbCnoThresh">
+                <property name="minimum">
+                  <number>0</number>
+                </property>
+                <property name="maximum">
+                  <number>255</number>
+                </property>
+              </widget>
+            </item>
+            <item row="11" column="0">
+              <widget class="QLabel" name="labelCnoThreshNumSVs">
+                <property name="text">
+                  <string>CNO Min SVs:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="11" column="1">
+              <widget class="QSpinBox" name="sbCnoThreshNumSVs">
+                <property name="minimum">
+                  <number>0</number>
+                </property>
+                <property name="maximum">
+                  <number>255</number>
+                </property>
+              </widget>
+            </item>
+            <item row="12" column="0">
+              <widget class="QLabel" name="labelUtcStandard">
+                <property name="text">
+                  <string>UTC Standard:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="12" column="1">
+              <widget class="QComboBox" name="cbUtcStandard">
+                <item>
+                  <property name="text">
+                    <string>Automatic (0)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>USNO (3)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>European (5)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>GLONASS (6)</string>
+                  </property>
+                </item>
+                <item>
+                  <property name="text">
+                    <string>BeiDou (7)</string>
+                  </property>
+                </item>
+              </widget>
+            </item>
+            <item row="13" column="0">
+              <widget class="QLabel" name="labelStaticHoldMaxDist">
+                <property name="text">
+                  <string>Static Hold Max Dist (m):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="13" column="1">
+              <widget class="QDoubleSpinBox" name="dsbStaticHoldMaxDist">
+                <property name="decimals">
+                  <number>1</number>
+                </property>
+                <property name="minimum">
+                  <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                  <double>1000.000000000000000</double>
+                </property>
+              </widget>
+            </item>
+          </layout>
+        </widget>
+        </item>
+        <item>
          <widget class="QGroupBox" name="gbMonRfFields">
           <property name="title">
            <string>MON-RF Parameters</string>
