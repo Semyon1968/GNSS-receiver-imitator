@@ -971,27 +971,226 @@
         </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbInfDebugFields">
+        <widget class="QGroupBox" name="gbCfgAntFields">
           <property name="title">
-            <string>INF-DEBUG Parameters</string>
+            <string>CFG-ANT Parameters</string>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_5">
-            <item>
-              <widget class="QLabel" name="labelInfDebugMessage">
+          <layout class="QGridLayout" name="gridLayout_16">
+            <item row="0" column="0">
+              <widget class="QLabel" name="labelAntFlags">
                 <property name="text">
-                  <string>Debug message:</string>
+                  <string>Antenna Flags:</string>
                 </property>
               </widget>
             </item>
-            <item>
-              <widget class="QPlainTextEdit" name="teInfDebugMessage">
-                <property name="plainText">
-                  <string>Debug message</string>
+            <item row="0" column="1">
+              <widget class="QCheckBox" name="cbAntSupplyCtrl">
+                <property name="text">
+                  <string>Enable supply voltage control</string>
+                </property>
+              </widget>
+            </item>
+            <item row="1" column="1">
+              <widget class="QCheckBox" name="cbAntShortDetect">
+                <property name="text">
+                  <string>Enable short circuit detection</string>
+                </property>
+              </widget>
+            </item>
+            <item row="2" column="1">
+              <widget class="QCheckBox" name="cbAntOpenDetect">
+                <property name="text">
+                  <string>Enable open circuit detection</string>
+                </property>
+              </widget>
+            </item>
+            <item row="3" column="1">
+              <widget class="QCheckBox" name="cbAntPowerDown">
+                <property name="text">
+                  <string>Power down on short circuit</string>
+                </property>
+              </widget>
+            </item>
+            <item row="4" column="1">
+              <widget class="QCheckBox" name="cbAntAutoRecover">
+                <property name="text">
+                  <string>Enable auto recovery</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="0">
+              <widget class="QLabel" name="labelAntPins">
+                <property name="text">
+                  <string>Pin Configuration:</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="1">
+              <widget class="QLabel" name="labelAntSwitchPin">
+                <property name="text">
+                  <string>Switch Pin (0-31):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="5" column="2">
+              <widget class="QSpinBox" name="sbAntSwitchPin">
+                <property name="maximum">
+                  <number>31</number>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="1">
+              <widget class="QLabel" name="labelAntShortPin">
+                <property name="text">
+                  <string>Short Detect Pin (0-31):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="6" column="2">
+              <widget class="QSpinBox" name="sbAntShortPin">
+                <property name="maximum">
+                  <number>31</number>
+                </property>
+              </widget>
+            </item>
+            <item row="7" column="1">
+              <widget class="QLabel" name="labelAntOpenPin">
+                <property name="text">
+                  <string>Open Detect Pin (0-31):</string>
+                </property>
+              </widget>
+            </item>
+            <item row="7" column="2">
+              <widget class="QSpinBox" name="sbAntOpenPin">
+                <property name="maximum">
+                  <number>31</number>
+                </property>
+              </widget>
+            </item>
+            <item row="8" column="1">
+              <widget class="QCheckBox" name="cbAntReconfig">
+                <property name="text">
+                  <string>Reconfigure pins</string>
                 </property>
               </widget>
             </item>
           </layout>
         </widget>
+        </item>
+        <item>
+            <widget class="QGroupBox" name="gbInfDebugFields">
+                <property name="title">
+                    <string>INF-DEBUG Parameters</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_5">
+                    <item>
+                        <widget class="QLabel" name="labelInfDebugMessage">
+                            <property name="text">
+                                <string>Debug message:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPlainTextEdit" name="teInfDebugMessage">
+                            <property name="plainText">
+                                <string>Debug message</string>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </widget>
+        </item>
+        <item>
+            <widget class="QGroupBox" name="gbInfErrorFields">
+                <property name="title">
+                    <string>INF-ERROR Parameters</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_6">
+                    <item>
+                        <widget class="QLabel" name="labelInfErrorMessage">
+                            <property name="text">
+                                <string>Error message:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPlainTextEdit" name="teInfErrorMessage">
+                            <property name="plainText">
+                                <string>Error message</string>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </widget>
+        </item>
+        <item>
+            <widget class="QGroupBox" name="gbInfWarningFields">
+                <property name="title">
+                    <string>INF-WARNING Parameters</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_7">
+                    <item>
+                        <widget class="QLabel" name="labelInfWarningMessage">
+                            <property name="text">
+                                <string>Warning message:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPlainTextEdit" name="teInfWarningMessage">
+                            <property name="plainText">
+                                <string>Warning message</string>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </widget>
+        </item>
+        <item>
+            <widget class="QGroupBox" name="gbInfNoticeFields">
+                <property name="title">
+                    <string>INF-NOTICE Parameters</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_8">
+                    <item>
+                        <widget class="QLabel" name="labelInfNoticeMessage">
+                            <property name="text">
+                                <string>Notice message:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPlainTextEdit" name="teInfNoticeMessage">
+                            <property name="plainText">
+                                <string>Notice message</string>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </widget>
+        </item>
+        <item>
+            <widget class="QGroupBox" name="gbInfTestFields">
+                <property name="title">
+                    <string>INF-TEST Parameters</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_9">
+                    <item>
+                        <widget class="QLabel" name="labelInfTestMessage">
+                            <property name="text">
+                                <string>Test message:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QPlainTextEdit" name="teInfTestMessage">
+                            <property name="plainText">
+                                <string>Test message</string>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </widget>
         </item>
         <item>
         <widget class="QGroupBox" name="gbNavTimeUtcFields">

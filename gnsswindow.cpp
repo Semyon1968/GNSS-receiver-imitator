@@ -291,10 +291,53 @@ void GNSSWindow::setupInfDebugFields()
 {
     ui->gbInfDebugFields->setVisible(true);
     ui->tePayload->setVisible(false);
-
     ui->teInfDebugMessage->setPlainText("Debug message");
 }
 
+void GNSSWindow::setupInfErrorFields()
+{
+    ui->gbInfErrorFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+    ui->teInfErrorMessage->setPlainText("Error message");
+}
+
+void GNSSWindow::setupInfWarningFields()
+{
+    ui->gbInfWarningFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+    ui->teInfWarningMessage->setPlainText("Warning message");
+}
+
+void GNSSWindow::setupInfNoticeFields()
+{
+    ui->gbInfNoticeFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+    ui->teInfNoticeMessage->setPlainText("Notice message");
+}
+
+void GNSSWindow::setupInfTestFields()
+{
+    ui->gbInfTestFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+    ui->teInfTestMessage->setPlainText("Test message");
+}
+
+void GNSSWindow::setupCfgAntFields()
+{
+    ui->gbCfgAntFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    // Set default values
+    ui->cbAntSupplyCtrl->setChecked(true);
+    ui->cbAntShortDetect->setChecked(true);
+    ui->cbAntOpenDetect->setChecked(true);
+    ui->cbAntPowerDown->setChecked(true);
+    ui->cbAntAutoRecover->setChecked(true);
+    ui->sbAntSwitchPin->setValue(0);
+    ui->sbAntShortPin->setValue(1);
+    ui->sbAntOpenPin->setValue(2);
+    ui->cbAntReconfig->setChecked(false);
+}
 
 void GNSSWindow::setupCfgNav5Fields()
 {
@@ -339,6 +382,62 @@ void GNSSWindow::sendUbxInfDebug()
 
     createUbxPacket(0x04, 0x04, payload);
     appendToLog(QString("INF-DEBUG sent: %1").arg(debugMessage), "out");
+}
+
+void GNSSWindow::sendUbxInfError()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send INF-ERROR", "error");
+        return;
+    }
+
+    QString message = ui->teInfErrorMessage->toPlainText();
+    QByteArray payload = message.toLatin1();
+
+    createUbxPacket(0x04, 0x00, payload);
+    appendToLog(QString("INF-ERROR sent: %1").arg(message), "out");
+}
+
+void GNSSWindow::sendUbxInfNotice()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send INF-NOTICE", "error");
+        return;
+    }
+
+    QString message = ui->teInfNoticeMessage->toPlainText();
+    QByteArray payload = message.toLatin1();
+
+    createUbxPacket(0x04, 0x02, payload);
+    appendToLog(QString("INF-NOTICE sent: %1").arg(message), "out");
+}
+
+void GNSSWindow::sendUbxInfTest()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send INF-TEST", "error");
+        return;
+    }
+
+    QString message = ui->teInfTestMessage->toPlainText();
+    QByteArray payload = message.toLatin1();
+
+    createUbxPacket(0x04, 0x03, payload);
+    appendToLog(QString("INF-TEST sent: %1").arg(message), "out");
+}
+
+void GNSSWindow::sendUbxInfWarning()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send INF-WARNING", "error");
+        return;
+    }
+
+    QString message = ui->teInfWarningMessage->toPlainText();
+    QByteArray payload = message.toLatin1();
+
+    createUbxPacket(0x04, 0x01, payload);
+    appendToLog(QString("INF-WARNING sent: %1").arg(message), "out");
 }
 
 void GNSSWindow::sendUbxCfgRate()
@@ -410,6 +509,22 @@ void GNSSWindow::onClassIdChanged() {
             setupInfDebugFields();
             ui->gbInfDebugFields->setVisible(true);
         }
+        else if (msgId == 0x00) { // ERROR
+            setupInfErrorFields();
+            ui->gbInfErrorFields->setVisible(true);
+        }
+        else if (msgId == 0x01) { // WARNING
+            setupInfWarningFields();
+            ui->gbInfWarningFields->setVisible(true);
+        }
+        else if (msgId == 0x02) { // NOTICE
+            setupInfNoticeFields();
+            ui->gbInfNoticeFields->setVisible(true);
+        }
+        else if (msgId == 0x03) { // TEST
+            setupInfTestFields();
+            ui->gbInfTestFields->setVisible(true);
+        }
         break;
     case 0x06: // CFG
         if (msgId == 0x00) { // PRT
@@ -430,6 +545,9 @@ void GNSSWindow::onClassIdChanged() {
         } else if (msgId == 0x8a) { // VALSET
             setupCfgValsetFields();
             ui->gbCfgValsetFields->setVisible(true);
+        } else if (msgId == 0x13) { // ANT
+            setupCfgAntFields();
+            ui->gbCfgAntFields->setVisible(true);
         }
         break;
     case 0x27: // SEC
@@ -450,6 +568,11 @@ void GNSSWindow::onClassIdChanged() {
         !ui->gbMonHwFields->isVisible() &&
         !ui->gbCfgValsetFields->isVisible() &&
         !ui->gbInfDebugFields->isVisible() &&
+        !ui->gbInfErrorFields->isVisible() &&
+        !ui->gbInfWarningFields->isVisible() &&
+        !ui->gbInfNoticeFields->isVisible() &&
+        !ui->gbInfTestFields->isVisible() &&
+        !ui->gbCfgAntFields->isVisible() &&
         !ui->gbCfgValgetFields->isVisible() &&
         !ui->gbCfgItfmFields->isVisible() &&
         !ui->gbCfgNav5Fields->isVisible() &&
@@ -471,8 +594,13 @@ void GNSSWindow::hideAllParameterFields() {
     ui->gbMonHwFields->setVisible(false);
     ui->gbCfgValsetFields->setVisible(false);
     ui->gbSecUniqidFields->setVisible(false);
+    ui->gbCfgAntFields->setVisible(false);
     ui->gbCfgItfmFields->setVisible(false);
     ui->gbInfDebugFields->setVisible(false);
+    ui->gbInfErrorFields->setVisible(false);
+    ui->gbInfWarningFields->setVisible(false);
+    ui->gbInfNoticeFields->setVisible(false);
+    ui->gbInfTestFields->setVisible(false);
     ui->gbCfgValgetFields->setVisible(false);
     ui->gbCfgNav5Fields->setVisible(false);
     ui->tePayload->setVisible(false);
@@ -501,9 +629,8 @@ void GNSSWindow::sendInitialConfiguration() {
     sendUbxCfgMsg(0x0A, 0x28, 1);  // MON-RF
     sendUbxCfgRate();
     sendUbxCfgNav5();              // NAV5 configuration
-    sendUbxCfgDynModel(4);         // Automotive
-    sendUbxCfgAntSettings(true, true, true); // Antenna settings
-    sendUbxCfgItfm();              // Enable interference detection
+    sendUbxCfgAnt();               // Antenna settings (new)
+    sendUbxCfgItfm();              // Enable interference detectionction
 
     // Delayed info requests
     QTimer::singleShot(500, this, &GNSSWindow::sendUbxMonVer);
@@ -995,28 +1122,6 @@ void GNSSWindow::sendUbxMonRf()
     appendToLog(QString("MON-RF message sent (%1 bytes)").arg(payloadSize + 8), "out");
 }
 
-void GNSSWindow::sendUbxCfgDynModel(quint8 model) {
-    QByteArray payload(4, 0x00);
-    payload[0] = model;
-    createUbxPacket(0x06, 0x24, payload);
-    appendToLog(QString("CFG-DYNMODEL: Model=%1").arg(model), "config");
-}
-
-void GNSSWindow::sendUbxCfgAntSettings(bool openDet, bool shortDet, bool recover) {
-    QByteArray payload(4, 0x00);
-    quint16 flags = 0;
-
-    if(openDet) flags |= 0x0001;
-    if(shortDet) flags |= 0x0002;
-    if(recover) flags |= 0x0004;
-
-    qToLittleEndian<quint16>(flags, payload.data());
-    createUbxPacket(0x06, 0x13, payload);
-
-    appendToLog(QString("CFG-ANT: OpenDet=%1, ShortDet=%2, Recover=%3")
-                    .arg(openDet).arg(shortDet).arg(recover), "config");
-}
-
 void GNSSWindow::sendUbxSecUniqid()
 {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
@@ -1467,13 +1572,38 @@ void GNSSWindow::processMonHw(const UbxParser::MonHw &hw) {
     appendToLog(QString("MON-HW: %1").arg(info), "status");
 }
 
-void GNSSWindow::sendUbxCfgAnt(bool enablePower) {
+void GNSSWindow::sendUbxCfgAnt()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send CFG-ANT", "error");
+        return;
+    }
+
     QByteArray payload(4, 0x00);
-    quint16 flags = enablePower ? 0x0001 : 0x0000;
+
+    // Build flags
+    quint16 flags = 0;
+    if (ui->cbAntSupplyCtrl->isChecked()) flags |= 0x0001;
+    if (ui->cbAntShortDetect->isChecked()) flags |= 0x0002;
+    if (ui->cbAntOpenDetect->isChecked()) flags |= 0x0004;
+    if (ui->cbAntPowerDown->isChecked()) flags |= 0x0008;
+    if (ui->cbAntAutoRecover->isChecked()) flags |= 0x0010;
+
+    // Build pins configuration
+    quint16 pins = 0;
+    pins |= (ui->sbAntSwitchPin->value() & 0x1F);
+    pins |= ((ui->sbAntShortPin->value() & 0x1F) << 5);
+    pins |= ((ui->sbAntOpenPin->value() & 0x1F) << 10);
+    if (ui->cbAntReconfig->isChecked()) pins |= 0x8000;
+
+    // Write to payload
     qToLittleEndian<quint16>(flags, payload.data());
+    qToLittleEndian<quint16>(pins, payload.data() + 2);
 
     createUbxPacket(0x06, 0x13, payload);
-    appendToLog(QString("Antenna power %1").arg(enablePower ? "ON" : "OFF"), "config");
+    appendToLog(QString("CFG-ANT sent: flags=0x%1, pins=0x%2")
+                    .arg(flags, 4, 16, QLatin1Char('0'))
+                    .arg(pins, 4, 16, QLatin1Char('0')), "config");
 }
 
 void GNSSWindow::sendUbxNavSat() {
@@ -1566,7 +1696,11 @@ void GNSSWindow::onSendButtonClicked() {
         else if (msgId == 0x8a) sendUbxCfgValset();
         break;
     case 0x04: // INF
-        if (msgId == 0x04) sendUbxInfDebug();
+        if (msgId == 0x00) sendUbxInfError();
+        else if (msgId == 0x01) sendUbxInfWarning();
+        else if (msgId == 0x02) sendUbxInfNotice();
+        else if (msgId == 0x03) sendUbxInfTest();
+        else if (msgId == 0x04) sendUbxInfDebug();
         break;
     case 0x0A: // MON
         if (msgId == 0x04) sendUbxMonVer();
