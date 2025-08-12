@@ -6,8 +6,7 @@
 #include <QDateTime>
 #include <QtEndian>
 
-class UbxParser : public QObject
-{
+class UbxParser : public QObject {
     Q_OBJECT
 
 public:

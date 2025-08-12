@@ -2,15 +2,13 @@
 #include <QtEndian>
 #include <QDebug>
 
-UbxParser::UbxParser(QObject *parent) : QObject(parent)
-{
+UbxParser::UbxParser(QObject *parent) : QObject(parent) {
 }
 
 bool UbxParser::parseUbxMessage(const QByteArray &data,
                                 quint8 &msgClass,
                                 quint8 &msgId,
-                                QByteArray &payload)
-{
+                                QByteArray &payload) {
     // 1. Check minimum message size
     if (data.size() < 8) {
         qDebug() << "UBX message too short. Minimum size is 8 bytes, got"
@@ -64,8 +62,7 @@ bool UbxParser::parseUbxMessage(const QByteArray &data,
     return true;
 }
 
-UbxParser::CfgItfm UbxParser::parseCfgItfm(const QByteArray &payload)
-{
+UbxParser::CfgItfm UbxParser::parseCfgItfm(const QByteArray &payload) {
     CfgItfm result = {};
 
     if (payload.size() >= 8) {
@@ -76,8 +73,7 @@ UbxParser::CfgItfm UbxParser::parseCfgItfm(const QByteArray &payload)
     return result;
 }
 
-UbxParser::NavPvt UbxParser::parseNavPvt(const QByteArray &payload)
-{
+UbxParser::NavPvt UbxParser::parseNavPvt(const QByteArray &payload) {
     NavPvt result = {};
 
     if (payload.size() < 92) {
@@ -122,8 +118,7 @@ UbxParser::NavPvt UbxParser::parseNavPvt(const QByteArray &payload)
     return result;
 }
 
-UbxParser::NavSat UbxParser::parseNavSat(const QByteArray &payload)
-{
+UbxParser::NavSat UbxParser::parseNavSat(const QByteArray &payload) {
     NavSat result = {};
 
     if (payload.size() < 8) {
@@ -148,8 +143,7 @@ UbxParser::NavSat UbxParser::parseNavSat(const QByteArray &payload)
     return result;
 }
 
-UbxParser::NavStatus UbxParser::parseNavStatus(const QByteArray &payload)
-{
+UbxParser::NavStatus UbxParser::parseNavStatus(const QByteArray &payload) {
     NavStatus result = {};
 
     if (payload.size() < 16) {
@@ -167,8 +161,7 @@ UbxParser::NavStatus UbxParser::parseNavStatus(const QByteArray &payload)
     return result;
 }
 
-UbxParser::CfgPrt UbxParser::parseCfgPrt(const QByteArray &payload)
-{
+UbxParser::CfgPrt UbxParser::parseCfgPrt(const QByteArray &payload) {
     CfgPrt result = {};
 
     if (payload.size() < 20) {
@@ -183,8 +176,7 @@ UbxParser::CfgPrt UbxParser::parseCfgPrt(const QByteArray &payload)
     return result;
 }
 
-UbxParser::AckPacket UbxParser::parseAck(const QByteArray &payload)
-{
+UbxParser::AckPacket UbxParser::parseAck(const QByteArray &payload) {
     AckPacket ack;
     ack.ackClass = 0;
     ack.ackId = 0;
@@ -199,8 +191,7 @@ UbxParser::AckPacket UbxParser::parseAck(const QByteArray &payload)
     return ack;
 }
 
-UbxParser::SecUniqid UbxParser::parseSecUniqid(const QByteArray &payload)
-{
+UbxParser::SecUniqid UbxParser::parseSecUniqid(const QByteArray &payload) {
     SecUniqid result = {};
 
     if (payload.size() < 5) {
@@ -213,8 +204,7 @@ UbxParser::SecUniqid UbxParser::parseSecUniqid(const QByteArray &payload)
     return result;
 }
 
-UbxParser::CfgMsg UbxParser::parseCfgMsg(const QByteArray &payload)
-{
+UbxParser::CfgMsg UbxParser::parseCfgMsg(const QByteArray &payload) {
     CfgMsg result = {};
 
     if (payload.size() < 3) {
@@ -228,8 +218,7 @@ UbxParser::CfgMsg UbxParser::parseCfgMsg(const QByteArray &payload)
     return result;
 }
 
-UbxParser::MonRf UbxParser::parseMonRf(const QByteArray &payload)
-{
+UbxParser::MonRf UbxParser::parseMonRf(const QByteArray &payload) {
     MonRf result = {};
     const int headerSize = 4;
     const int blockSize = 24;
@@ -273,8 +262,7 @@ UbxParser::MonRf UbxParser::parseMonRf(const QByteArray &payload)
     return result;
 }
 
-UbxParser::MonVer UbxParser::parseMonVer(const QByteArray &payload)
-{
+UbxParser::MonVer UbxParser::parseMonVer(const QByteArray &payload) {
     MonVer result;
     int pos = 0;
 
@@ -299,8 +287,7 @@ UbxParser::MonVer UbxParser::parseMonVer(const QByteArray &payload)
     return result;
 }
 
-UbxParser::MonHw UbxParser::parseMonHw(const QByteArray &payload)
-{
+UbxParser::MonHw UbxParser::parseMonHw(const QByteArray &payload) {
     MonHw result = {};
     const int minSize = 28 + 4 + 17 + 1 + 2;
 

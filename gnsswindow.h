@@ -18,8 +18,7 @@ namespace Ui {
 class GNSSWindow;
 }
 
-class GNSSWindow : public QMainWindow
-{
+class GNSSWindow : public QMainWindow {
     Q_OBJECT
 
 public:

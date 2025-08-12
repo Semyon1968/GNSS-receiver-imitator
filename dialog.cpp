@@ -10,8 +10,7 @@ Dialog::Dialog(QWidget *parent) :
     ui(new Ui::Dialog),
     m_socket(new QTcpSocket(this)),
     m_gnssWindow(nullptr),
-    m_connectionTimer(new QTimer(this))
-{
+    m_connectionTimer(new QTimer(this)) {
     ui->setupUi(this);
 
     // Setup connection timer (10 sec timeout)
@@ -38,16 +37,14 @@ Dialog::Dialog(QWidget *parent) :
     qDebug() << "Dialog initialized, socket state:" << m_socket->state();
 }
 
-void Dialog::onConnectionTimeout()
-{
+void Dialog::onConnectionTimeout() {
     if (m_socket->state() == QAbstractSocket::ConnectingState) {
         m_socket->abort();
         QMessageBox::warning(this, "Timeout", "Connection timed out");
     }
 }
 
-void Dialog::onDisconnected()
-{
+void Dialog::onDisconnected() {
     if (m_gnssWindow) {
         m_gnssWindow->close();
     }
@@ -59,8 +56,7 @@ void Dialog::onDisconnected()
     }
 }
 
-void Dialog::onConnected()
-{
+void Dialog::onConnected() {
     m_connectionTimer->stop();
 
     if (!m_gnssWindow) {
@@ -73,8 +69,7 @@ void Dialog::onConnected()
     emit logMessage("Connected to autopilot", "system");
 }
 
-void Dialog::appendToLog(const QString &message, const QString &type)
-{
+void Dialog::appendToLog(const QString &message, const QString &type) {
     QString formattedMessage = QString("[%1] %2: %3")
                                    .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
                                    .arg(type.toUpper())
@@ -83,8 +78,7 @@ void Dialog::appendToLog(const QString &message, const QString &type)
     qDebug() << formattedMessage;
 }
 
-void Dialog::on_connectButton_clicked()
-{
+void Dialog::on_connectButton_clicked() {
     QString host = ui->leIpAddress->text().trimmed();
     QString portStr = ui->lePort->text().trimmed();
 
@@ -111,8 +105,7 @@ void Dialog::on_connectButton_clicked()
     m_connectionTimer->start(10000);
 }
 
-void Dialog::onError(QAbstractSocket::SocketError error)
-{
+void Dialog::onError(QAbstractSocket::SocketError error) {
     Q_UNUSED(error)
     m_connectionTimer->stop();
 
@@ -126,8 +119,7 @@ void Dialog::onError(QAbstractSocket::SocketError error)
     }
 }
 
-Dialog::~Dialog()
-{
+Dialog::~Dialog() {
     m_connectionTimer->stop();
 
     if (m_socket->state() == QAbstractSocket::ConnectedState) {

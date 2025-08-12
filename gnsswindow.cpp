@@ -19,8 +19,7 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     m_ackTimeoutTimer(new QTimer(this)), // ACK wait timer
     m_utcTimer(new QTimer(this)),
     m_initializationComplete(false),
-    m_waitingForAck(false)
-{
+    m_waitingForAck(false) {
     ui->setupUi(this);
 
     // Setup timer intervals (default 1 Hz)
@@ -257,15 +256,13 @@ void GNSSWindow::onError(QAbstractSocket::SocketError error) {
     ui->statusbar->showMessage("Connection error: " + errorMsg, 5000);
 }
 
-void GNSSWindow::updateUTCTime()
-{
+void GNSSWindow::updateUTCTime() {
     QDateTime utcTime = QDateTime::currentDateTimeUtc();
     QString timeString = utcTime.toString("yyyy-MM-dd hh:mm:ss UTC");
     ui->leUTCTimeView->setText(timeString);
 }
 
-void GNSSWindow::onActionSaveLogTriggered()
-{
+void GNSSWindow::onActionSaveLogTriggered() {
     QString fileName = QFileDialog::getSaveFileName(this, "Save Log", "", "Text Files (*.txt);;All Files (*)");
     if (fileName.isEmpty()) return;
 
@@ -280,14 +277,12 @@ void GNSSWindow::onActionSaveLogTriggered()
     file.close();
 }
 
-void GNSSWindow::onActionClearLogTriggered()
-{
+void GNSSWindow::onActionClearLogTriggered() {
     ui->teReceived->clear();
     appendToLog("Log cleared by user", "system");
 }
 
-void GNSSWindow::onActionAboutTriggered()
-{
+void GNSSWindow::onActionAboutTriggered() {
     QMessageBox::about(this, "About GNSS Simulator",
                        "Application simulates GNSS receiver\n"
                        "Version: 1.0\n"
@@ -308,43 +303,37 @@ void GNSSWindow::setupNavSatFields() {
     ui->cbOrbitSource->setCurrentIndex(1); // Ephemeris
 }
 
-void GNSSWindow::setupInfDebugFields()
-{
+void GNSSWindow::setupInfDebugFields() {
     ui->gbInfDebugFields->setVisible(true);
     ui->tePayload->setVisible(false);
     ui->teInfDebugMessage->setPlainText("Debug message");
 }
 
-void GNSSWindow::setupInfErrorFields()
-{
+void GNSSWindow::setupInfErrorFields() {
     ui->gbInfErrorFields->setVisible(true);
     ui->tePayload->setVisible(false);
     ui->teInfErrorMessage->setPlainText("Error message");
 }
 
-void GNSSWindow::setupInfWarningFields()
-{
+void GNSSWindow::setupInfWarningFields() {
     ui->gbInfWarningFields->setVisible(true);
     ui->tePayload->setVisible(false);
     ui->teInfWarningMessage->setPlainText("Warning message");
 }
 
-void GNSSWindow::setupInfNoticeFields()
-{
+void GNSSWindow::setupInfNoticeFields() {
     ui->gbInfNoticeFields->setVisible(true);
     ui->tePayload->setVisible(false);
     ui->teInfNoticeMessage->setPlainText("Notice message");
 }
 
-void GNSSWindow::setupInfTestFields()
-{
+void GNSSWindow::setupInfTestFields() {
     ui->gbInfTestFields->setVisible(true);
     ui->tePayload->setVisible(false);
     ui->teInfTestMessage->setPlainText("Test message");
 }
 
-void GNSSWindow::setupCfgAntFields()
-{
+void GNSSWindow::setupCfgAntFields() {
     ui->gbCfgAntFields->setVisible(true);
     ui->tePayload->setVisible(false);
 
@@ -360,8 +349,7 @@ void GNSSWindow::setupCfgAntFields()
     ui->cbAntReconfig->setChecked(false);
 }
 
-void GNSSWindow::setupCfgNav5Fields()
-{
+void GNSSWindow::setupCfgNav5Fields() {
     ui->gbCfgNav5Fields->setVisible(true);
     ui->tePayload->setVisible(false);
 
@@ -382,16 +370,14 @@ void GNSSWindow::setupCfgNav5Fields()
     ui->dsbStaticHoldMaxDist->setValue(0.0);
 }
 
-void GNSSWindow::setupCfgRateFields()
-{
+void GNSSWindow::setupCfgRateFields() {
     // Устанавливаем значения по умолчанию
     ui->sbMeasRate->setValue(1000);  // 1 Hz
     ui->sbNavRate->setValue(1);      // 1 navigation solution per measurement
     ui->cbTimeRef->setCurrentIndex(0); // UTC time
 }
 
-void GNSSWindow::sendUbxInfDebug()
-{
+void GNSSWindow::sendUbxInfDebug() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send INF-DEBUG", "error");
         return;
@@ -405,8 +391,7 @@ void GNSSWindow::sendUbxInfDebug()
     appendToLog(QString("INF-DEBUG sent: %1").arg(debugMessage), "out");
 }
 
-void GNSSWindow::sendUbxInfError()
-{
+void GNSSWindow::sendUbxInfError() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send INF-ERROR", "error");
         return;
@@ -419,8 +404,7 @@ void GNSSWindow::sendUbxInfError()
     appendToLog(QString("INF-ERROR sent: %1").arg(message), "out");
 }
 
-void GNSSWindow::sendUbxInfNotice()
-{
+void GNSSWindow::sendUbxInfNotice() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send INF-NOTICE", "error");
         return;
@@ -433,8 +417,7 @@ void GNSSWindow::sendUbxInfNotice()
     appendToLog(QString("INF-NOTICE sent: %1").arg(message), "out");
 }
 
-void GNSSWindow::sendUbxInfTest()
-{
+void GNSSWindow::sendUbxInfTest() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send INF-TEST", "error");
         return;
@@ -447,8 +430,7 @@ void GNSSWindow::sendUbxInfTest()
     appendToLog(QString("INF-TEST sent: %1").arg(message), "out");
 }
 
-void GNSSWindow::sendUbxInfWarning()
-{
+void GNSSWindow::sendUbxInfWarning() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send INF-WARNING", "error");
         return;
@@ -461,8 +443,7 @@ void GNSSWindow::sendUbxInfWarning()
     appendToLog(QString("INF-WARNING sent: %1").arg(message), "out");
 }
 
-void GNSSWindow::sendUbxCfgRate()
-{
+void GNSSWindow::sendUbxCfgRate() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send CFG-RATE", "error");
         return;
@@ -769,8 +750,7 @@ void GNSSWindow::sendUbxSecUniqidReq() {
     appendToLog("Requested SEC-UNIQID", "config");
 }
 
-void GNSSWindow::sendUbxCfgItfm()
-{
+void GNSSWindow::sendUbxCfgItfm() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send CFG-ITFM", "error");
         return;
@@ -804,8 +784,7 @@ void GNSSWindow::sendUbxCfgItfm()
                     .arg(ui->cbEnable->isChecked() ? "ON" : "OFF"), "out");
 }
 
-void GNSSWindow::setupMonRfFields()
-{
+void GNSSWindow::setupMonRfFields() {
     // Set default values
     ui->sbRfVersion->setValue(0);
     ui->sbRfBlocks->setValue(1);
@@ -817,8 +796,7 @@ void GNSSWindow::setupMonRfFields()
     ui->sbRfCwSuppression->setValue(0);
 }
 
-void GNSSWindow::setupCfgValsetFields()
-{
+void GNSSWindow::setupCfgValsetFields() {
     ui->gbCfgValsetFields->setVisible(true);
     ui->tePayload->setVisible(false);
 
@@ -830,8 +808,7 @@ void GNSSWindow::setupCfgValsetFields()
     ui->leValsetKeysValues->setText("0x00000000=0x00000000");
 }
 
-void GNSSWindow::setupCfgValgetFields()
-{
+void GNSSWindow::setupCfgValgetFields() {
     ui->gbCfgValgetFields->setVisible(true);
     ui->tePayload->setVisible(false);
 
@@ -842,8 +819,7 @@ void GNSSWindow::setupCfgValgetFields()
     ui->leValgetKeys->setText("0x00000000");
 }
 
-void GNSSWindow::setupMonVerFields()
-{
+void GNSSWindow::setupMonVerFields() {
     ui->gbMonVerFields->setVisible(true);
     // Set default values
     ui->leSwVersion->setText("ROM CORE 3.01 (107888)");
@@ -851,8 +827,7 @@ void GNSSWindow::setupMonVerFields()
     ui->teExtensions->setPlainText("PROTVER=18.00\nGPS;GLO;GAL;BDS\nSBAS;IMES;QZSS");
 }
 
-void GNSSWindow::setupMonHwFields()
-{
+void GNSSWindow::setupMonHwFields() {
     ui->gbMonHwFields->setVisible(true);
 
     ui->sbHwNoise->setValue(50);
@@ -863,8 +838,7 @@ void GNSSWindow::setupMonHwFields()
     ui->sbHwCwSuppression->setValue(0);
 }
 
-void GNSSWindow::setupSecUniqidFields()
-{
+void GNSSWindow::setupSecUniqidFields() {
     ui->gbSecUniqidFields->setVisible(true);
     ui->tePayload->setVisible(false);
     // Set default values
@@ -872,8 +846,7 @@ void GNSSWindow::setupSecUniqidFields()
     ui->leChipId->setText("12345678");
 }
 
-void GNSSWindow::setupNavTimeUtcFields()
-{
+void GNSSWindow::setupNavTimeUtcFields() {
     ui->gbNavTimeUtcFields->setVisible(true);
     // Установим значения по умолчанию
     ui->sbTimeUtcTAcc->setValue(100000); // 100 мкс точность
@@ -882,8 +855,7 @@ void GNSSWindow::setupNavTimeUtcFields()
     ui->cbTimeUtcStandard->setCurrentIndex(4); // BIPM
 }
 
-void GNSSWindow::sendUbxCfgValset()
-{
+void GNSSWindow::sendUbxCfgValset() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send CFG-VALSET", "error");
         return;
@@ -948,8 +920,7 @@ void GNSSWindow::sendUbxCfgValset()
                     .arg(kvPairs.size()), "config");
 }
 
-void GNSSWindow::sendUbxCfgValGet()
-{
+void GNSSWindow::sendUbxCfgValGet() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send CFG-VALGET", "error");
         return;
@@ -999,8 +970,7 @@ void GNSSWindow::sendUbxCfgValGet()
                     .arg(keysStr), "config");
 }
 
-void GNSSWindow::sendUbxNavTimeUtc()
-{
+void GNSSWindow::sendUbxNavTimeUtc() {
     QByteArray payload(20, 0x00);
     QDateTime currentTime = QDateTime::currentDateTimeUtc();
 
@@ -1072,8 +1042,7 @@ void GNSSWindow::processCfgValSet(const QByteArray &payload) {
     appendToLog("CFG-VALSET processed", "config");
 }
 
-void GNSSWindow::sendUbxMonRf()
-{
+void GNSSWindow::sendUbxMonRf() {
     // Проверка соединения
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send MON-RF", "error");
@@ -1143,8 +1112,7 @@ void GNSSWindow::sendUbxMonRf()
     appendToLog(QString("MON-RF message sent (%1 bytes)").arg(payloadSize + 8), "out");
 }
 
-void GNSSWindow::sendUbxSecUniqid()
-{
+void GNSSWindow::sendUbxSecUniqid() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send SEC-UNIQID", "error");
         return;
@@ -1176,7 +1144,6 @@ void GNSSWindow::sendUbxSecUniqid()
 }
 
 void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate) {
-
     bool useLegacyMethod = true;
 
     if (m_protocolVersion > 23.01f) {
@@ -1687,8 +1654,7 @@ void GNSSWindow::processMonHw(const UbxParser::MonHw &hw) {
     appendToLog(QString("MON-HW: %1").arg(info), "status");
 }
 
-void GNSSWindow::sendUbxCfgAnt()
-{
+void GNSSWindow::sendUbxCfgAnt() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send CFG-ANT", "error");
         return;
@@ -2075,8 +2041,7 @@ void GNSSWindow::sendUbxCfgPrtResponse() {
     appendToLog("Sent UART1 configuration", "config");
 }
 
-void GNSSWindow::sendUbxCfgNav5()
-{
+void GNSSWindow::sendUbxCfgNav5() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send CFG-NAV5", "error");
         return;
@@ -2285,8 +2250,7 @@ void GNSSWindow::setupNavStatusFields() {
     ui->sbTtff->setValue(5000); // 5 seconds
 }
 
-void GNSSWindow::setupCfgPrtFields()
-{
+void GNSSWindow::setupCfgPrtFields() {
     ui->gbCfgPrtFields->setVisible(true);
     ui->cbPortId->setCurrentIndex(0); // UART1 by default
     ui->cbBaudRate->setCurrentText("115200");
@@ -2296,8 +2260,7 @@ void GNSSWindow::setupCfgPrtFields()
     ui->cbOutNmea->setChecked(true);
 }
 
-void GNSSWindow::setupCfgItfmFields()
-{
+void GNSSWindow::setupCfgItfmFields() {
     ui->gbCfgItfmFields->setVisible(true);
     ui->tePayload->setVisible(false);
     ui->sbBbThreshold->setValue(0);
@@ -2307,8 +2270,7 @@ void GNSSWindow::setupCfgItfmFields()
     ui->cbEnable2->setChecked(false);
 }
 
-void GNSSWindow::sendUbxCfgPrt()
-{
+void GNSSWindow::sendUbxCfgPrt() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
         appendToLog("Error: No active connection to send CFG-PRT", "error");
         return;
@@ -2348,8 +2310,7 @@ void GNSSWindow::sendUbxCfgPrt()
                     .arg(outProtoMask, 4, 16, QLatin1Char('0')), "config");
 }
 
-void GNSSWindow::sendUbxMonHw()
-{
+void GNSSWindow::sendUbxMonHw() {
     QByteArray payload(60, 0x00);
 
     // Заполняем основные поля из UI
@@ -2437,8 +2398,7 @@ void GNSSWindow::sendUbxNavPvt() {
     appendToLog("Sent NAV-PVT", "out");
 }
 
-void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload)
-{
+void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload) {
     if (!m_socket) {
         appendToLog("Error: Socket not initialized", "error");
         return;
