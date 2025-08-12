@@ -48,6 +48,7 @@ else()
     else()
         add_executable(ImitatorGNSS
             ${PROJECT_SOURCES}
+            ubxdefs.h
         )
     endif()
 endif()

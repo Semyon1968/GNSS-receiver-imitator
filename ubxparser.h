@@ -118,24 +118,24 @@ public:
         struct RfBlock {
             quint8 antId;
             quint8 flags;
-            quint8 antStatus;  // Добавлено
-            quint8 antPower;   // Добавлено
-            quint32 postStatus; // Добавлено
-            quint8 reserved1[4]; // Добавлено
+            quint8 antStatus;
+            quint8 antPower;
+            quint32 postStatus;
+            quint8 reserved1[4];
             quint16 noisePerMS;
             quint16 agcCnt;
-            quint8 cwSuppression; // Добавлено
-            qint8 ofsI;          // Добавлено
-            quint8 magI;         // Добавлено
-            qint8 ofsQ;          // Добавлено
-            quint8 magQ;         // Добавлено
-            quint8 reserved2[3]; // Добавлено
-        } blocks[4]; // Maximum 4 RF blocks
+            quint8 cwSuppression;
+            qint8 ofsI;
+            quint8 magI;
+            qint8 ofsQ;
+            quint8 magQ;
+            quint8 reserved2[3];
+        } blocks[4];
     };
     struct AckPacket {
         quint8 ackClass;
         quint8 ackId;
-        bool isAck; // true для ACK, false для NACK
+        bool isAck;
     };
 
     struct CfgRate {

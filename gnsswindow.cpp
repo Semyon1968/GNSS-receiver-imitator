@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include "dialog.h"
 #include "ubxparser.h"
+#include "ubxdefs.h"
 
 GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     QMainWindow(parent),
@@ -71,6 +72,26 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
             this, &GNSSWindow::onAutoSendToggled);
     connect(ui->btnClearLog, &QPushButton::clicked,
             this, &GNSSWindow::on_btnClearLog_clicked);
+    connect(ui->cbAutoSendNavPvt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavPvtToggled);
+    connect(ui->cbAutoSendNavStatus, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavStatusToggled);
+    connect(ui->cbAutoSendNavSat, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavSatToggled);
+    connect(ui->cbAutoSendNavTimeUTC, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavTimeUtcToggled);
+    connect(ui->cbAutoSendMonVer, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonVerToggled);
+    connect(ui->cbAutoSendMonHw, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonHwToggled);
+    connect(ui->cbAutoSendMonRf, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonRfToggled);
+    connect(ui->cbAutoSendCfgPrt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgPrtToggled);
+    connect(ui->cbAutoSendCfgItfm, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgItfmToggled);
+    connect(ui->cbAutoSendCfgNav5, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgNav5Toggled);
+    connect(ui->cbAutoSendCfgRate, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgRateToggled);
+    connect(ui->cbAutoSendCfgValget, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgValgetToggled);
+    connect(ui->cbAutoSendCfgValset, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgValsetToggled);
+    connect(ui->cbAutoSendCfgAnt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgAntToggled);
+    connect(ui->cbAutoSendInfDebug, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfDebugToggled);
+    connect(ui->cbAutoSendInfError, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfErrorToggled);
+    connect(ui->cbAutoSendInfWarning, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfWarningToggled);
+    connect(ui->cbAutoSendInfNotice, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfNoticeToggled);
+    connect(ui->cbAutoSendInfTest, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfTestToggled);
+    connect(ui->cbAutoSendSecUniqid, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendSecUniqidToggled);
 
     // Real time signal
     connect(m_utcTimer, &QTimer::timeout, this, &GNSSWindow::updateUTCTime);
@@ -108,59 +129,59 @@ void GNSSWindow::initClassIdMapping() {
 
     // NAV class (0x01)
     QMap<int, QString> navIds;
-    navIds.insert(0x03, "STATUS");
-    navIds.insert(0x07, "PVT");
-    navIds.insert(0x21, "TIMEUTC");
-    navIds.insert(0x35, "SAT");
-    m_classIdMap.insert(0x01, navIds);
+    navIds.insert(UBX_NAV_STATUS, "STATUS");
+    navIds.insert(UBX_NAV_PVT, "PVT");
+    navIds.insert(UBX_NAV_TIMEUTC, "TIMEUTC");
+    navIds.insert(UBX_NAV_SAT, "SAT");
+    m_classIdMap.insert(UBX_CLASS_NAV, navIds);
 
     // MON class (0x0A)
     QMap<int, QString> monIds;
-    monIds.insert(0x04, "VER");
-    monIds.insert(0x09, "HW");
-    monIds.insert(0x38, "RF");
-    m_classIdMap.insert(0x0A, monIds);
+    monIds.insert(UBX_MON_VER, "VER");
+    monIds.insert(UBX_MON_HW, "HW");
+    monIds.insert(UBX_MON_RF, "RF");
+    m_classIdMap.insert(UBX_CLASS_MON, monIds);
 
     // CFG class (0x06)
     QMap<int, QString> cfgIds;
-    cfgIds.insert(0x00, "PRT");
-    cfgIds.insert(0x01, "MSG");
-    cfgIds.insert(0x13, "ANT");
-    cfgIds.insert(0x24, "NAV5");
-    cfgIds.insert(0x39, "ITFM");
-    cfgIds.insert(0x08, "RATE");
-    cfgIds.insert(0x8b, "VALGET");
-    cfgIds.insert(0x8a, "VALSET");
-    m_classIdMap.insert(0x06, cfgIds);
+    cfgIds.insert(UBX_CFG_PRT, "PRT");
+    cfgIds.insert(UBX_CFG_MSG, "MSG");
+    cfgIds.insert(UBX_CFG_ANT, "ANT");
+    cfgIds.insert(UBX_CFG_NAV5, "NAV5");
+    cfgIds.insert(UBX_CFG_ITFM, "ITFM");
+    cfgIds.insert(UBX_CFG_RATE, "RATE");
+    cfgIds.insert(UBX_CFG_VALGET, "VALGET");
+    cfgIds.insert(UBX_CFG_VALSET, "VALSET");
+    m_classIdMap.insert(UBX_CLASS_CFG, cfgIds);
 
     // SEC class (0x27)
     QMap<int, QString> secIds;
-    secIds.insert(0x03, "UNIQID");
-    m_classIdMap.insert(0x27, secIds);
+    secIds.insert(UBX_SEC_UNIQID, "UNIQID");
+    m_classIdMap.insert(UBX_CLASS_SEC, secIds);
 
     // INF class (0x04)
     QMap<int, QString> infIds;
-    infIds.insert(0x04, "DEBUG");
-    infIds.insert(0x00, "ERROR");
-    infIds.insert(0x02, "NOTICE");
-    infIds.insert(0x03, "TEST");
-    infIds.insert(0x01, "WARNING");
-    m_classIdMap.insert(0x04, infIds);
+    infIds.insert(UBX_INF_DEBUG, "DEBUG");
+    infIds.insert(UBX_INF_ERROR, "ERROR");
+    infIds.insert(UBX_INF_NOTICE, "NOTICE");
+    infIds.insert(UBX_INF_TEST, "TEST");
+    infIds.insert(UBX_INF_WARNING, "WARNING");
+    m_classIdMap.insert(UBX_CLASS_INF, infIds);
 
     // ACK class (0x05)
     QMap<int, QString> ackIds;
-    ackIds.insert(0x01, "ACK");
-    ackIds.insert(0x00, "NAK");
-    m_classIdMap.insert(0x05, ackIds);
+    ackIds.insert(UBX_ACK_ACK, "ACK");
+    ackIds.insert(UBX_ACK_NAK, "NAK");
+    m_classIdMap.insert(UBX_CLASS_ACK, ackIds);
 
     // Fill class comboBox
     ui->cbClass->clear();
-    ui->cbClass->addItem("NAV (0x01)", 0x01);
-    ui->cbClass->addItem("CFG (0x06)", 0x06);
-    ui->cbClass->addItem("MON (0x0A)", 0x0A);
-    ui->cbClass->addItem("SEC (0x27)", 0x27);
-    ui->cbClass->addItem("INF (0x04)", 0x04);
-    ui->cbClass->addItem("ACK (0x05)", 0x05);
+    ui->cbClass->addItem("NAV (0x01)", UBX_CLASS_NAV);
+    ui->cbClass->addItem("CFG (0x06)", UBX_CLASS_CFG);
+    ui->cbClass->addItem("MON (0x0A)", UBX_CLASS_MON);
+    ui->cbClass->addItem("SEC (0x27)", UBX_CLASS_SEC);
+    ui->cbClass->addItem("INF (0x04)", UBX_CLASS_INF);
+    ui->cbClass->addItem("ACK (0x05)", UBX_CLASS_ACK);
 
     updateAvailableIds(); // Initialize ID list
 }
@@ -1155,10 +1176,9 @@ void GNSSWindow::sendUbxSecUniqid()
 }
 
 void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate) {
-    // По умолчанию используем старый метод (для совместимости)
+
     bool useLegacyMethod = true;
 
-    // Если версия протокола известна и > 23.01, используем новый метод
     if (m_protocolVersion > 23.01f) {
         useLegacyMethod = false;
     }
@@ -1215,23 +1235,23 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
                        << " Size=" << payload.size() << " bytes";
 
     // Process ACK/NACK messages
-    if (msgClass == 0x05) {
+    if (msgClass == UBX_CLASS_ACK) {
         if (payload.size() >= 2) {
             quint8 ackedClass = static_cast<quint8>(payload[0]);
             quint8 ackedId = static_cast<quint8>(payload[1]);
 
-            if (msgId == 0x01) { // ACK
+            if (msgId == UBX_ACK_ACK) {
                 appendToLog(QString("ACK received for Class=0x%1 ID=0x%2")
                                 .arg(ackedClass, 2, 16, QLatin1Char('0'))
                                 .arg(ackedId, 2, 16, QLatin1Char('0')),
                             "in");
 
                 // Handle configuration completion if this was for a CFG message
-                if (ackedClass == 0x06) {
+                if (ackedClass == UBX_CLASS_CFG) {
                     completeInitialization();
                 }
             }
-            else if (msgId == 0x00) { // NACK
+            else if (msgId == UBX_ACK_NAK) {
                 appendToLog(QString("NACK received for Class=0x%1 ID=0x%2")
                                 .arg(ackedClass, 2, 16, QLatin1Char('0'))
                                 .arg(ackedId, 2, 16, QLatin1Char('0')),
@@ -1242,7 +1262,7 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
     }
 
     // Process CFG messages
-    if (msgClass == 0x06) {
+    if (msgClass == UBX_CLASS_CFG) {
         processCfgMessages(msgId, payload);
         return;
     }
@@ -1254,11 +1274,10 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
 
     // Process main messages by class
     switch (msgClass) {
-    case 0x01: messageInfo = processNavMessages(msgId, payload); break;
-    case 0x02: messageInfo = processRxmMessages(msgId, payload); break;
-    case 0x04: processInfMessages(msgId, payload); return;
-    case 0x0A: messageInfo = processMonMessages(msgId, payload); break;
-    case 0x27: messageInfo = processSecMessages(msgId, payload); break;
+    case UBX_CLASS_NAV: messageInfo = processNavMessages(msgId, payload); break;
+    case UBX_CLASS_INF: processInfMessages(msgId, payload); return;
+    case UBX_CLASS_MON: messageInfo = processMonMessages(msgId, payload); break;
+    case UBX_CLASS_SEC: messageInfo = processSecMessages(msgId, payload); break;
     default:
         messageInfo = QString("Unknown message class: 0x%1").arg(msgClass, 2, 16, QLatin1Char('0'));
         qWarning() << messageInfo;
@@ -1271,22 +1290,28 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
 }
 
 void GNSSWindow::processAckNack(quint8 msgId, const QByteArray& payload) {
-    UbxParser::AckPacket ack = m_ubxParser.parseAck(payload);
-    QString ackType = (msgId == 0x01) ? "ACK" : "NACK";
-
-    QString message = QString("%1 for %2 (0x%3) ID: 0x%4")
-                          .arg(ackType)
-                          .arg(getMessageName(ack.ackClass, ack.ackId))
-                          .arg(ack.ackClass, 2, 16, QLatin1Char('0'))
-                          .arg(ack.ackId, 2, 16, QLatin1Char('0'));
-
-    if (msgId == 0x01 && ack.ackClass == 0x06) {
-        if (ack.ackId == 0x00 || ack.ackId == 0x01 || ack.ackId == 0x08 || ack.ackId == 0x13) {
-            completeInitialization();
-        }
+    if (payload.size() < 2) {
+        appendToLog("Invalid ACK/NAK payload size", "error");
+        return;
     }
 
-    appendToLog(message, "in");
+    quint8 ackedClass = static_cast<quint8>(payload[0]);
+    quint8 ackedId = static_cast<quint8>(payload[1]);
+
+    if (msgId == UBX_ACK_ACK) {
+        appendToLog(QString("ACK received for %1 (0x%2) ID: 0x%3")
+                        .arg(getMessageName(ackedClass, ackedId))
+                        .arg(ackedClass, 2, 16, QLatin1Char('0'))
+                        .arg(ackedId, 2, 16, QLatin1Char('0')),
+                    "in");
+    }
+    else if (msgId == UBX_ACK_NAK) {
+        appendToLog(QString("NACK received for %1 (0x%2) ID: 0x%3")
+                        .arg(getMessageName(ackedClass, ackedId))
+                        .arg(ackedClass, 2, 16, QLatin1Char('0'))
+                        .arg(ackedId, 2, 16, QLatin1Char('0')),
+                    "error");
+    }
 }
 
 void GNSSWindow::completeInitialization() {
@@ -1455,21 +1480,57 @@ void GNSSWindow::processInfMessages(quint8 msgId, const QByteArray& payload) {
 
 QString GNSSWindow::getMessageName(quint8 msgClass, quint8 msgId) {
     switch(msgClass) {
-    case 0x01: // NAV
+    case UBX_CLASS_NAV: // NAV
         switch(msgId) {
-        case 0x07: return "NAV-PVT";
-        case 0x03: return "NAV-STATUS";
-        default: return "NAV-UNKNOWN";
+        case UBX_NAV_PVT: return "NAV-PVT";
+        case UBX_NAV_STATUS: return "NAV-STATUS";
+        case UBX_NAV_SAT: return "NAV-SAT";
+        case UBX_NAV_TIMEUTC: return "NAV-TIMEUTC";
+        default: return QString("NAV-UNKNOWN (0x%1)").arg(msgId, 2, 16, QLatin1Char('0'));
         }
-    case 0x06: // CFG
+    case UBX_CLASS_INF: // INF
         switch(msgId) {
-        case 0x00: return "CFG-PRT";
-        case 0x39: return "CFG-ITFM";
-        default: return "CFG-UNKNOWN";
+        case UBX_INF_ERROR: return "INF-ERROR";
+        case UBX_INF_WARNING: return "INF-WARNING";
+        case UBX_INF_NOTICE: return "INF-NOTICE";
+        case UBX_INF_TEST: return "INF-TEST";
+        case UBX_INF_DEBUG: return "INF-DEBUG";
+        default: return QString("INF-UNKNOWN (0x%1)").arg(msgId, 2, 16, QLatin1Char('0'));
         }
-    case 0x0A: return "MON";
-    case 0x27: return "SEC";
-    default: return QString("UNKNOWN (0x%1)").arg(msgClass, 2, 16, QLatin1Char('0'));
+    case UBX_CLASS_ACK: // ACK
+        switch(msgId) {
+        case UBX_ACK_ACK: return "ACK-ACK";
+        case UBX_ACK_NAK: return "ACK-NAK";
+        default: return QString("ACK-UNKNOWN (0x%1)").arg(msgId, 2, 16, QLatin1Char('0'));
+        }
+    case UBX_CLASS_CFG: // CFG
+        switch(msgId) {
+        case UBX_CFG_PRT: return "CFG-PRT";
+        case UBX_CFG_MSG: return "CFG-MSG";
+        case UBX_CFG_RATE: return "CFG-RATE";
+        case UBX_CFG_ANT: return "CFG-ANT";
+        case UBX_CFG_NAV5: return "CFG-NAV5";
+        case UBX_CFG_ITFM: return "CFG-ITFM";
+        case UBX_CFG_VALSET: return "CFG-VALSET";
+        case UBX_CFG_VALGET: return "CFG-VALGET";
+        default: return QString("CFG-UNKNOWN (0x%1)").arg(msgId, 2, 16, QLatin1Char('0'));
+        }
+    case UBX_CLASS_MON: // MON
+        switch(msgId) {
+        case UBX_MON_VER: return "MON-VER";
+        case UBX_MON_HW: return "MON-HW";
+        case UBX_MON_RF: return "MON-RF";
+        default: return QString("MON-UNKNOWN (0x%1)").arg(msgId, 2, 16, QLatin1Char('0'));
+        }
+    case UBX_CLASS_SEC: // SEC
+        switch(msgId) {
+        case UBX_SEC_UNIQID: return "SEC-UNIQID";
+        default: return QString("SEC-UNKNOWN (0x%1)").arg(msgId, 2, 16, QLatin1Char('0'));
+        }
+    default:
+        return QString("UNKNOWN (Class: 0x%1, ID: 0x%2)")
+            .arg(msgClass, 2, 16, QLatin1Char('0'))
+            .arg(msgId, 2, 16, QLatin1Char('0'));
     }
 }
 
@@ -1480,62 +1541,44 @@ void GNSSWindow::displayNavStatus(const UbxParser::NavStatus &data) {
     ui->statusbar->showMessage(QString("Fix status: %1, TTFF: %2ms").arg(data.fixType).arg(data.ttff), 5000);
 }
 
-void GNSSWindow::displayMonRf(const UbxParser::MonRf &data)
-{
-    QString info = QString("MON-RF: Version=%1 Blocks=%2")
+void GNSSWindow::displayMonRf(const UbxParser::MonRf &data) {
+    QString info = QString("MON-RF: Version=%1, Blocks=%2")
                        .arg(data.version)
                        .arg(data.nBlocks);
 
-    for(int i = 0; i < data.nBlocks && i < 4; i++) {
+    for (int i = 0; i < data.nBlocks && i < 4; i++) {
         const auto& block = data.blocks[i];
+
+        // Использование enum для статусов
         QString jammingState;
-        switch(block.flags & 0x03) {
-        case 0: jammingState = "Unknown"; break;
-        case 1: jammingState = "OK"; break;
-        case 2: jammingState = "Warning"; break;
-        case 3: jammingState = "Critical"; break;
+        switch (block.flags & 0x03) {
+        case JAMMING_UNKNOWN: jammingState = "Unknown"; break;
+        case JAMMING_OK: jammingState = "OK"; break;
+        case JAMMING_WARNING: jammingState = "Warning"; break;
+        case JAMMING_CRITICAL: jammingState = "Critical"; break;
         }
 
         QString antStatus;
-        switch(block.antStatus) {
-        case 0: antStatus = "INIT"; break;
-        case 1: antStatus = "DONTKNOW"; break;
-        case 2: antStatus = "OK"; break;
-        case 3: antStatus = "SHORT"; break;
-        case 4: antStatus = "OPEN"; break;
-        default: antStatus = QString("Unknown (%1)").arg(block.antStatus); break;
+        switch (block.antStatus) {
+        case ANT_STATUS_INIT: antStatus = "INIT"; break;
+        case ANT_STATUS_DONTKNOW: antStatus = "DONTKNOW"; break;
+        case ANT_STATUS_OK: antStatus = "OK"; break;
+        case ANT_STATUS_SHORT: antStatus = "SHORT"; break;
+        case ANT_STATUS_OPEN: antStatus = "OPEN"; break;
         }
 
         QString antPower;
-        switch(block.antPower) {
-        case 0: antPower = "OFF"; break;
-        case 1: antPower = "ON"; break;
-        case 2: antPower = "DONTKNOW"; break;
-        default: antPower = QString("Unknown (%1)").arg(block.antPower); break;
+        switch (block.antPower) {
+        case ANT_POWER_OFF: antPower = "OFF"; break;
+        case ANT_POWER_ON: antPower = "ON"; break;
+        case ANT_POWER_UNKNOWN: antPower = "UNKNOWN"; break;
         }
 
-        info += QString("\nBlock %1 (ID=%2):\n"
-                        "  JammingState=%3\n"
-                        "  AntStatus=%4\n"
-                        "  AntPower=%5\n"
-                        "  POSTStatus=0x%6\n"
-                        "  Noise=%7 dB\n"
-                        "  AGC=%8%%\n"
-                        "  CWSuppression=%9\n"
-                        "  I/Q: ofsI=%10 magI=%11 ofsQ=%12 magQ=%13")
+        info += QString("\nBlock %1: Jamming=%2, Antenna=%3, Power=%4")
                     .arg(i)
-                    .arg(block.antId)
                     .arg(jammingState)
                     .arg(antStatus)
-                    .arg(antPower)
-                    .arg(block.postStatus, 8, 16, QLatin1Char('0'))
-                    .arg(block.noisePerMS / 100.0, 0, 'f', 2)
-                    .arg(block.agcCnt / 100.0, 0, 'f', 2)
-                    .arg(block.cwSuppression)
-                    .arg(block.ofsI)
-                    .arg(block.magI)
-                    .arg(block.ofsQ)
-                    .arg(block.magQ);
+                    .arg(antPower);
     }
 
     appendToLog(info, "status");
@@ -1566,7 +1609,7 @@ void GNSSWindow::displayNavPvt(const UbxParser::NavPvt &data) {
 }
 
 void GNSSWindow::displayMonVer(const UbxParser::MonVer &data) {
-    // Обновляем UI
+
     ui->leSwVersion->setText(data.swVersion);
     ui->leHwVersion->setText(data.hwVersion);
     ui->teExtensions->setPlainText(data.extensions.join("\n"));
@@ -1753,38 +1796,37 @@ void GNSSWindow::onSendButtonClicked() {
     quint8 msgId = static_cast<quint8>(ui->cbId->currentData().toInt());
 
     switch(msgClass) {
-    case 0x01: // NAV
-        if (msgId == 0x07) sendUbxNavPvt();
-        else if (msgId == 0x03) sendUbxNavStatus();
-        else if (msgId == 0x35) sendUbxNavSat();
-        else if (msgId == 0x21) sendUbxNavTimeUtc();
+    case UBX_CLASS_NAV:
+        if (msgId == UBX_NAV_PVT) sendUbxNavPvt();
+        else if (msgId == UBX_NAV_STATUS) sendUbxNavStatus();
+        else if (msgId == UBX_NAV_SAT) sendUbxNavSat();
+        else if (msgId == UBX_NAV_TIMEUTC) sendUbxNavTimeUtc();
         break;
-    case 0x06: // CFG
-        if (msgId == 0x00) sendUbxCfgPrt();
-        else if (msgId == 0x39) sendUbxCfgItfm();
-        else if (msgId == 0x24) sendUbxCfgNav5();
-        else if (msgId == 0x08) sendUbxCfgRate();
-        else if (msgId == 0x8b) sendUbxCfgValGet();
-        else if (msgId == 0x8a) sendUbxCfgValset();
+    case UBX_CLASS_CFG:
+        if (msgId == UBX_CFG_PRT) sendUbxCfgPrt();
+        else if (msgId == UBX_CFG_ITFM) sendUbxCfgItfm();
+        else if (msgId == UBX_CFG_NAV5) sendUbxCfgNav5();
+        else if (msgId == UBX_CFG_RATE) sendUbxCfgRate();
+        else if (msgId == UBX_CFG_VALGET) sendUbxCfgValGet();
+        else if (msgId == UBX_CFG_VALSET) sendUbxCfgValset();
         break;
-    case 0x04: // INF
-        if (msgId == 0x00) sendUbxInfError();
-        else if (msgId == 0x01) sendUbxInfWarning();
-        else if (msgId == 0x02) sendUbxInfNotice();
-        else if (msgId == 0x03) sendUbxInfTest();
-        else if (msgId == 0x04) sendUbxInfDebug();
+    case UBX_CLASS_INF:
+        if (msgId == UBX_INF_ERROR) sendUbxInfError();
+        else if (msgId == UBX_INF_WARNING) sendUbxInfWarning();
+        else if (msgId == UBX_INF_NOTICE) sendUbxInfNotice();
+        else if (msgId == UBX_INF_TEST) sendUbxInfTest();
+        else if (msgId == UBX_INF_DEBUG) sendUbxInfDebug();
         break;
-    case 0x0A: // MON
-        if (msgId == 0x04) sendUbxMonVer();
-        else if (msgId == 0x09) sendUbxMonHw();
-        else if (msgId == 0x38) sendUbxMonRf();
+    case UBX_CLASS_MON:
+        if (msgId == UBX_MON_VER) sendUbxMonVer();
+        else if (msgId == UBX_MON_HW) sendUbxMonHw();
+        else if (msgId == UBX_MON_RF) sendUbxMonRf();
         break;
-    case 0x27: // SEC
-        if (msgId == 0x03) sendUbxSecUniqid();
+    case UBX_CLASS_SEC:
+        if (msgId == UBX_SEC_UNIQID) sendUbxSecUniqid();
         break;
     }
 }
-
 void GNSSWindow::onAutoSendToggled(bool checked) {
     if (checked && !m_initializationComplete) {
         QMessageBox::warning(this, "Warning",
@@ -1800,6 +1842,222 @@ void GNSSWindow::onAutoSendToggled(bool checked) {
     } else {
         m_pvtTimer->stop();
         m_statusTimer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendNavPvtToggled(bool checked) {
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxNavPvt);
+        m_pvtTimer->start(1000 / ui->rateSpin->value());
+    } else {
+        m_pvtTimer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendNavStatusToggled(bool checked) {
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxNavStatus);
+        m_statusTimer->start(1000 / ui->rateSpin->value());
+    } else {
+        m_statusTimer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendNavSatToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavSat);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxNavSat);
+        timer->start(1000 / ui->rateSpin->value());
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendNavTimeUtcToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavTimeUtc);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxNavTimeUtc);
+        timer->start(1000 / ui->rateSpin->value());
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendMonVerToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxMonVer);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxMonVer);
+        timer->start(5000); // Every 5 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendMonHwToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxMonHw);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxMonHw);
+        timer->start(5000); // Every 5 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendMonRfToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxMonRf);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxMonRf);
+        timer->start(1000 / ui->rateSpin->value());
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendCfgPrtToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgPrt);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgPrt);
+        timer->start(10000); // Every 10 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendCfgItfmToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgItfm);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgItfm);
+        timer->start(10000); // Every 10 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendCfgNav5Toggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgNav5);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgNav5);
+        timer->start(10000); // Every 10 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendCfgRateToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgRate);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgRate);
+        timer->start(10000); // Every 10 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendCfgValgetToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgValGet);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgValGet);
+        timer->start(5000); // Every 5 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendCfgValsetToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgValset);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgValset);
+        timer->start(5000); // Every 5 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendCfgAntToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgAnt);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgAnt);
+        timer->start(10000); // Every 10 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendInfDebugToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfDebug);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfDebug);
+        timer->start(2000); // Every 2 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendInfErrorToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfError);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfError);
+        timer->start(5000); // Every 5 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendInfWarningToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfWarning);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfWarning);
+        timer->start(3000); // Every 3 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendInfNoticeToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfNotice);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfNotice);
+        timer->start(4000); // Every 4 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendInfTestToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfTest);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfTest);
+        timer->start(3000); // Every 3 seconds
+    } else {
+        timer->stop();
+    }
+}
+
+void GNSSWindow::onAutoSendSecUniqidToggled(bool checked) {
+    static QTimer* timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxSecUniqid);
+    if (checked) {
+        QTimer::singleShot(0, this, &GNSSWindow::sendUbxSecUniqid);
+        timer->start(10000); // Every 10 seconds
+    } else {
+        timer->stop();
     }
 }
 
@@ -1916,20 +2174,7 @@ void GNSSWindow::sendUbxMonVer() {
                     .arg(hwVersion)
                     .arg(extensions.size()), "config");
 }
-/*
-void GNSSWindow::sendUbxSecUniqid() {
-    QByteArray payload(5, 0x00);
-    payload[0] = 0x01; // Version
-    payload[1] = 0x12; // Unique chip ID
-    payload[2] = 0x34;
-    payload[3] = 0x56;
-    payload[4] = 0x78;
 
-    createUbxPacket(0x27, 0x03, payload);
-    appendToLog("Sent SEC-UNIQID with valid chip ID", "config");
-    ui->leChipId->setText("0x12345678");
-}
-*/
 void GNSSWindow::sendUbxNavStatus() {
     QByteArray payload(16, 0x00);
     QDateTime currentTime = QDateTime::currentDateTime();
@@ -1992,7 +2237,7 @@ void GNSSWindow::sendUbxAck(quint8 msgClass, quint8 msgId) {
     payload.append(static_cast<char>(msgClass));
     payload.append(static_cast<char>(msgId));
 
-    createUbxPacket(0x05, 0x01, payload);
+    createUbxPacket(UBX_CLASS_ACK, UBX_ACK_ACK, payload);
     appendToLog(QString("Sent ACK for Class=0x%1 ID=0x%2")
                     .arg(msgClass, 2, 16, QLatin1Char('0'))
                     .arg(msgId, 2, 16, QLatin1Char('0')),
@@ -2004,13 +2249,12 @@ void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId) {
     payload.append(static_cast<char>(msgClass));
     payload.append(static_cast<char>(msgId));
 
-    createUbxPacket(0x05, 0x00, payload);
+    createUbxPacket(UBX_CLASS_ACK, UBX_ACK_NAK, payload);
     appendToLog(QString("Sent NACK for Class=0x%1 ID=0x%2")
                     .arg(msgClass, 2, 16, QLatin1Char('0'))
                     .arg(msgId, 2, 16, QLatin1Char('0')),
                 "error");
 }
-
 void GNSSWindow::setupNavPvtFields() {
     ui->gbNavPvtFields->setVisible(true);
     ui->gbNavStatusFields->setVisible(false);

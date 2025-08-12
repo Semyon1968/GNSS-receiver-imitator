@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>2178</height>
+    <height>5467</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -102,10 +102,92 @@
            <string>NAV-PVT Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_3">
-           <item row="0" column="0">
-            <widget class="QLabel" name="labelLat_2">
+           <item row="8" column="1">
+            <widget class="QDoubleSpinBox" name="dsbVelU">
+             <property name="minimum">
+              <double>-1000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="labelVelN">
              <property name="text">
-              <string>Longitude:</string>
+              <string>Vel N (m/s):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="dsbSpeed">
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QDoubleSpinBox" name="dsbRmsVel">
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="labelHeading">
+             <property name="text">
+              <string>Heading (deg):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QDoubleSpinBox" name="dsbVelE">
+             <property name="minimum">
+              <double>-1000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QDoubleSpinBox" name="dsbRmsPos">
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="1">
+            <widget class="QDoubleSpinBox" name="dsbPdop">
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0">
+            <widget class="QLabel" name="labelPdop">
+             <property name="text">
+              <string>PDOP:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QDoubleSpinBox" name="dsbVelN">
+             <property name="minimum">
+              <double>-1000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelHeight_2">
+             <property name="text">
+              <string>Height (m):</string>
              </property>
             </widget>
            </item>
@@ -122,10 +204,58 @@
              </property>
             </widget>
            </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="labelVelU">
+             <property name="text">
+              <string>Vel U (m/s):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="labelVelE">
+             <property name="text">
+              <string>Vel E (m/s):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSpinBox" name="sbNumSats">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>32</number>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0">
+            <widget class="QLabel" name="labelRmsVel">
+             <property name="text">
+              <string>RMS Vel (m/s):</string>
+             </property>
+            </widget>
+           </item>
            <item row="1" column="0">
             <widget class="QLabel" name="labelLon_2">
              <property name="text">
               <string>Latitude:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelSpeed_2">
+             <property name="text">
+              <string>Speed (m/s):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QDoubleSpinBox" name="dsbHeading">
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>359.990000000000009</double>
              </property>
             </widget>
            </item>
@@ -142,10 +272,17 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="labelHeight_2">
+           <item row="5" column="0">
+            <widget class="QLabel" name="labelSats_2">
              <property name="text">
-              <string>Height (m):</string>
+              <string>SV_Num:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QLabel" name="labelRmsPos">
+             <property name="text">
+              <string>RMS Pos (m):</string>
              </property>
             </widget>
            </item>
@@ -159,147 +296,17 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="labelSpeed_2">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelLat_2">
              <property name="text">
-              <string>Speed (m/s):</string>
+              <string>Longitude:</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
-            <widget class="QDoubleSpinBox" name="dsbSpeed">
-             <property name="minimum">
-              <double>0.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>1000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="labelHeading">
+           <item row="12" column="0">
+            <widget class="QCheckBox" name="cbAutoSendNavPvt">
              <property name="text">
-              <string>Heading (deg):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QDoubleSpinBox" name="dsbHeading">
-             <property name="minimum">
-              <double>0.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>359.990000000000009</double>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="0">
-            <widget class="QLabel" name="labelSats_2">
-             <property name="text">
-              <string>SV_Num:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="5" column="1">
-            <widget class="QSpinBox" name="sbNumSats">
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>32</number>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="labelVelN">
-             <property name="text">
-              <string>Vel N (m/s):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="6" column="1">
-            <widget class="QDoubleSpinBox" name="dsbVelN">
-             <property name="minimum">
-              <double>-1000.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>1000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="0">
-            <widget class="QLabel" name="labelVelE">
-             <property name="text">
-              <string>Vel E (m/s):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="7" column="1">
-            <widget class="QDoubleSpinBox" name="dsbVelE">
-             <property name="minimum">
-              <double>-1000.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>1000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="0">
-            <widget class="QLabel" name="labelVelU">
-             <property name="text">
-              <string>Vel U (m/s):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="8" column="1">
-            <widget class="QDoubleSpinBox" name="dsbVelU">
-             <property name="minimum">
-              <double>-1000.000000000000000</double>
-             </property>
-             <property name="maximum">
-              <double>1000.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="0">
-            <widget class="QLabel" name="labelRmsPos">
-             <property name="text">
-              <string>RMS Pos (m):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="9" column="1">
-            <widget class="QDoubleSpinBox" name="dsbRmsPos">
-             <property name="minimum">
-              <double>0.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="10" column="0">
-            <widget class="QLabel" name="labelRmsVel">
-             <property name="text">
-              <string>RMS Vel (m/s):</string>
-             </property>
-            </widget>
-           </item>
-           <item row="10" column="1">
-            <widget class="QDoubleSpinBox" name="dsbRmsVel">
-             <property name="minimum">
-              <double>0.000000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="11" column="0">
-            <widget class="QLabel" name="labelPdop">
-             <property name="text">
-              <string>PDOP:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="11" column="1">
-            <widget class="QDoubleSpinBox" name="dsbPdop">
-             <property name="minimum">
-              <double>0.000000000000000</double>
+              <string>Auto Send</string>
              </property>
             </widget>
            </item>
@@ -343,6 +350,13 @@
              </property>
              <property name="maximum">
               <number>60000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="2">
+            <widget class="QCheckBox" name="cbAutoSendNavStatus">
+             <property name="text">
+              <string>Auto Send</string>
              </property>
             </widget>
            </item>
@@ -553,108 +567,121 @@
              </item>
             </widget>
            </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendNavSat">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbCfgItfmFields">
+         <widget class="QGroupBox" name="gbCfgItfmFields">
           <property name="title">
-            <string>CFG-ITFM Parameters</string>
+           <string>CFG-ITFM Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_10">
-            <item row="0" column="0">
-              <widget class="QLabel" name="labelBbThreshold">
-                <property name="text">
-                  <string>BB Threshold (0-15):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="0" column="1">
-              <widget class="QSpinBox" name="sbBbThreshold">
-                <property name="minimum">
-                  <number>0</number>
-                </property>
-                <property name="maximum">
-                  <number>15</number>
-                </property>
-                <property name="value">
-                  <number>0</number>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="0">
-              <widget class="QLabel" name="labelCwThreshold">
-                <property name="text">
-                  <string>CW Threshold (0-31):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="1">
-              <widget class="QSpinBox" name="sbCwThreshold">
-                <property name="minimum">
-                  <number>0</number>
-                </property>
-                <property name="maximum">
-                  <number>31</number>
-                </property>
-                <property name="value">
-                  <number>0</number>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="0">
-              <widget class="QLabel" name="labelEnable">
-                <property name="text">
-                  <string>Enable Detection:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="1">
-              <widget class="QCheckBox" name="cbEnable">
-                <property name="checked">
-                  <bool>true</bool>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="0">
-              <widget class="QLabel" name="labelAntSetting">
-                <property name="text">
-                  <string>Antenna Setting:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="1">
-              <widget class="QComboBox" name="cbAntSetting">
-                <item>
-                  <property name="text">
-                    <string>Unknown (0)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Passive (1)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Active (2)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="4" column="0">
-              <widget class="QLabel" name="labelEnable2">
-                <property name="text">
-                  <string>Scan Aux Bands:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="4" column="1">
-              <widget class="QCheckBox" name="cbEnable2">
-              </widget>
-            </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelBbThreshold">
+             <property name="text">
+              <string>BB Threshold (0-15):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbBbThreshold">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>15</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelCwThreshold">
+             <property name="text">
+              <string>CW Threshold (0-31):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="sbCwThreshold">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>31</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelEnable">
+             <property name="text">
+              <string>Enable Detection:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QCheckBox" name="cbEnable">
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelAntSetting">
+             <property name="text">
+              <string>Antenna Setting:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QComboBox" name="cbAntSetting">
+             <item>
+              <property name="text">
+               <string>Unknown (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Passive (1)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Active (2)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="labelEnable2">
+             <property name="text">
+              <string>Scan Aux Bands:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QCheckBox" name="cbEnable2"/>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendCfgItfm">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
-        </widget>
+         </widget>
         </item>
         <item>
          <widget class="QGroupBox" name="gbCfgPrtFields">
@@ -817,682 +844,766 @@
              </property>
             </widget>
            </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendCfgPrt">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbCfgValgetFields">
+         <widget class="QGroupBox" name="gbCfgValgetFields">
           <property name="title">
-            <string>CFG-VALGET Parameters</string>
+           <string>CFG-VALGET Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_14">
-            <item row="0" column="0">
-              <widget class="QLabel" name="labelValgetVersion">
-                <property name="text">
-                  <string>Version:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="0" column="1">
-              <widget class="QSpinBox" name="sbValgetVersion">
-                <property name="maximum">
-                  <number>255</number>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="0">
-              <widget class="QLabel" name="labelValgetLayer">
-                <property name="text">
-                  <string>Layer:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="1">
-              <widget class="QComboBox" name="cbValgetLayer">
-                <item>
-                  <property name="text">
-                    <string>RAM (0)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>BBR (1)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Flash (2)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Default (7)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="2" column="0">
-              <widget class="QLabel" name="labelValgetPosition">
-                <property name="text">
-                  <string>Position:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="1">
-              <widget class="QSpinBox" name="sbValgetPosition">
-                <property name="maximum">
-                  <number>65535</number>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="0">
-              <widget class="QLabel" name="labelValgetKeys">
-                <property name="text">
-                  <string>Keys (hex, comma separated):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="1">
-              <widget class="QLineEdit" name="leValgetKeys">
-                <property name="text">
-                  <string>0x00000000</string>
-                </property>
-              </widget>
-            </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelValgetVersion">
+             <property name="text">
+              <string>Version:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbValgetVersion">
+             <property name="maximum">
+              <number>255</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelValgetLayer">
+             <property name="text">
+              <string>Layer:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="cbValgetLayer">
+             <item>
+              <property name="text">
+               <string>RAM (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>BBR (1)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Flash (2)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Default (7)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelValgetPosition">
+             <property name="text">
+              <string>Position:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="sbValgetPosition">
+             <property name="maximum">
+              <number>65535</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelValgetKeys">
+             <property name="text">
+              <string>Keys (hex, comma separated):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="leValgetKeys">
+             <property name="text">
+              <string>0x00000000</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendCfgValget">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
-        </widget>
+         </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbCfgValsetFields">
+         <widget class="QGroupBox" name="gbCfgValsetFields">
           <property name="title">
-            <string>CFG-VALSET Parameters</string>
+           <string>CFG-VALSET Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_15">
-            <item row="0" column="0">
-              <widget class="QLabel" name="labelValsetVersion">
-                <property name="text">
-                  <string>Version:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="0" column="1">
-              <widget class="QSpinBox" name="sbValsetVersion">
-                <property name="maximum">
-                  <number>1</number>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="0">
-              <widget class="QLabel" name="labelValsetLayers">
-                <property name="text">
-                  <string>Layers:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="1">
-              <widget class="QCheckBox" name="cbValsetRam">
-                <property name="text">
-                  <string>RAM</string>
-                </property>
-                <property name="checked">
-                  <bool>true</bool>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="1">
-              <widget class="QCheckBox" name="cbValsetBbr">
-                <property name="text">
-                  <string>BBR</string>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="1">
-              <widget class="QCheckBox" name="cbValsetFlash">
-                <property name="text">
-                  <string>Flash</string>
-                </property>
-              </widget>
-            </item>
-            <item row="4" column="0">
-              <widget class="QLabel" name="labelValsetKeysValues">
-                <property name="text">
-                  <string>Key=Value pairs (hex, comma separated):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="4" column="1">
-              <widget class="QLineEdit" name="leValsetKeysValues">
-                <property name="text">
-                  <string>0x00000000=0x00000000</string>
-                </property>
-              </widget>
-            </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelValsetVersion">
+             <property name="text">
+              <string>Version:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbValsetVersion">
+             <property name="maximum">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelValsetLayers">
+             <property name="text">
+              <string>Layers:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QCheckBox" name="cbValsetRam">
+             <property name="text">
+              <string>RAM</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QCheckBox" name="cbValsetBbr">
+             <property name="text">
+              <string>BBR</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="cbValsetFlash">
+             <property name="text">
+              <string>Flash</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="labelValsetKeysValues">
+             <property name="text">
+              <string>Key=Value pairs (hex, comma separated):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QLineEdit" name="leValsetKeysValues">
+             <property name="text">
+              <string>0x00000000=0x00000000</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendCfgValset">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
-        </widget>
+         </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbCfgAntFields">
+         <widget class="QGroupBox" name="gbCfgAntFields">
           <property name="title">
-            <string>CFG-ANT Parameters</string>
+           <string>CFG-ANT Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_16">
-            <item row="0" column="0">
-              <widget class="QLabel" name="labelAntFlags">
-                <property name="text">
-                  <string>Antenna Flags:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="0" column="1">
-              <widget class="QCheckBox" name="cbAntSupplyCtrl">
-                <property name="text">
-                  <string>Enable supply voltage control</string>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="1">
-              <widget class="QCheckBox" name="cbAntShortDetect">
-                <property name="text">
-                  <string>Enable short circuit detection</string>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="1">
-              <widget class="QCheckBox" name="cbAntOpenDetect">
-                <property name="text">
-                  <string>Enable open circuit detection</string>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="1">
-              <widget class="QCheckBox" name="cbAntPowerDown">
-                <property name="text">
-                  <string>Power down on short circuit</string>
-                </property>
-              </widget>
-            </item>
-            <item row="4" column="1">
-              <widget class="QCheckBox" name="cbAntAutoRecover">
-                <property name="text">
-                  <string>Enable auto recovery</string>
-                </property>
-              </widget>
-            </item>
-            <item row="5" column="0">
-              <widget class="QLabel" name="labelAntPins">
-                <property name="text">
-                  <string>Pin Configuration:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="5" column="1">
-              <widget class="QLabel" name="labelAntSwitchPin">
-                <property name="text">
-                  <string>Switch Pin (0-31):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="5" column="2">
-              <widget class="QSpinBox" name="sbAntSwitchPin">
-                <property name="maximum">
-                  <number>31</number>
-                </property>
-              </widget>
-            </item>
-            <item row="6" column="1">
-              <widget class="QLabel" name="labelAntShortPin">
-                <property name="text">
-                  <string>Short Detect Pin (0-31):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="6" column="2">
-              <widget class="QSpinBox" name="sbAntShortPin">
-                <property name="maximum">
-                  <number>31</number>
-                </property>
-              </widget>
-            </item>
-            <item row="7" column="1">
-              <widget class="QLabel" name="labelAntOpenPin">
-                <property name="text">
-                  <string>Open Detect Pin (0-31):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="7" column="2">
-              <widget class="QSpinBox" name="sbAntOpenPin">
-                <property name="maximum">
-                  <number>31</number>
-                </property>
-              </widget>
-            </item>
-            <item row="8" column="1">
-              <widget class="QCheckBox" name="cbAntReconfig">
-                <property name="text">
-                  <string>Reconfigure pins</string>
-                </property>
-              </widget>
-            </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelAntFlags">
+             <property name="text">
+              <string>Antenna Flags:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QCheckBox" name="cbAntSupplyCtrl">
+             <property name="text">
+              <string>Enable supply voltage control</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QCheckBox" name="cbAntShortDetect">
+             <property name="text">
+              <string>Enable short circuit detection</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QCheckBox" name="cbAntOpenDetect">
+             <property name="text">
+              <string>Enable open circuit detection</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QCheckBox" name="cbAntPowerDown">
+             <property name="text">
+              <string>Power down on short circuit</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QCheckBox" name="cbAntAutoRecover">
+             <property name="text">
+              <string>Enable auto recovery</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="labelAntPins">
+             <property name="text">
+              <string>Pin Configuration:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QLabel" name="labelAntSwitchPin">
+             <property name="text">
+              <string>Switch Pin (0-31):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="2">
+            <widget class="QSpinBox" name="sbAntSwitchPin">
+             <property name="maximum">
+              <number>31</number>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QLabel" name="labelAntShortPin">
+             <property name="text">
+              <string>Short Detect Pin (0-31):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="2">
+            <widget class="QSpinBox" name="sbAntShortPin">
+             <property name="maximum">
+              <number>31</number>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QLabel" name="labelAntOpenPin">
+             <property name="text">
+              <string>Open Detect Pin (0-31):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="2">
+            <widget class="QSpinBox" name="sbAntOpenPin">
+             <property name="maximum">
+              <number>31</number>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QCheckBox" name="cbAntReconfig">
+             <property name="text">
+              <string>Reconfigure pins</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendCfgAnt">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
-        </widget>
+         </widget>
         </item>
         <item>
-            <widget class="QGroupBox" name="gbInfDebugFields">
-                <property name="title">
-                    <string>INF-DEBUG Parameters</string>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_5">
-                    <item>
-                        <widget class="QLabel" name="labelInfDebugMessage">
-                            <property name="text">
-                                <string>Debug message:</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item>
-                        <widget class="QPlainTextEdit" name="teInfDebugMessage">
-                            <property name="plainText">
-                                <string>Debug message</string>
-                            </property>
-                        </widget>
-                    </item>
-                </layout>
-            </widget>
-        </item>
-        <item>
-            <widget class="QGroupBox" name="gbInfErrorFields">
-                <property name="title">
-                    <string>INF-ERROR Parameters</string>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_6">
-                    <item>
-                        <widget class="QLabel" name="labelInfErrorMessage">
-                            <property name="text">
-                                <string>Error message:</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item>
-                        <widget class="QPlainTextEdit" name="teInfErrorMessage">
-                            <property name="plainText">
-                                <string>Error message</string>
-                            </property>
-                        </widget>
-                    </item>
-                </layout>
-            </widget>
-        </item>
-        <item>
-            <widget class="QGroupBox" name="gbInfWarningFields">
-                <property name="title">
-                    <string>INF-WARNING Parameters</string>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_7">
-                    <item>
-                        <widget class="QLabel" name="labelInfWarningMessage">
-                            <property name="text">
-                                <string>Warning message:</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item>
-                        <widget class="QPlainTextEdit" name="teInfWarningMessage">
-                            <property name="plainText">
-                                <string>Warning message</string>
-                            </property>
-                        </widget>
-                    </item>
-                </layout>
-            </widget>
-        </item>
-        <item>
-            <widget class="QGroupBox" name="gbInfNoticeFields">
-                <property name="title">
-                    <string>INF-NOTICE Parameters</string>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_8">
-                    <item>
-                        <widget class="QLabel" name="labelInfNoticeMessage">
-                            <property name="text">
-                                <string>Notice message:</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item>
-                        <widget class="QPlainTextEdit" name="teInfNoticeMessage">
-                            <property name="plainText">
-                                <string>Notice message</string>
-                            </property>
-                        </widget>
-                    </item>
-                </layout>
-            </widget>
-        </item>
-        <item>
-            <widget class="QGroupBox" name="gbInfTestFields">
-                <property name="title">
-                    <string>INF-TEST Parameters</string>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_9">
-                    <item>
-                        <widget class="QLabel" name="labelInfTestMessage">
-                            <property name="text">
-                                <string>Test message:</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item>
-                        <widget class="QPlainTextEdit" name="teInfTestMessage">
-                            <property name="plainText">
-                                <string>Test message</string>
-                            </property>
-                        </widget>
-                    </item>
-                </layout>
-            </widget>
-        </item>
-        <item>
-        <widget class="QGroupBox" name="gbNavTimeUtcFields">
+         <widget class="QGroupBox" name="gbInfDebugFields">
           <property name="title">
-            <string>NAV-TIMEUTC Parameters</string>
+           <string>INF-DEBUG Parameters</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
+            <widget class="QLabel" name="labelInfDebugMessage">
+             <property name="text">
+              <string>Debug message:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="teInfDebugMessage">
+             <property name="plainText">
+              <string>Debug message</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="cbAutoSendInfDebug">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbInfErrorFields">
+          <property name="title">
+           <string>INF-ERROR Parameters</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <widget class="QLabel" name="labelInfErrorMessage">
+             <property name="text">
+              <string>Error message:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="teInfErrorMessage">
+             <property name="plainText">
+              <string>Error message</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="cbAutoSendInfError">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbInfWarningFields">
+          <property name="title">
+           <string>INF-WARNING Parameters</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_7">
+           <item>
+            <widget class="QLabel" name="labelInfWarningMessage">
+             <property name="text">
+              <string>Warning message:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="teInfWarningMessage">
+             <property name="plainText">
+              <string>Warning message</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="cbAutoSendInfWarning">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbInfNoticeFields">
+          <property name="title">
+           <string>INF-NOTICE Parameters</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_8">
+           <item>
+            <widget class="QLabel" name="labelInfNoticeMessage">
+             <property name="text">
+              <string>Notice message:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="teInfNoticeMessage">
+             <property name="plainText">
+              <string>Notice message</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="cbAutoSendInfNotice">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbInfTestFields">
+          <property name="title">
+           <string>INF-TEST Parameters</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_9">
+           <item>
+            <widget class="QLabel" name="labelInfTestMessage">
+             <property name="text">
+              <string>Test message:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPlainTextEdit" name="teInfTestMessage">
+             <property name="plainText">
+              <string>Test message</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="cbAutoSendInfTest">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="gbNavTimeUtcFields">
+          <property name="title">
+           <string>NAV-TIMEUTC Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_11">
-            <item row="0" column="0">
-              <widget class="QLabel" name="labelTimeUtcTAcc">
-                <property name="text">
-                  <string>Time Accuracy (ns):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="0" column="1">
-              <widget class="QSpinBox" name="sbTimeUtcTAcc">
-                <property name="maximum">
-                  <number>1000000000</number>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="0">
-              <widget class="QLabel" name="labelTimeUtcNano">
-                <property name="text">
-                  <string>Nano seconds:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="1">
-              <widget class="QSpinBox" name="sbTimeUtcNano">
-                <property name="minimum">
-                  <number>-1000000000</number>
-                </property>
-                <property name="maximum">
-                  <number>1000000000</number>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="0">
-              <widget class="QLabel" name="labelTimeUtcValid">
-                <property name="text">
-                  <string>Validity Flags:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="1">
-              <widget class="QComboBox" name="cbTimeUtcValid">
-                <item>
-                  <property name="text">
-                    <string>Valid TOW (0x01)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Valid WKN (0x02)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Valid UTC (0x04)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Authenticated (0x08)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="3" column="0">
-              <widget class="QLabel" name="labelTimeUtcStandard">
-                <property name="text">
-                  <string>UTC Standard:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="1">
-              <widget class="QComboBox" name="cbTimeUtcStandard">
-                <item>
-                  <property name="text">
-                    <string>Not available (0)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>CRL Tokyo (1)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>NIST (2)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>USNO (3)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>BIPM (4)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>European labs (5)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelTimeUtcTAcc">
+             <property name="text">
+              <string>Time Accuracy (ns):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbTimeUtcTAcc">
+             <property name="maximum">
+              <number>1000000000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelTimeUtcNano">
+             <property name="text">
+              <string>Nano seconds:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="sbTimeUtcNano">
+             <property name="minimum">
+              <number>-1000000000</number>
+             </property>
+             <property name="maximum">
+              <number>1000000000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelTimeUtcValid">
+             <property name="text">
+              <string>Validity Flags:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="cbTimeUtcValid">
+             <item>
+              <property name="text">
+               <string>Valid TOW (0x01)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Valid WKN (0x02)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Valid UTC (0x04)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Authenticated (0x08)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelTimeUtcStandard">
+             <property name="text">
+              <string>UTC Standard:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QComboBox" name="cbTimeUtcStandard">
+             <item>
+              <property name="text">
+               <string>Not available (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>CRL Tokyo (1)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>NIST (2)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>USNO (3)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>BIPM (4)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>European labs (5)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendNavTimeUTC">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
-        </widget>
+         </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbSecUniqidFields">
+         <widget class="QGroupBox" name="gbSecUniqidFields">
           <property name="title">
-            <string>SEC-UNIQID Parameters</string>
+           <string>SEC-UNIQID Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_9">
-            <item row="0" column="0">
-              <widget class="QLabel" name="labelUniqidVersion">
-                <property name="text">
-                  <string>Version:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="0" column="1">
-              <widget class="QSpinBox" name="sbUniqidVersion">
-                <property name="minimum">
-                  <number>0</number>
-                </property>
-                <property name="maximum">
-                  <number>255</number>
-                </property>
-                <property name="value">
-                  <number>1</number>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="0">
-              <widget class="QLabel" name="labelChipId">
-                <property name="text">
-                  <string>Chip ID (hex):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="1">
-              <widget class="QLineEdit" name="leChipId">
-                <property name="text">
-                  <string>12345678</string>
-                </property>
-                <property name="inputMask" stdset="0">
-                  <string>HHHHHHHH</string>
-                </property>
-              </widget>
-            </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelUniqidVersion">
+             <property name="text">
+              <string>Version:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbUniqidVersion">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>255</number>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelChipId">
+             <property name="text">
+              <string>Chip ID (hex):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="leChipId">
+             <property name="inputMask">
+              <string>HHHHHHHH</string>
+             </property>
+             <property name="text">
+              <string>12345678</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendSecUniqid">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
-        </widget>
+         </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbMonHwFields">
+         <widget class="QGroupBox" name="gbMonHwFields">
           <property name="title">
-            <string>MON-HW Parameters</string>
+           <string>MON-HW Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_12">
-            <item row="0" column="0">
-              <widget class="QLabel" name="labelHwNoise">
-                <property name="text">
-                  <string>Noise Level:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="0" column="1">
-              <widget class="QSpinBox" name="sbHwNoise">
-                <property name="maximum">
-                  <number>8191</number>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="0">
-              <widget class="QLabel" name="labelHwAgc">
-                <property name="text">
-                  <string>AGC (%):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="1">
-              <widget class="QSpinBox" name="sbHwAgc">
-                <property name="maximum">
-                  <number>100</number>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="0">
-              <widget class="QLabel" name="labelHwAntStatus">
-                <property name="text">
-                  <string>Antenna Status:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="1">
-              <widget class="QComboBox" name="cbHwAntStatus">
-                <item>
-                  <property name="text">
-                    <string>INIT (0)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>DONTKNOW (1)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>OK (2)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>SHORT (3)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>OPEN (4)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="3" column="0">
-              <widget class="QLabel" name="labelHwAntPower">
-                <property name="text">
-                  <string>Antenna Power:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="1">
-              <widget class="QComboBox" name="cbHwAntPower">
-                <item>
-                  <property name="text">
-                    <string>OFF (0)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>ON (1)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>DONTKNOW (2)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="4" column="0">
-              <widget class="QLabel" name="labelHwJamming">
-                <property name="text">
-                  <string>Jamming State:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="4" column="1">
-              <widget class="QComboBox" name="cbHwJamming">
-                <item>
-                  <property name="text">
-                    <string>Unknown (0)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>OK (1)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Warning (2)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Critical (3)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="5" column="0">
-              <widget class="QLabel" name="labelHwCwSuppression">
-                <property name="text">
-                  <string>CW Suppression:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="5" column="1">
-              <widget class="QSpinBox" name="sbHwCwSuppression">
-                <property name="maximum">
-                  <number>255</number>
-                </property>
-              </widget>
-            </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelHwNoise">
+             <property name="text">
+              <string>Noise Level:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbHwNoise">
+             <property name="maximum">
+              <number>8191</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelHwAgc">
+             <property name="text">
+              <string>AGC (%):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="sbHwAgc">
+             <property name="maximum">
+              <number>100</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelHwAntStatus">
+             <property name="text">
+              <string>Antenna Status:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="cbHwAntStatus">
+             <item>
+              <property name="text">
+               <string>INIT (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>DONTKNOW (1)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>OK (2)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>SHORT (3)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>OPEN (4)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelHwAntPower">
+             <property name="text">
+              <string>Antenna Power:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QComboBox" name="cbHwAntPower">
+             <item>
+              <property name="text">
+               <string>OFF (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>ON (1)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>DONTKNOW (2)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="labelHwJamming">
+             <property name="text">
+              <string>Jamming State:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QComboBox" name="cbHwJamming">
+             <item>
+              <property name="text">
+               <string>Unknown (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>OK (1)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Warning (2)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Critical (3)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="labelHwCwSuppression">
+             <property name="text">
+              <string>CW Suppression:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSpinBox" name="sbHwCwSuppression">
+             <property name="maximum">
+              <number>255</number>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendMonHw">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
-        </widget>
+         </widget>
         </item>
         <item>
          <widget class="QGroupBox" name="gbMonVerFields">
@@ -1544,442 +1655,463 @@
              </property>
             </widget>
            </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendMonVer">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
         <item>
-            <widget class="QGroupBox" name="gbCfgRateFields">
-                <property name="title">
-                    <string>Rate Configuration</string>
-                </property>
-                <layout class="QGridLayout" name="gridLayoutRate">
-                    <item row="0" column="0">
-                        <widget class="QLabel" name="labelMeasRate">
-                            <property name="text">
-                                <string>Measurement Rate (ms):</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="0" column="1">
-                        <widget class="QSpinBox" name="sbMeasRate">
-                            <property name="minimum">
-                                <number>25</number>
-                            </property>
-                            <property name="maximum">
-                                <number>10000</number>
-                            </property>
-                            <property name="value">
-                                <number>1000</number>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="1" column="0">
-                        <widget class="QLabel" name="labelNavRate">
-                            <property name="text">
-                                <string>Navigation Rate (cycles):</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="1" column="1">
-                        <widget class="QSpinBox" name="sbNavRate">
-                            <property name="minimum">
-                                <number>1</number>
-                            </property>
-                            <property name="maximum">
-                                <number>127</number>
-                            </property>
-                            <property name="value">
-                                <number>1</number>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="2" column="0">
-                        <widget class="QLabel" name="labelTimeRef">
-                            <property name="text">
-                                <string>Time Reference:</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="2" column="1">
-                        <widget class="QComboBox" name="cbTimeRef">
-                            <item>
-                                <property name="text">
-                                    <string>UTC (0)</string>
-                                </property>
-                            </item>
-                            <item>
-                                <property name="text">
-                                    <string>GPS (1)</string>
-                                </property>
-                            </item>
-                            <item>
-                                <property name="text">
-                                    <string>GLONASS (2)</string>
-                                </property>
-                            </item>
-                            <item>
-                                <property name="text">
-                                    <string>BeiDou (3)</string>
-                                </property>
-                            </item>
-                            <item>
-                                <property name="text">
-                                    <string>Galileo (4)</string>
-                                </property>
-                            </item>
-                        </widget>
-                    </item>
-                </layout>
+         <widget class="QGroupBox" name="gbCfgRateFields">
+          <property name="title">
+           <string>CFG-Rate Parameters</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayoutRate">
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelMeasRate">
+             <property name="text">
+              <string>Measurement Rate (ms):</string>
+             </property>
             </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="sbMeasRate">
+             <property name="minimum">
+              <number>25</number>
+             </property>
+             <property name="maximum">
+              <number>10000</number>
+             </property>
+             <property name="value">
+              <number>1000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelNavRate">
+             <property name="text">
+              <string>Navigation Rate (cycles):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="sbNavRate">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>127</number>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelTimeRef">
+             <property name="text">
+              <string>Time Reference:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="cbTimeRef">
+             <item>
+              <property name="text">
+               <string>UTC (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>GPS (1)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>GLONASS (2)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>BeiDou (3)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Galileo (4)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendCfgRate">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
-        <widget class="QGroupBox" name="gbCfgNav5Fields">
+         <widget class="QGroupBox" name="gbCfgNav5Fields">
           <property name="title">
-            <string>CFG-NAV5 Parameters</string>
+           <string>CFG-NAV5 Parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_13">
-            <item row="0" column="0">
-              <widget class="QLabel" name="labelDynModel">
-                <property name="text">
-                  <string>Dynamic Model:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="0" column="1">
-              <widget class="QComboBox" name="cbDynModel">
-                <item>
-                  <property name="text">
-                    <string>Portable (0)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Stationary (2)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Pedestrian (3)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Automotive (4)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Sea (5)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Airborne &lt;1g (6)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Airborne &lt;2g (7)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Airborne &lt;4g (8)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Wrist-worn (9)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Motorbike (10)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="1" column="0">
-              <widget class="QLabel" name="labelFixMode">
-                <property name="text">
-                  <string>Fix Mode:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="1" column="1">
-              <widget class="QComboBox" name="cbFixMode">
-                <item>
-                  <property name="text">
-                    <string>2D only (1)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>3D only (2)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>Auto 2D/3D (3)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="2" column="0">
-              <widget class="QLabel" name="labelFixedAlt">
-                <property name="text">
-                  <string>Fixed Altitude (m):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="2" column="1">
-              <widget class="QDoubleSpinBox" name="dsbFixedAlt">
-                <property name="decimals">
-                  <number>2</number>
-                </property>
-                <property name="minimum">
-                  <double>-1000.000000000000000</double>
-                </property>
-                <property name="maximum">
-                  <double>10000.000000000000000</double>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="0">
-              <widget class="QLabel" name="labelMinElev">
-                <property name="text">
-                  <string>Min Elevation (deg):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="3" column="1">
-              <widget class="QSpinBox" name="sbMinElev">
-                <property name="minimum">
-                  <number>0</number>
-                </property>
-                <property name="maximum">
-                  <number>90</number>
-                </property>
-                <property name="value">
-                  <number>5</number>
-                </property>
-              </widget>
-            </item>
-            <item row="4" column="0">
-              <widget class="QLabel" name="labelPDOP">
-                <property name="text">
-                  <string>PDOP Mask:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="4" column="1">
-              <widget class="QDoubleSpinBox" name="dsbPDOP">
-                <property name="decimals">
-                  <number>1</number>
-                </property>
-                <property name="minimum">
-                  <double>0.000000000000000</double>
-                </property>
-                <property name="maximum">
-                  <double>100.000000000000000</double>
-                </property>
-                <property name="value">
-                  <double>2.500000000000000</double>
-                </property>
-              </widget>
-            </item>
-            <item row="5" column="0">
-              <widget class="QLabel" name="labelTDOP">
-                <property name="text">
-                  <string>TDOP Mask:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="5" column="1">
-              <widget class="QDoubleSpinBox" name="dsbTDOP">
-                <property name="decimals">
-                  <number>1</number>
-                </property>
-                <property name="minimum">
-                  <double>0.000000000000000</double>
-                </property>
-                <property name="maximum">
-                  <double>100.000000000000000</double>
-                </property>
-                <property name="value">
-                  <double>2.500000000000000</double>
-                </property>
-              </widget>
-            </item>
-            <item row="6" column="0">
-              <widget class="QLabel" name="labelPAcc">
-                <property name="text">
-                  <string>Pos Accuracy Mask (m):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="6" column="1">
-              <widget class="QDoubleSpinBox" name="dsbPAcc">
-                <property name="decimals">
-                  <number>1</number>
-                </property>
-                <property name="minimum">
-                  <double>0.000000000000000</double>
-                </property>
-                <property name="maximum">
-                  <double>1000.000000000000000</double>
-                </property>
-              </widget>
-            </item>
-            <item row="7" column="0">
-              <widget class="QLabel" name="labelTAcc">
-                <property name="text">
-                  <string>Time Accuracy Mask (m):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="7" column="1">
-              <widget class="QDoubleSpinBox" name="dsbTAcc">
-                <property name="decimals">
-                  <number>1</number>
-                </property>
-                <property name="minimum">
-                  <double>0.000000000000000</double>
-                </property>
-                <property name="maximum">
-                  <double>1000.000000000000000</double>
-                </property>
-              </widget>
-            </item>
-            <item row="8" column="0">
-              <widget class="QLabel" name="labelStaticHoldThresh">
-                <property name="text">
-                  <string>Static Hold Thresh (cm/s):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="8" column="1">
-              <widget class="QDoubleSpinBox" name="dsbStaticHoldThresh">
-                <property name="decimals">
-                  <number>1</number>
-                </property>
-                <property name="minimum">
-                  <double>0.000000000000000</double>
-                </property>
-                <property name="maximum">
-                  <double>1000.000000000000000</double>
-                </property>
-              </widget>
-            </item>
-            <item row="9" column="0">
-              <widget class="QLabel" name="labelDgnssTimeout">
-                <property name="text">
-                  <string>DGNSS Timeout (s):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="9" column="1">
-              <widget class="QSpinBox" name="sbDgnssTimeout">
-                <property name="minimum">
-                  <number>0</number>
-                </property>
-                <property name="maximum">
-                  <number>255</number>
-                </property>
-              </widget>
-            </item>
-            <item row="10" column="0">
-              <widget class="QLabel" name="labelCnoThresh">
-                <property name="text">
-                  <string>CNO Threshold (dBHz):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="10" column="1">
-              <widget class="QSpinBox" name="sbCnoThresh">
-                <property name="minimum">
-                  <number>0</number>
-                </property>
-                <property name="maximum">
-                  <number>255</number>
-                </property>
-              </widget>
-            </item>
-            <item row="11" column="0">
-              <widget class="QLabel" name="labelCnoThreshNumSVs">
-                <property name="text">
-                  <string>CNO Min SVs:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="11" column="1">
-              <widget class="QSpinBox" name="sbCnoThreshNumSVs">
-                <property name="minimum">
-                  <number>0</number>
-                </property>
-                <property name="maximum">
-                  <number>255</number>
-                </property>
-              </widget>
-            </item>
-            <item row="12" column="0">
-              <widget class="QLabel" name="labelUtcStandard">
-                <property name="text">
-                  <string>UTC Standard:</string>
-                </property>
-              </widget>
-            </item>
-            <item row="12" column="1">
-              <widget class="QComboBox" name="cbUtcStandard">
-                <item>
-                  <property name="text">
-                    <string>Automatic (0)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>USNO (3)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>European (5)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>GLONASS (6)</string>
-                  </property>
-                </item>
-                <item>
-                  <property name="text">
-                    <string>BeiDou (7)</string>
-                  </property>
-                </item>
-              </widget>
-            </item>
-            <item row="13" column="0">
-              <widget class="QLabel" name="labelStaticHoldMaxDist">
-                <property name="text">
-                  <string>Static Hold Max Dist (m):</string>
-                </property>
-              </widget>
-            </item>
-            <item row="13" column="1">
-              <widget class="QDoubleSpinBox" name="dsbStaticHoldMaxDist">
-                <property name="decimals">
-                  <number>1</number>
-                </property>
-                <property name="minimum">
-                  <double>0.000000000000000</double>
-                </property>
-                <property name="maximum">
-                  <double>1000.000000000000000</double>
-                </property>
-              </widget>
-            </item>
+           <item row="12" column="1">
+            <widget class="QComboBox" name="cbUtcStandard">
+             <item>
+              <property name="text">
+               <string>Automatic (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>USNO (3)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>European (5)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>GLONASS (6)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>BeiDou (7)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QLabel" name="labelDgnssTimeout">
+             <property name="text">
+              <string>DGNSS Timeout (s):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QDoubleSpinBox" name="dsbFixedAlt">
+             <property name="decimals">
+              <number>2</number>
+             </property>
+             <property name="minimum">
+              <double>-1000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>10000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QDoubleSpinBox" name="dsbPAcc">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="labelTAcc">
+             <property name="text">
+              <string>Time Accuracy Mask (m):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0">
+            <widget class="QLabel" name="labelCnoThreshNumSVs">
+             <property name="text">
+              <string>CNO Min SVs:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="labelStaticHoldThresh">
+             <property name="text">
+              <string>Static Hold Thresh (cm/s):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="labelTDOP">
+             <property name="text">
+              <string>TDOP Mask:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QDoubleSpinBox" name="dsbTDOP">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>2.500000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelMinElev">
+             <property name="text">
+              <string>Min Elevation (deg):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0">
+            <widget class="QLabel" name="labelCnoThresh">
+             <property name="text">
+              <string>CNO Threshold (dBHz):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QDoubleSpinBox" name="dsbStaticHoldThresh">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="labelPAcc">
+             <property name="text">
+              <string>Pos Accuracy Mask (m):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="labelPDOP">
+             <property name="text">
+              <string>PDOP Mask:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="cbFixMode">
+             <item>
+              <property name="text">
+               <string>2D only (1)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>3D only (2)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Auto 2D/3D (3)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="12" column="0">
+            <widget class="QLabel" name="labelUtcStandard">
+             <property name="text">
+              <string>UTC Standard:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="1">
+            <widget class="QSpinBox" name="sbCnoThreshNumSVs">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>255</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelFixedAlt">
+             <property name="text">
+              <string>Fixed Altitude (m):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QDoubleSpinBox" name="dsbPDOP">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>2.500000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="1">
+            <widget class="QDoubleSpinBox" name="dsbStaticHoldMaxDist">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="sbMinElev">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>90</number>
+             </property>
+             <property name="value">
+              <number>5</number>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QDoubleSpinBox" name="dsbTAcc">
+             <property name="decimals">
+              <number>1</number>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelDynModel">
+             <property name="text">
+              <string>Dynamic Model:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelFixMode">
+             <property name="text">
+              <string>Fix Mode:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="0">
+            <widget class="QLabel" name="labelStaticHoldMaxDist">
+             <property name="text">
+              <string>Static Hold Max Dist (m):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QSpinBox" name="sbCnoThresh">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>255</number>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="cbDynModel">
+             <item>
+              <property name="text">
+               <string>Portable (0)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Stationary (2)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Pedestrian (3)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Automotive (4)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Sea (5)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Airborne &lt;1g (6)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Airborne &lt;2g (7)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Airborne &lt;4g (8)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Wrist-worn (9)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Motorbike (10)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QSpinBox" name="sbDgnssTimeout">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>255</number>
+             </property>
+            </widget>
+           </item>
+           <item row="14" column="0">
+            <widget class="QCheckBox" name="cbAutoSendCfgNav5">
+             <property name="text">
+              <string>Auto Send</string>
+             </property>
+            </widget>
+           </item>
           </layout>
-        </widget>
+         </widget>
         </item>
         <item>
          <widget class="QGroupBox" name="gbMonRfFields">
@@ -2156,6 +2288,13 @@
             <widget class="QSpinBox" name="sbRfCwSuppression">
              <property name="maximum">
               <number>255</number>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0" colspan="3">
+            <widget class="QCheckBox" name="cbAutoSendMonRf">
+             <property name="text">
+              <string>Auto Send</string>
              </property>
             </widget>
            </item>

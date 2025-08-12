@@ -54,6 +54,26 @@ private slots:
     void onActionSaveLogTriggered();
     void onActionClearLogTriggered();
     void onActionAboutTriggered();
+    void onAutoSendNavPvtToggled(bool checked);
+    void onAutoSendNavStatusToggled(bool checked);
+    void onAutoSendNavSatToggled(bool checked);
+    void onAutoSendNavTimeUtcToggled(bool checked);
+    void onAutoSendMonVerToggled(bool checked);
+    void onAutoSendMonHwToggled(bool checked);
+    void onAutoSendMonRfToggled(bool checked);
+    void onAutoSendCfgPrtToggled(bool checked);
+    void onAutoSendCfgItfmToggled(bool checked);
+    void onAutoSendCfgNav5Toggled(bool checked);
+    void onAutoSendCfgRateToggled(bool checked);
+    void onAutoSendCfgValgetToggled(bool checked);
+    void onAutoSendCfgValsetToggled(bool checked);
+    void onAutoSendCfgAntToggled(bool checked);
+    void onAutoSendInfDebugToggled(bool checked);
+    void onAutoSendInfErrorToggled(bool checked);
+    void onAutoSendInfWarningToggled(bool checked);
+    void onAutoSendInfNoticeToggled(bool checked);
+    void onAutoSendInfTestToggled(bool checked);
+    void onAutoSendSecUniqidToggled(bool checked);
 
 signals:
     void secUniqidReceived(const UbxParser::SecUniqid &data);
