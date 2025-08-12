@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>5467</height>
+    <height>5497</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -2369,7 +2369,7 @@
              <item row="0" column="0">
               <widget class="QLabel" name="labelSwVer">
                <property name="text">
-                <string>UTC Time:</string>
+                <string>Time:</string>
                </property>
               </widget>
              </item>
