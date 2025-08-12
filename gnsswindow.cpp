@@ -1216,7 +1216,28 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
 
     // Process ACK/NACK messages
     if (msgClass == 0x05) {
-        processAckNack(msgId, payload);
+        if (payload.size() >= 2) {
+            quint8 ackedClass = static_cast<quint8>(payload[0]);
+            quint8 ackedId = static_cast<quint8>(payload[1]);
+
+            if (msgId == 0x01) { // ACK
+                appendToLog(QString("ACK received for Class=0x%1 ID=0x%2")
+                                .arg(ackedClass, 2, 16, QLatin1Char('0'))
+                                .arg(ackedId, 2, 16, QLatin1Char('0')),
+                            "in");
+
+                // Handle configuration completion if this was for a CFG message
+                if (ackedClass == 0x06) {
+                    completeInitialization();
+                }
+            }
+            else if (msgId == 0x00) { // NACK
+                appendToLog(QString("NACK received for Class=0x%1 ID=0x%2")
+                                .arg(ackedClass, 2, 16, QLatin1Char('0'))
+                                .arg(ackedId, 2, 16, QLatin1Char('0')),
+                            "error");
+            }
+        }
         return;
     }
 
@@ -1282,6 +1303,7 @@ void GNSSWindow::completeInitialization() {
 
     appendToLog("Configuration complete. Starting NAV-PVT and NAV-STATUS.", "system");
 }
+
 
 void GNSSWindow::processCfgMessages(quint8 msgId, const QByteArray& payload) {
     QString message;
@@ -1977,6 +1999,18 @@ void GNSSWindow::sendUbxAck(quint8 msgClass, quint8 msgId) {
                 "config");
 }
 
+void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId) {
+    QByteArray payload;
+    payload.append(static_cast<char>(msgClass));
+    payload.append(static_cast<char>(msgId));
+
+    createUbxPacket(0x05, 0x00, payload);
+    appendToLog(QString("Sent NACK for Class=0x%1 ID=0x%2")
+                    .arg(msgClass, 2, 16, QLatin1Char('0'))
+                    .arg(msgId, 2, 16, QLatin1Char('0')),
+                "error");
+}
+
 void GNSSWindow::setupNavPvtFields() {
     ui->gbNavPvtFields->setVisible(true);
     ui->gbNavStatusFields->setVisible(false);
@@ -2027,18 +2061,6 @@ void GNSSWindow::setupCfgItfmFields()
     ui->cbEnable->setChecked(true);
     ui->cbAntSetting->setCurrentIndex(0);
     ui->cbEnable2->setChecked(false);
-}
-
-void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId) {
-    QByteArray payload;
-    payload.append(static_cast<char>(msgClass));
-    payload.append(static_cast<char>(msgId));
-
-    createUbxPacket(0x05, 0x00, payload);
-    appendToLog(QString("Sent NACK for Class=0x%1 ID=0x%2")
-                    .arg(msgClass, 2, 16, QLatin1Char('0'))
-                    .arg(msgId, 2, 16, QLatin1Char('0')),
-                "error");
 }
 
 void GNSSWindow::sendUbxCfgPrt()
