@@ -140,17 +140,17 @@ void GNSSWindow::initClassIdMapping() {
 
     // INF class (0x04)
     QMap<int, QString> infIds;
-    secIds.insert(0x04, "DEBUG");
-    secIds.insert(0x00, "ERROR");
-    secIds.insert(0x02, "NOTICE");
-    secIds.insert(0x03, "TEST");
-    secIds.insert(0x01, "WARNING");
+    infIds.insert(0x04, "DEBUG");
+    infIds.insert(0x00, "ERROR");
+    infIds.insert(0x02, "NOTICE");
+    infIds.insert(0x03, "TEST");
+    infIds.insert(0x01, "WARNING");
     m_classIdMap.insert(0x04, infIds);
 
     // ACK class (0x05)
     QMap<int, QString> ackIds;
-    secIds.insert(0x01, "ACK");
-    secIds.insert(0x00, "NAK");
+    ackIds.insert(0x01, "ACK");
+    ackIds.insert(0x00, "NAK");
     m_classIdMap.insert(0x05, ackIds);
 
     // Fill class comboBox
@@ -287,6 +287,15 @@ void GNSSWindow::setupNavSatFields() {
     ui->cbOrbitSource->setCurrentIndex(1); // Ephemeris
 }
 
+void GNSSWindow::setupInfDebugFields()
+{
+    ui->gbInfDebugFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    ui->teInfDebugMessage->setPlainText("Debug message");
+}
+
+
 void GNSSWindow::setupCfgNav5Fields()
 {
     ui->gbCfgNav5Fields->setVisible(true);
@@ -307,6 +316,59 @@ void GNSSWindow::setupCfgNav5Fields()
     ui->sbCnoThreshNumSVs->setValue(0);
     ui->cbUtcStandard->setCurrentIndex(0); // Automatic
     ui->dsbStaticHoldMaxDist->setValue(0.0);
+}
+
+void GNSSWindow::setupCfgRateFields()
+{
+    // Устанавливаем значения по умолчанию
+    ui->sbMeasRate->setValue(1000);  // 1 Hz
+    ui->sbNavRate->setValue(1);      // 1 navigation solution per measurement
+    ui->cbTimeRef->setCurrentIndex(0); // UTC time
+}
+
+void GNSSWindow::sendUbxInfDebug()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send INF-DEBUG", "error");
+        return;
+    }
+
+    // Получаем сообщение из UI
+    QString debugMessage = ui->teInfDebugMessage->toPlainText();
+    QByteArray payload = debugMessage.toLatin1();
+
+    createUbxPacket(0x04, 0x04, payload);
+    appendToLog(QString("INF-DEBUG sent: %1").arg(debugMessage), "out");
+}
+
+void GNSSWindow::sendUbxCfgRate()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send CFG-RATE", "error");
+        return;
+    }
+
+    // Получаем значения из UI
+    quint16 measRate = static_cast<quint16>(ui->sbMeasRate->value());
+    quint16 navRate = static_cast<quint16>(ui->sbNavRate->value());
+    quint16 timeRef = static_cast<quint16>(ui->cbTimeRef->currentIndex());
+
+    QByteArray payload(6, 0x00);
+
+    // Записываем measRate (little-endian)
+    qToLittleEndian<quint16>(measRate, payload.data());
+
+    // Записываем navRate (little-endian)
+    qToLittleEndian<quint16>(navRate, payload.data() + 2);
+
+    // Записываем timeRef (little-endian)
+    qToLittleEndian<quint16>(timeRef, payload.data() + 4);
+
+    createUbxPacket(0x06, 0x08, payload);
+    appendToLog(QString("CFG-RATE sent: MeasRate=%1ms, NavRate=%2, TimeRef=%3")
+                    .arg(measRate)
+                    .arg(navRate)
+                    .arg(timeRef), "config");
 }
 
 void GNSSWindow::onClassIdChanged() {
@@ -343,6 +405,12 @@ void GNSSWindow::onClassIdChanged() {
             ui->gbMonRfFields->setVisible(true);
         }
         break;
+    case 0x04: // INF
+        if (msgId == 0x04) { // DEBUG
+            setupInfDebugFields();
+            ui->gbInfDebugFields->setVisible(true);
+        }
+        break;
     case 0x06: // CFG
         if (msgId == 0x00) { // PRT
             setupCfgPrtFields();
@@ -353,6 +421,15 @@ void GNSSWindow::onClassIdChanged() {
         } else if (msgId == 0x24) { // NAV5
             setupCfgNav5Fields();
             ui->gbCfgNav5Fields->setVisible(true);
+        } else if (msgId == 0x08) { // RATE
+            setupCfgRateFields();
+            ui->gbCfgRateFields->setVisible(true);
+        } else if (msgId == 0x8b) { // VALGET
+            setupCfgValgetFields();
+            ui->gbCfgValgetFields->setVisible(true);
+        } else if (msgId == 0x8a) { // VALSET
+            setupCfgValsetFields();
+            ui->gbCfgValsetFields->setVisible(true);
         }
         break;
     case 0x27: // SEC
@@ -371,8 +448,12 @@ void GNSSWindow::onClassIdChanged() {
         !ui->gbMonVerFields->isVisible() &&
         !ui->gbNavTimeUtcFields->isVisible() &&
         !ui->gbMonHwFields->isVisible() &&
+        !ui->gbCfgValsetFields->isVisible() &&
+        !ui->gbInfDebugFields->isVisible() &&
+        !ui->gbCfgValgetFields->isVisible() &&
         !ui->gbCfgItfmFields->isVisible() &&
         !ui->gbCfgNav5Fields->isVisible() &&
+        !ui->gbCfgRateFields->isVisible() &&
         !ui->gbSecUniqidFields->isVisible()) {
         ui->tePayload->setVisible(true);
     }
@@ -386,9 +467,13 @@ void GNSSWindow::hideAllParameterFields() {
     ui->gbNavSatFields->setVisible(false);
     ui->gbCfgPrtFields->setVisible(false);
     ui->gbMonVerFields->setVisible(false);
+    ui->gbCfgRateFields->setVisible(false);
     ui->gbMonHwFields->setVisible(false);
+    ui->gbCfgValsetFields->setVisible(false);
     ui->gbSecUniqidFields->setVisible(false);
     ui->gbCfgItfmFields->setVisible(false);
+    ui->gbInfDebugFields->setVisible(false);
+    ui->gbCfgValgetFields->setVisible(false);
     ui->gbCfgNav5Fields->setVisible(false);
     ui->tePayload->setVisible(false);
 }
@@ -414,8 +499,8 @@ void GNSSWindow::sendInitialConfiguration() {
     sendUbxCfgMsg(0x01, 0x07, 1);  // NAV-PVT
     sendUbxCfgMsg(0x01, 0x03, 1);  // NAV-STATUS
     sendUbxCfgMsg(0x0A, 0x28, 1);  // MON-RF
-    sendUbxCfgRate(1000, 1);       // 1Hz
-    sendUbxCfgNav5();              // Add this line for NAV5 configuration
+    sendUbxCfgRate();
+    sendUbxCfgNav5();              // NAV5 configuration
     sendUbxCfgDynModel(4);         // Automotive
     sendUbxCfgAntSettings(true, true, true); // Antenna settings
     sendUbxCfgItfm();              // Enable interference detection
@@ -584,6 +669,31 @@ void GNSSWindow::setupMonRfFields()
     ui->sbRfCwSuppression->setValue(0);
 }
 
+void GNSSWindow::setupCfgValsetFields()
+{
+    ui->gbCfgValsetFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    // Установим значения по умолчанию
+    ui->sbValsetVersion->setValue(0);
+    ui->cbValsetRam->setChecked(true);
+    ui->cbValsetBbr->setChecked(false);
+    ui->cbValsetFlash->setChecked(false);
+    ui->leValsetKeysValues->setText("0x00000000=0x00000000");
+}
+
+void GNSSWindow::setupCfgValgetFields()
+{
+    ui->gbCfgValgetFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    // Установим значения по умолчанию
+    ui->sbValgetVersion->setValue(0);
+    ui->cbValgetLayer->setCurrentIndex(0); // RAM layer
+    ui->sbValgetPosition->setValue(0);
+    ui->leValgetKeys->setText("0x00000000");
+}
+
 void GNSSWindow::setupMonVerFields()
 {
     ui->gbMonVerFields->setVisible(true);
@@ -622,6 +732,123 @@ void GNSSWindow::setupNavTimeUtcFields()
     ui->sbTimeUtcNano->setValue(0);
     ui->cbTimeUtcValid->setCurrentIndex(2); // Valid UTC
     ui->cbTimeUtcStandard->setCurrentIndex(4); // BIPM
+}
+
+void GNSSWindow::sendUbxCfgValset()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send CFG-VALSET", "error");
+        return;
+    }
+
+    // Получаем параметры из UI
+    quint8 version = static_cast<quint8>(ui->sbValsetVersion->value());
+    quint8 layers = 0;
+    if (ui->cbValsetRam->isChecked()) layers |= 0x01;
+    if (ui->cbValsetBbr->isChecked()) layers |= 0x02;
+    if (ui->cbValsetFlash->isChecked()) layers |= 0x04;
+
+    QString kvPairsStr = ui->leValsetKeysValues->text();
+
+    // Парсим пары ключ=значение
+    QList<QPair<quint32, quint32>> kvPairs;
+    QStringList pairs = kvPairsStr.split(',', Qt::SkipEmptyParts);
+    for (const QString &pair : pairs) {
+        QStringList kv = pair.split('=', Qt::SkipEmptyParts);
+        if (kv.size() == 2) {
+            bool keyOk, valueOk;
+            quint32 key = kv[0].trimmed().toUInt(&keyOk, 16);
+            quint32 value = kv[1].trimmed().toUInt(&valueOk, 16);
+            if (keyOk && valueOk) {
+                kvPairs.append(qMakePair(key, value));
+            }
+        }
+    }
+
+    if (kvPairs.isEmpty()) {
+        appendToLog("Error: No valid key-value pairs provided for CFG-VALSET", "error");
+        return;
+    }
+
+    // Формируем payload
+    QByteArray payload;
+    payload.append(static_cast<char>(version));
+    payload.append(static_cast<char>(layers));
+    payload.append('\0'); // reserved1
+    payload.append('\0'); // reserved2
+
+    // Добавляем пары ключ-значение
+    for (const auto &kv : kvPairs) {
+        quint32 key = kv.first;
+        quint32 value = kv.second;
+
+        payload.append(static_cast<char>(key & 0xFF));
+        payload.append(static_cast<char>((key >> 8) & 0xFF));
+        payload.append(static_cast<char>((key >> 16) & 0xFF));
+        payload.append(static_cast<char>((key >> 24) & 0xFF));
+
+        payload.append(static_cast<char>(value & 0xFF));
+        payload.append(static_cast<char>((value >> 8) & 0xFF));
+        payload.append(static_cast<char>((value >> 16) & 0xFF));
+        payload.append(static_cast<char>((value >> 24) & 0xFF));
+    }
+
+    createUbxPacket(0x06, 0x8a, payload);
+    appendToLog(QString("CFG-VALSET sent: Version=%1, Layers=0x%2, %3 key-value pairs")
+                    .arg(version)
+                    .arg(layers, 2, 16, QLatin1Char('0'))
+                    .arg(kvPairs.size()), "config");
+}
+
+void GNSSWindow::sendUbxCfgValGet()
+{
+    if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        appendToLog("Error: No active connection to send CFG-VALGET", "error");
+        return;
+    }
+
+    // Получаем параметры из UI
+    quint8 version = static_cast<quint8>(ui->sbValgetVersion->value());
+    quint8 layer = static_cast<quint8>(ui->cbValgetLayer->currentIndex());
+    quint16 position = static_cast<quint16>(ui->sbValgetPosition->value());
+    QString keysStr = ui->leValgetKeys->text();
+
+    // Парсим ключи из строки (формат: "0x12345678,0x87654321")
+    QList<quint32> keys;
+    QStringList keyList = keysStr.split(',', Qt::SkipEmptyParts);
+    for (const QString &keyStr : keyList) {
+        bool ok;
+        quint32 key = keyStr.trimmed().toUInt(&ok, 16);
+        if (ok) {
+            keys.append(key);
+        }
+    }
+
+    if (keys.isEmpty()) {
+        appendToLog("Error: No valid keys provided for CFG-VALGET", "error");
+        return;
+    }
+
+    // Формируем payload (версия + слой + позиция + ключи)
+    QByteArray payload;
+    payload.append(static_cast<char>(version));
+    payload.append(static_cast<char>(layer));
+    payload.append(static_cast<char>(position & 0xFF));
+    payload.append(static_cast<char>((position >> 8) & 0xFF));
+
+    for (quint32 key : keys) {
+        payload.append(static_cast<char>(key & 0xFF));
+        payload.append(static_cast<char>((key >> 8) & 0xFF));
+        payload.append(static_cast<char>((key >> 16) & 0xFF));
+        payload.append(static_cast<char>((key >> 24) & 0xFF));
+    }
+
+    createUbxPacket(0x06, 0x8b, payload);
+    appendToLog(QString("CFG-VALGET sent: Version=%1, Layer=%2, Position=%3, Keys=%4")
+                    .arg(version)
+                    .arg(layer)
+                    .arg(position)
+                    .arg(keysStr), "config");
 }
 
 void GNSSWindow::sendUbxNavTimeUtc()
@@ -669,15 +896,27 @@ void GNSSWindow::sendUbxNavTimeUtc()
     appendToLog("Sent NAV-TIMEUTC", "out");
 }
 
-void GNSSWindow::processCfgValGet(const QByteArray &payload) {
-    if(payload.size() >= 8) {
-        quint32 key = qFromLittleEndian<quint32>(payload.mid(4, 4).constData());
-        QByteArray response = payload.left(4);
-        response.append(0x01); // Example value
-
-        createUbxPacket(0x06, 0x8B, response);
-        appendToLog(QString("CFG-VALGET response for key 0x%1").arg(key, 8, 16, QLatin1Char('0')), "config");
+void GNSSWindow::processCfgValGet(const QByteArray& payload) {
+    if (payload.size() < 4) {
+        appendToLog("CFG-VALGET response too short", "error");
+        return;
     }
+
+    quint8 version = static_cast<quint8>(payload[0]);
+    quint8 layer = static_cast<quint8>(payload[1]);
+
+    QString message = QString("CFG-VALGET response: Version=%1, Layer=%2").arg(version).arg(layer);
+
+    // Обработка key-value пар (каждые 8 байт: 4 байта key, 4 байта value)
+    for (int i = 4; i + 7 < payload.size(); i += 8) {
+        quint32 key = qFromLittleEndian<quint32>(payload.mid(i, 4).constData());
+        quint32 value = qFromLittleEndian<quint32>(payload.mid(i + 4, 4).constData());
+
+        message += QString("\nKey: 0x%1, Value: 0x%2").arg(key, 8, 16, QLatin1Char('0'))
+                       .arg(value, 8, 16, QLatin1Char('0'));
+    }
+
+    appendToLog(message, "in");
 }
 
 void GNSSWindow::processCfgValSet(const QByteArray &payload) {
@@ -909,11 +1148,11 @@ void GNSSWindow::processCfgMessages(quint8 msgId, const QByteArray& payload) {
         sendUbxCfgPrtResponse();
         sendInitialConfiguration();
         return;
-    case 0x8A: // CFG-VALGET
+    case 0x8a: // CFG-VALGET
         processCfgValGet(payload);
         break;
-    case 0x8B: // CFG-VALSET
-        processCfgValSet(payload);
+    case 0x8b: // CFG-VALGET
+        processCfgValGet(payload);
         break;
     case 0x39: // CFG-ITFM
         sendUbxAck(0x06, 0x39);
@@ -1228,16 +1467,6 @@ void GNSSWindow::processMonHw(const UbxParser::MonHw &hw) {
     appendToLog(QString("MON-HW: %1").arg(info), "status");
 }
 
-void GNSSWindow::sendUbxCfgRate(quint16 measRate, quint16 navRate) {
-    QByteArray payload(6, 0x00);
-    qToLittleEndian<quint16>(measRate, payload.data());
-    qToLittleEndian<quint16>(navRate, payload.data()+2);
-    qToLittleEndian<quint16>(1, payload.data()+4); // GPS time reference
-
-    createUbxPacket(0x06, 0x08, payload);
-    appendToLog(QString("Set rates - Meas: %1ms, Nav: %2 cycles").arg(measRate).arg(navRate), "config");
-}
-
 void GNSSWindow::sendUbxCfgAnt(bool enablePower) {
     QByteArray payload(4, 0x00);
     quint16 flags = enablePower ? 0x0001 : 0x0000;
@@ -1332,10 +1561,16 @@ void GNSSWindow::onSendButtonClicked() {
         if (msgId == 0x00) sendUbxCfgPrt();
         else if (msgId == 0x39) sendUbxCfgItfm();
         else if (msgId == 0x24) sendUbxCfgNav5();
+        else if (msgId == 0x08) sendUbxCfgRate();
+        else if (msgId == 0x8b) sendUbxCfgValGet();
+        else if (msgId == 0x8a) sendUbxCfgValset();
+        break;
+    case 0x04: // INF
+        if (msgId == 0x04) sendUbxInfDebug();
         break;
     case 0x0A: // MON
         if (msgId == 0x04) sendUbxMonVer();
-        else if (msgId == 0x09) sendUbxMonHw(); // Добавлено
+        else if (msgId == 0x09) sendUbxMonHw();
         else if (msgId == 0x38) sendUbxMonRf();
         break;
     case 0x27: // SEC

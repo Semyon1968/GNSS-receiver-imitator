@@ -45,7 +45,6 @@ private slots:
     void sendUbxSecUniqid();
     void sendUbxNavStatus();
     void onClassIdChanged();
-    void sendUbxCfgRate(quint16 measRate, quint16 navRate);
     void sendUbxCfgAnt(bool enablePower);
     void saveLogToFile();
     void clearLog();
@@ -100,7 +99,15 @@ private:
     void setupNavTimeUtcFields();
     void setupMonHwFields();
     void setupCfgNav5Fields();
+    void sendUbxCfgRate();
+    void sendUbxCfgValGet();
+    void setupCfgRateFields();
+    void setupCfgValgetFields();
+    void setupCfgValsetFields();
+    void sendUbxCfgValset();
     void sendUbxCfgNav5();
+    void setupInfDebugFields();
+    void sendUbxInfDebug();
     void sendUbxMonHw();
     void sendUbxNavTimeUtc();
     void sendUbxNavSat();
