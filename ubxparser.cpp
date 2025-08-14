@@ -9,34 +9,34 @@ bool UbxParser::parseUbxMessage(const QByteArray &data,
                                 quint8 &msgClass,
                                 quint8 &msgId,
                                 QByteArray &payload) {
-    // 1. Check minimum message size
+    // Check minimum message size
     if (data.size() < 8) {
         qDebug() << "UBX message too short. Minimum size is 8 bytes, got"
                  << data.size() << "bytes";
         return false;
     }
 
-    // 2. Verify sync bytes
+    // Verify sync bytes
     if (static_cast<quint8>(data[0]) != 0xB5 ||
         static_cast<quint8>(data[1]) != 0x62) {
         qDebug() << "Invalid UBX sync bytes";
         return false;
     }
 
-    // 3. Extract header fields
+    // Extract header fields
     msgClass = static_cast<quint8>(data[2]);
     msgId = static_cast<quint8>(data[3]);
     quint16 length = static_cast<quint8>(data[4]) |
                      (static_cast<quint8>(data[5]) << 8);
 
-    // 4. Verify full message size
+    // Verify full message size
     if (data.size() != 6 + length + 2) {
         qDebug() << "UBX message length mismatch. Expected"
                  << 6 + length + 2 << "bytes, got" << data.size() << "bytes";
         return false;
     }
 
-    // 5. Calculate and verify checksum
+    // Calculate and verify checksum
     quint8 ck_a = 0;
     quint8 ck_b = 0;
 
@@ -51,7 +51,7 @@ bool UbxParser::parseUbxMessage(const QByteArray &data,
         return false;
     }
 
-    // 6. Extract payload
+    // Extract payload
     payload = data.mid(6, length);
 
     qDebug() << "Successfully parsed UBX message:"

@@ -13,14 +13,14 @@ public:
     explicit UbxParser(QObject *parent = nullptr);
 
     struct NavPvt {
-        quint32 iTOW;        // GPS time of week (ms)
-        quint16 year;        // Year (UTC)
-        quint8 month;        // Month (1-12, UTC)
-        quint8 day;          // Day (1-31, UTC)
-        quint8 hour;         // Hour (0-23, UTC)
-        quint8 min;          // Minute (0-59, UTC)
-        quint8 sec;          // Second (0-59, UTC)
-        quint8 valid;        // Validity flags
+        quint32 iTOW;
+        quint16 year;
+        quint8 month;
+        quint8 day;
+        quint8 hour;
+        quint8 min;
+        quint8 sec;
+        quint8 valid;
         quint32 tAcc;        // Time accuracy estimate (ns)
         qint32 nano;         // Fraction of second (ns)
         quint8 fixType;      // GNSS fix type
@@ -42,7 +42,7 @@ public:
         quint32 sAcc;        // Speed accuracy estimate (mm/s)
         quint32 headAcc;     // Heading accuracy estimate (deg * 1e-5)
         quint16 pDOP;        // Position DOP (0.01)
-        quint8 reserved[6];  // Reserved
+        quint8 reserved[6];
     };
 
     struct NavSat {

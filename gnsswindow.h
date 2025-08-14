@@ -81,8 +81,8 @@ signals:
 private:
     Dialog* m_parentDialog;
     Ui::GNSSWindow *ui;
-    QTimer *m_pvtTimer;    // Timer for NAV-PVT
-    QTimer *m_statusTimer; // Timer for NAV-STATUS
+    QTimer *m_pvtTimer;
+    QTimer *m_statusTimer;
     QTimer *m_ackTimeoutTimer;
     bool m_waitingForAck = false;
     QTimer *m_initTimer;
