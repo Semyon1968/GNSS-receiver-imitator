@@ -4,6 +4,9 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QDateTime>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 #include "dialog.h"
 #include "ubxparser.h"
 #include "ubxdefs.h"
@@ -131,6 +134,485 @@ void GNSSWindow::updateAvailableIds() {
 
 GNSSWindow::~GNSSWindow() {
     delete ui;
+}
+
+QJsonObject GNSSWindow::getCurrentSettings() const {
+    QJsonObject settings;
+
+    // Save auto-send checkboxes
+    QJsonObject autoSendSettings;
+    autoSendSettings["navPvt"] = ui->cbAutoSendNavPvt->isChecked();
+    autoSendSettings["navStatus"] = ui->cbAutoSendNavStatus->isChecked();
+    autoSendSettings["navSat"] = ui->cbAutoSendNavSat->isChecked();
+    autoSendSettings["navTimeUTC"] = ui->cbAutoSendNavTimeUTC->isChecked();
+    autoSendSettings["monVer"] = ui->cbAutoSendMonVer->isChecked();
+    autoSendSettings["monHw"] = ui->cbAutoSendMonHw->isChecked();
+    autoSendSettings["monRf"] = ui->cbAutoSendMonRf->isChecked();
+    autoSendSettings["cfgPrt"] = ui->cbAutoSendCfgPrt->isChecked();
+    autoSendSettings["cfgItfm"] = ui->cbAutoSendCfgItfm->isChecked();
+    autoSendSettings["cfgNav5"] = ui->cbAutoSendCfgNav5->isChecked();
+    autoSendSettings["cfgRate"] = ui->cbAutoSendCfgRate->isChecked();
+    autoSendSettings["cfgValget"] = ui->cbAutoSendCfgValget->isChecked();
+    autoSendSettings["cfgValset"] = ui->cbAutoSendCfgValset->isChecked();
+    autoSendSettings["cfgAnt"] = ui->cbAutoSendCfgAnt->isChecked();
+    autoSendSettings["infDebug"] = ui->cbAutoSendInfDebug->isChecked();
+    autoSendSettings["infError"] = ui->cbAutoSendInfError->isChecked();
+    autoSendSettings["infWarning"] = ui->cbAutoSendInfWarning->isChecked();
+    autoSendSettings["infNotice"] = ui->cbAutoSendInfNotice->isChecked();
+    autoSendSettings["infTest"] = ui->cbAutoSendInfTest->isChecked();
+    autoSendSettings["secUniqid"] = ui->cbAutoSendSecUniqid->isChecked();
+    settings["autoSend"] = autoSendSettings;
+
+    // Save rate
+    settings["rate"] = ui->rateSpin->value();
+
+    // Save NAV-PVT settings
+    QJsonObject navPvtSettings;
+    navPvtSettings["lat"] = ui->dsbLat->value();
+    navPvtSettings["lon"] = ui->dsbLon->value();
+    navPvtSettings["height"] = ui->dsbHeight->value();
+    navPvtSettings["speed"] = ui->dsbSpeed->value();
+    navPvtSettings["heading"] = ui->dsbHeading->value();
+    navPvtSettings["numSats"] = ui->sbNumSats->value();
+    navPvtSettings["velN"] = ui->dsbVelN->value();
+    navPvtSettings["velE"] = ui->dsbVelE->value();
+    navPvtSettings["velU"] = ui->dsbVelU->value();
+    navPvtSettings["rmsPos"] = ui->dsbRmsPos->value();
+    navPvtSettings["rmsVel"] = ui->dsbRmsVel->value();
+    navPvtSettings["pdop"] = ui->dsbPdop->value();
+    settings["navPvt"] = navPvtSettings;
+
+    // Save NAV-STATUS settings
+    QJsonObject navStatusSettings;
+    navStatusSettings["fixType"] = ui->sbFixTypeStatus->value();
+    navStatusSettings["ttff"] = ui->sbTtff->value();
+    settings["navStatus"] = navStatusSettings;
+
+    // Save NAV-SAT settings
+    QJsonObject navSatSettings;
+    navSatSettings["version"] = ui->sbSatVersion->value();
+    navSatSettings["numSats"] = ui->sbNumSatsSat->value();
+    navSatSettings["qualityInd"] = ui->cbQualityInd->currentIndex();
+    navSatSettings["health"] = ui->cbHealth->currentIndex();
+    navSatSettings["prResMin"] = ui->dsbPrResMin->value();
+    navSatSettings["prResMax"] = ui->dsbPrResMax->value();
+    navSatSettings["svUsed"] = ui->cbSvUsed->isChecked();
+    navSatSettings["diffCorr"] = ui->cbDiffCorr->isChecked();
+    navSatSettings["smoothed"] = ui->cbSmoothed->isChecked();
+    navSatSettings["orbitSource"] = ui->cbOrbitSource->currentIndex();
+    settings["navSat"] = navSatSettings;
+
+    // Save NAV-TIMEUTC settings
+    QJsonObject navTimeUtcSettings;
+    navTimeUtcSettings["tAcc"] = ui->sbTimeUtcTAcc->value();
+    navTimeUtcSettings["nano"] = ui->sbTimeUtcNano->value();
+    navTimeUtcSettings["valid"] = ui->cbTimeUtcValid->currentIndex();
+    navTimeUtcSettings["standard"] = ui->cbTimeUtcStandard->currentIndex();
+    settings["navTimeUtc"] = navTimeUtcSettings;
+
+    // Save MON-VER settings
+    QJsonObject monVerSettings;
+    monVerSettings["swVersion"] = ui->leSwVersion->text();
+    monVerSettings["hwVersion"] = ui->leHwVersion->text();
+    monVerSettings["extensions"] = ui->teExtensions->toPlainText();
+    settings["monVer"] = monVerSettings;
+
+    // Save MON-HW settings
+    QJsonObject monHwSettings;
+    monHwSettings["noise"] = ui->sbHwNoise->value();
+    monHwSettings["agc"] = ui->sbHwAgc->value();
+    monHwSettings["antStatus"] = ui->cbHwAntStatus->currentIndex();
+    monHwSettings["antPower"] = ui->cbHwAntPower->currentIndex();
+    monHwSettings["jamming"] = ui->cbHwJamming->currentIndex();
+    monHwSettings["cwSuppression"] = ui->sbHwCwSuppression->value();
+    settings["monHw"] = monHwSettings;
+
+    // Save MON-RF settings
+    QJsonObject monRfSettings;
+    monRfSettings["version"] = ui->sbRfVersion->value();
+    monRfSettings["blocks"] = ui->sbRfBlocks->value();
+    monRfSettings["noise"] = ui->dsbRfNoise->value();
+    monRfSettings["agc"] = ui->dsbRfAgc->value();
+    monRfSettings["jamState"] = ui->cbRfJamState->currentIndex();
+    monRfSettings["antStatus"] = ui->cbRfAntStatus->currentIndex();
+    monRfSettings["antPower"] = ui->cbRfAntPower->currentIndex();
+    monRfSettings["cwSuppression"] = ui->sbRfCwSuppression->value();
+    settings["monRf"] = monRfSettings;
+
+    // Save CFG-PRT settings
+    QJsonObject cfgPrtSettings;
+    cfgPrtSettings["portId"] = ui->cbPortId->currentIndex();
+    cfgPrtSettings["baudRate"] = ui->cbBaudRate->currentText();
+    cfgPrtSettings["inUbx"] = ui->cbInUbx->isChecked();
+    cfgPrtSettings["inNmea"] = ui->cbInNmea->isChecked();
+    cfgPrtSettings["outUbx"] = ui->cbOutUbx->isChecked();
+    cfgPrtSettings["outNmea"] = ui->cbOutNmea->isChecked();
+    settings["cfgPrt"] = cfgPrtSettings;
+
+    // Save CFG-ITFM settings
+    QJsonObject cfgItfmSettings;
+    cfgItfmSettings["bbThreshold"] = ui->sbBbThreshold->value();
+    cfgItfmSettings["cwThreshold"] = ui->sbCwThreshold->value();
+    cfgItfmSettings["enable"] = ui->cbEnable->isChecked();
+    cfgItfmSettings["antSetting"] = ui->cbAntSetting->currentIndex();
+    cfgItfmSettings["enable2"] = ui->cbEnable2->isChecked();
+    settings["cfgItfm"] = cfgItfmSettings;
+
+    // Save CFG-NAV5 settings
+    QJsonObject cfgNav5Settings;
+    cfgNav5Settings["dynModel"] = ui->cbDynModel->currentIndex();
+    cfgNav5Settings["fixMode"] = ui->cbFixMode->currentIndex();
+    cfgNav5Settings["fixedAlt"] = ui->dsbFixedAlt->value();
+    cfgNav5Settings["minElev"] = ui->sbMinElev->value();
+    cfgNav5Settings["pdop"] = ui->dsbPDOP->value();
+    cfgNav5Settings["tdop"] = ui->dsbTDOP->value();
+    cfgNav5Settings["pAcc"] = ui->dsbPAcc->value();
+    cfgNav5Settings["tAcc"] = ui->dsbTAcc->value();
+    cfgNav5Settings["staticHoldThresh"] = ui->dsbStaticHoldThresh->value();
+    cfgNav5Settings["dgnssTimeout"] = ui->sbDgnssTimeout->value();
+    cfgNav5Settings["cnoThresh"] = ui->sbCnoThresh->value();
+    cfgNav5Settings["cnoThreshNumSVs"] = ui->sbCnoThreshNumSVs->value();
+    cfgNav5Settings["utcStandard"] = ui->cbUtcStandard->currentIndex();
+    cfgNav5Settings["staticHoldMaxDist"] = ui->dsbStaticHoldMaxDist->value();
+    settings["cfgNav5"] = cfgNav5Settings;
+
+    // Save CFG-RATE settings
+    QJsonObject cfgRateSettings;
+    cfgRateSettings["measRate"] = ui->sbMeasRate->value();
+    cfgRateSettings["navRate"] = ui->sbNavRate->value();
+    cfgRateSettings["timeRef"] = ui->cbTimeRef->currentIndex();
+    settings["cfgRate"] = cfgRateSettings;
+
+    // Save CFG-VALGET settings
+    QJsonObject cfgValgetSettings;
+    cfgValgetSettings["version"] = ui->sbValgetVersion->value();
+    cfgValgetSettings["layer"] = ui->cbValgetLayer->currentIndex();
+    cfgValgetSettings["position"] = ui->sbValgetPosition->value();
+    cfgValgetSettings["keys"] = ui->leValgetKeys->text();
+    settings["cfgValget"] = cfgValgetSettings;
+
+    // Save CFG-VALSET settings
+    QJsonObject cfgValsetSettings;
+    cfgValsetSettings["version"] = ui->sbValsetVersion->value();
+    cfgValsetSettings["ram"] = ui->cbValsetRam->isChecked();
+    cfgValsetSettings["bbr"] = ui->cbValsetBbr->isChecked();
+    cfgValsetSettings["flash"] = ui->cbValsetFlash->isChecked();
+    cfgValsetSettings["keysValues"] = ui->leValsetKeysValues->text();
+    settings["cfgValset"] = cfgValsetSettings;
+
+    // Save CFG-ANT settings
+    QJsonObject cfgAntSettings;
+    cfgAntSettings["supplyCtrl"] = ui->cbAntSupplyCtrl->isChecked();
+    cfgAntSettings["shortDetect"] = ui->cbAntShortDetect->isChecked();
+    cfgAntSettings["openDetect"] = ui->cbAntOpenDetect->isChecked();
+    cfgAntSettings["powerDown"] = ui->cbAntPowerDown->isChecked();
+    cfgAntSettings["autoRecover"] = ui->cbAntAutoRecover->isChecked();
+    cfgAntSettings["switchPin"] = ui->sbAntSwitchPin->value();
+    cfgAntSettings["shortPin"] = ui->sbAntShortPin->value();
+    cfgAntSettings["openPin"] = ui->sbAntOpenPin->value();
+    cfgAntSettings["reconfig"] = ui->cbAntReconfig->isChecked();
+    settings["cfgAnt"] = cfgAntSettings;
+
+    // Save INF-DEBUG settings
+    QJsonObject infDebugSettings;
+    infDebugSettings["message"] = ui->teInfDebugMessage->toPlainText();
+    settings["infDebug"] = infDebugSettings;
+
+    // Save INF-ERROR settings
+    QJsonObject infErrorSettings;
+    infErrorSettings["message"] = ui->teInfErrorMessage->toPlainText();
+    settings["infError"] = infErrorSettings;
+
+    // Save INF-WARNING settings
+    QJsonObject infWarningSettings;
+    infWarningSettings["message"] = ui->teInfWarningMessage->toPlainText();
+    settings["infWarning"] = infWarningSettings;
+
+    // Save INF-NOTICE settings
+    QJsonObject infNoticeSettings;
+    infNoticeSettings["message"] = ui->teInfNoticeMessage->toPlainText();
+    settings["infNotice"] = infNoticeSettings;
+
+    // Save INF-TEST settings
+    QJsonObject infTestSettings;
+    infTestSettings["message"] = ui->teInfTestMessage->toPlainText();
+    settings["infTest"] = infTestSettings;
+
+    // Save SEC-UNIQID settings
+    QJsonObject secUniqidSettings;
+    secUniqidSettings["version"] = ui->sbUniqidVersion->value();
+    secUniqidSettings["chipId"] = ui->leChipId->text();
+    settings["secUniqid"] = secUniqidSettings;
+
+    return settings;
+}
+
+void GNSSWindow::saveSettings(const QString &filename) {
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, "Error", "Could not save settings file");
+        return;
+    }
+
+    QJsonObject settings = getCurrentSettings();
+    QJsonDocument doc(settings);
+    file.write(doc.toJson());
+    file.close();
+
+    appendToLog(QString("Settings saved to %1").arg(filename), "system");
+}
+
+void GNSSWindow::loadSettings(const QString &filename) {
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this, "Error", "Could not load settings file");
+        return;
+    }
+
+    QByteArray data = file.readAll();
+    file.close();
+
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (doc.isNull()) {
+        QMessageBox::warning(this, "Error", "Invalid settings file format");
+        return;
+    }
+
+    applySettings(doc.object());
+    appendToLog(QString("Settings loaded from %1").arg(filename), "system");
+}
+
+void GNSSWindow::applySettings(const QJsonObject &settings)
+{
+    // 1. Блокируем сигналы всех виджетов
+    QList<QWidget*> widgets = findChildren<QWidget*>();
+    foreach (QWidget* widget, widgets) {
+        widget->blockSignals(true);
+    }
+
+    // 2. Применяем общие настройки
+    if (settings.contains("general")) {
+        QJsonObject general = settings["general"].toObject();
+        ui->autoSendCheck->setChecked(general["autoSendEnabled"].toBool());
+        ui->rateSpin->setValue(general["updateRate"].toInt(1));
+    }
+
+    // 3. Применяем настройки автоотправки
+    if (settings.contains("autoSend")) {
+        QJsonObject autoSend = settings["autoSend"].toObject();
+        auto applyCheckbox = [&](const QString& key, QCheckBox* checkbox) {
+            if (autoSend.contains(key)) checkbox->setChecked(autoSend[key].toBool());
+        };
+
+        applyCheckbox("navPvt", ui->cbAutoSendNavPvt);
+        applyCheckbox("navStatus", ui->cbAutoSendNavStatus);
+        applyCheckbox("navSat", ui->cbAutoSendNavSat);
+        applyCheckbox("navTimeUTC", ui->cbAutoSendNavTimeUTC);
+        applyCheckbox("monVer", ui->cbAutoSendMonVer);
+        applyCheckbox("monHw", ui->cbAutoSendMonHw);
+        applyCheckbox("monRf", ui->cbAutoSendMonRf);
+        applyCheckbox("cfgPrt", ui->cbAutoSendCfgPrt);
+        applyCheckbox("cfgItfm", ui->cbAutoSendCfgItfm);
+        applyCheckbox("cfgNav5", ui->cbAutoSendCfgNav5);
+        applyCheckbox("cfgRate", ui->cbAutoSendCfgRate);
+        applyCheckbox("cfgValget", ui->cbAutoSendCfgValget);
+        applyCheckbox("cfgValset", ui->cbAutoSendCfgValset);
+        applyCheckbox("cfgAnt", ui->cbAutoSendCfgAnt);
+        applyCheckbox("infDebug", ui->cbAutoSendInfDebug);
+        applyCheckbox("infError", ui->cbAutoSendInfError);
+        applyCheckbox("infWarning", ui->cbAutoSendInfWarning);
+        applyCheckbox("infNotice", ui->cbAutoSendInfNotice);
+        applyCheckbox("infTest", ui->cbAutoSendInfTest);
+        applyCheckbox("secUniqid", ui->cbAutoSendSecUniqid);
+    }
+
+    // 4. Применяем параметры для каждого типа сообщений
+    auto applyNavPvtSettings = [&](const QJsonObject& obj) {
+        ui->dsbLat->setValue(obj["lat"].toDouble(55.7522200));
+        ui->dsbLon->setValue(obj["lon"].toDouble(37.6155600));
+        ui->dsbHeight->setValue(obj["height"].toDouble(150.0));
+        ui->dsbSpeed->setValue(obj["speed"].toDouble(0.0));
+        ui->dsbHeading->setValue(obj["heading"].toDouble(0.0));
+        ui->sbNumSats->setValue(obj["numSats"].toInt(10));
+        ui->dsbVelN->setValue(obj["velN"].toDouble(0.0));
+        ui->dsbVelE->setValue(obj["velE"].toDouble(0.0));
+        ui->dsbVelU->setValue(obj["velU"].toDouble(0.0));
+        ui->dsbRmsPos->setValue(obj["rmsPos"].toDouble(1.0));
+        ui->dsbRmsVel->setValue(obj["rmsVel"].toDouble(0.1));
+        ui->dsbPdop->setValue(obj["pdop"].toDouble(1.5));
+    };
+
+    auto applyNavStatusSettings = [&](const QJsonObject& obj) {
+        ui->sbFixTypeStatus->setValue(obj["fixType"].toInt(3));
+        ui->sbTtff->setValue(obj["ttff"].toInt(5000));
+    };
+
+    auto applyNavSatSettings = [&](const QJsonObject& obj) {
+        ui->sbSatVersion->setValue(obj["version"].toInt(1));
+        ui->sbNumSatsSat->setValue(obj["numSats"].toInt(10));
+        ui->cbQualityInd->setCurrentIndex(obj["qualityInd"].toInt(4));
+        ui->cbHealth->setCurrentIndex(obj["health"].toInt(1));
+        ui->dsbPrResMin->setValue(obj["prResMin"].toDouble(-2.0));
+        ui->dsbPrResMax->setValue(obj["prResMax"].toDouble(2.0));
+        ui->cbSvUsed->setChecked(obj["svUsed"].toBool(true));
+        ui->cbDiffCorr->setChecked(obj["diffCorr"].toBool(false));
+        ui->cbSmoothed->setChecked(obj["smoothed"].toBool(false));
+        ui->cbOrbitSource->setCurrentIndex(obj["orbitSource"].toInt(1));
+    };
+
+    auto applyMonVerSettings = [&](const QJsonObject& obj) {
+        ui->leSwVersion->setText(obj["swVersion"].toString("ROM CORE 3.01 (107888)"));
+        ui->leHwVersion->setText(obj["hwVersion"].toString("00080000"));
+        ui->teExtensions->setPlainText(obj["extensions"].toString("PROTVER=18.00\nGPS;GLO;GAL;BDS\nSBAS;IMES;QZSS"));
+    };
+
+    auto applyMonHwSettings = [&](const QJsonObject& obj) {
+        ui->sbHwNoise->setValue(obj["noise"].toInt(50));
+        ui->sbHwAgc->setValue(obj["agc"].toInt(75));
+        ui->cbHwAntStatus->setCurrentIndex(obj["antStatus"].toInt(2)); // 2 = OK
+        ui->cbHwAntPower->setCurrentIndex(obj["antPower"].toInt(1));   // 1 = ON
+        ui->cbHwJamming->setCurrentIndex(obj["jamming"].toInt(1));     // 1 = OK
+        ui->sbHwCwSuppression->setValue(obj["cwSuppression"].toInt(0));
+    };
+
+    auto applyMonRfSettings = [&](const QJsonObject& obj) {
+        ui->sbRfVersion->setValue(obj["version"].toInt(0));
+        ui->sbRfBlocks->setValue(obj["blocks"].toInt(1));
+        ui->dsbRfNoise->setValue(obj["noise"].toDouble(50.0));
+        ui->dsbRfAgc->setValue(obj["agc"].toDouble(75.0));
+        ui->cbRfJamState->setCurrentIndex(obj["jamState"].toInt(1));   // 1 = OK
+        ui->cbRfAntStatus->setCurrentIndex(obj["antStatus"].toInt(2)); // 2 = OK
+        ui->cbRfAntPower->setCurrentIndex(obj["antPower"].toInt(1));   // 1 = ON
+        ui->sbRfCwSuppression->setValue(obj["cwSuppression"].toInt(0));
+    };
+
+    auto applyCfgPrtSettings = [&](const QJsonObject& obj) {
+        ui->cbPortId->setCurrentIndex(obj["portId"].toInt(0)); // 0 = UART1
+        ui->cbBaudRate->setCurrentText(obj["baudRate"].toString("115200"));
+        ui->cbInUbx->setChecked(obj["inUbx"].toBool(true));
+        ui->cbInNmea->setChecked(obj["inNmea"].toBool(true));
+        ui->cbOutUbx->setChecked(obj["outUbx"].toBool(true));
+        ui->cbOutNmea->setChecked(obj["outNmea"].toBool(true));
+    };
+
+    auto applyCfgItfmSettings = [&](const QJsonObject& obj) {
+        ui->sbBbThreshold->setValue(obj["bbThreshold"].toInt(0));
+        ui->sbCwThreshold->setValue(obj["cwThreshold"].toInt(0));
+        ui->cbEnable->setChecked(obj["enable"].toBool(true));
+        ui->cbAntSetting->setCurrentIndex(obj["antSetting"].toInt(0));
+        ui->cbEnable2->setChecked(obj["enable2"].toBool(false));
+    };
+
+    auto applyCfgNav5Settings = [&](const QJsonObject& obj) {
+        ui->cbDynModel->setCurrentIndex(obj["dynModel"].toInt(4));      // 4 = Automotive
+        ui->cbFixMode->setCurrentIndex(obj["fixMode"].toInt(2));        // 2 = Auto 2D/3D
+        ui->dsbFixedAlt->setValue(obj["fixedAlt"].toDouble(0.0));
+        ui->sbMinElev->setValue(obj["minElev"].toInt(5));
+        ui->dsbPDOP->setValue(obj["pdop"].toDouble(2.5));
+        ui->dsbTDOP->setValue(obj["tdop"].toDouble(2.5));
+        ui->dsbPAcc->setValue(obj["pAcc"].toDouble(0.0));
+        ui->dsbTAcc->setValue(obj["tAcc"].toDouble(0.0));
+        ui->dsbStaticHoldThresh->setValue(obj["staticHoldThresh"].toDouble(0.0));
+        ui->sbDgnssTimeout->setValue(obj["dgnssTimeout"].toInt(60));
+        ui->sbCnoThresh->setValue(obj["cnoThresh"].toInt(0));
+        ui->sbCnoThreshNumSVs->setValue(obj["cnoThreshNumSVs"].toInt(0));
+        ui->cbUtcStandard->setCurrentIndex(obj["utcStandard"].toInt(0)); // 0 = Automatic
+        ui->dsbStaticHoldMaxDist->setValue(obj["staticHoldMaxDist"].toDouble(0.0));
+    };
+
+    auto applyCfgRateSettings = [&](const QJsonObject& obj) {
+        ui->sbMeasRate->setValue(obj["measRate"].toInt(1000));  // 1 Hz
+        ui->sbNavRate->setValue(obj["navRate"].toInt(1));
+        ui->cbTimeRef->setCurrentIndex(obj["timeRef"].toInt(0)); // 0 = UTC
+    };
+
+    auto applyCfgValgetSettings = [&](const QJsonObject& obj) {
+        ui->sbValgetVersion->setValue(obj["version"].toInt(0));
+        ui->cbValgetLayer->setCurrentIndex(obj["layer"].toInt(0)); // 0 = RAM
+        ui->sbValgetPosition->setValue(obj["position"].toInt(0));
+        ui->leValgetKeys->setText(obj["keys"].toString("0x00000000"));
+    };
+
+    auto applyCfgValsetSettings = [&](const QJsonObject& obj) {
+        ui->sbValsetVersion->setValue(obj["version"].toInt(0));
+        ui->cbValsetRam->setChecked(obj["ram"].toBool(true));
+        ui->cbValsetBbr->setChecked(obj["bbr"].toBool(false));
+        ui->cbValsetFlash->setChecked(obj["flash"].toBool(false));
+        ui->leValsetKeysValues->setText(obj["keysValues"].toString("0x00000000=0x00000000"));
+    };
+
+    auto applyCfgAntSettings = [&](const QJsonObject& obj) {
+        ui->cbAntSupplyCtrl->setChecked(obj["supplyCtrl"].toBool(true));
+        ui->cbAntShortDetect->setChecked(obj["shortDetect"].toBool(true));
+        ui->cbAntOpenDetect->setChecked(obj["openDetect"].toBool(true));
+        ui->cbAntPowerDown->setChecked(obj["powerDown"].toBool(true));
+        ui->cbAntAutoRecover->setChecked(obj["autoRecover"].toBool(true));
+        ui->sbAntSwitchPin->setValue(obj["switchPin"].toInt(0));
+        ui->sbAntShortPin->setValue(obj["shortPin"].toInt(1));
+        ui->sbAntOpenPin->setValue(obj["openPin"].toInt(2));
+        ui->cbAntReconfig->setChecked(obj["reconfig"].toBool(false));
+    };
+
+    auto applyInfDebugSettings = [&](const QJsonObject& obj) {
+        ui->teInfDebugMessage->setPlainText(obj["message"].toString("Debug message"));
+    };
+
+    auto applyInfErrorSettings = [&](const QJsonObject& obj) {
+        ui->teInfErrorMessage->setPlainText(obj["message"].toString("Error message"));
+    };
+
+    auto applyInfWarningSettings = [&](const QJsonObject& obj) {
+        ui->teInfWarningMessage->setPlainText(obj["message"].toString("Warning message"));
+    };
+
+    auto applyInfNoticeSettings = [&](const QJsonObject& obj) {
+        ui->teInfNoticeMessage->setPlainText(obj["message"].toString("Notice message"));
+    };
+
+    auto applyInfTestSettings = [&](const QJsonObject& obj) {
+        ui->teInfTestMessage->setPlainText(obj["message"].toString("Test message"));
+    };
+
+    auto applySecUniqidSettings = [&](const QJsonObject& obj) {
+        ui->sbUniqidVersion->setValue(obj["version"].toInt(1));
+        ui->leChipId->setText(obj["chipId"].toString("12345678"));
+    };
+
+    auto applyIfExists = [&](const QString& key, auto handler) {
+        if (settings.contains(key)) handler(settings[key].toObject());
+    };
+
+    applyIfExists("navPvt", applyNavPvtSettings);
+    applyIfExists("navStatus", applyNavStatusSettings);
+    applyIfExists("navSat", applyNavSatSettings);
+    applyIfExists("monVer", applyMonVerSettings);
+    applyIfExists("monHw", applyMonHwSettings);
+    applyIfExists("monRf", applyMonRfSettings);
+    applyIfExists("cfgPrt", applyCfgPrtSettings);
+    applyIfExists("cfgItfm", applyCfgItfmSettings);
+    applyIfExists("cfgNav5", applyCfgNav5Settings);
+    applyIfExists("cfgRate", applyCfgRateSettings);
+    applyIfExists("cfgValget", applyCfgValgetSettings);
+    applyIfExists("cfgValset", applyCfgValsetSettings);
+    applyIfExists("cfgAnt", applyCfgAntSettings);
+    applyIfExists("infDebug", applyInfDebugSettings);
+    applyIfExists("infError", applyInfErrorSettings);
+    applyIfExists("infWarning", applyInfWarningSettings);
+    applyIfExists("infNotice", applyInfNoticeSettings);
+    applyIfExists("infTest", applyInfTestSettings);
+    applyIfExists("secUniqid", applySecUniqidSettings);
+
+    foreach (QWidget* widget, widgets) {
+        widget->blockSignals(false);
+    }
+
+    updateAvailableIds();
+    onClassIdChanged();
+
+    onAutoSendToggled(ui->autoSendCheck->isChecked());
+
+    ui->statusbar->showMessage(tr("Settings applied successfully"), 3000);
+    appendToLog("All settings applied from configuration", "system");
 }
 
 void GNSSWindow::setSocket(QTcpSocket *socket) {
@@ -351,7 +833,6 @@ void GNSSWindow::sendUbxInfDebug() {
         return;
     }
 
-    // Получаем сообщение из UI
     QString debugMessage = ui->teInfDebugMessage->toPlainText();
     QByteArray payload = debugMessage.toLatin1();
 
@@ -417,20 +898,16 @@ void GNSSWindow::sendUbxCfgRate() {
         return;
     }
 
-    // Получаем значения из UI
     quint16 measRate = static_cast<quint16>(ui->sbMeasRate->value());
     quint16 navRate = static_cast<quint16>(ui->sbNavRate->value());
     quint16 timeRef = static_cast<quint16>(ui->cbTimeRef->currentIndex());
 
     QByteArray payload(6, 0x00);
 
-    // Записываем measRate (little-endian)
     qToLittleEndian<quint16>(measRate, payload.data());
 
-    // Записываем navRate (little-endian)
     qToLittleEndian<quint16>(navRate, payload.data() + 2);
 
-    // Записываем timeRef (little-endian)
     qToLittleEndian<quint16>(timeRef, payload.data() + 4);
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_RATE, payload);
@@ -587,10 +1064,19 @@ void GNSSWindow::setupConnections()
     connect(m_ackTimeoutTimer, &QTimer::timeout, this, &GNSSWindow::handleAckTimeout);
     connect(m_utcTimer, &QTimer::timeout, this, &GNSSWindow::updateUTCTime);
 
-    // Menu
-    connect(ui->actionSaveLog, &QAction::triggered, this, &GNSSWindow::onActionSaveLogTriggered);
-    connect(ui->actionClearLog, &QAction::triggered, this, &GNSSWindow::onActionClearLogTriggered);
-    connect(ui->actionAbout, &QAction::triggered, this, &GNSSWindow::onActionAboutTriggered);
+    // Menu connections
+    connect(ui->actionSaveSettings, &QAction::triggered,
+            this, &GNSSWindow::onActionSaveSettingsTriggered);
+    connect(ui->actionLoadSettings, &QAction::triggered,
+            this, &GNSSWindow::onActionLoadSettingsTriggered);
+    connect(ui->actionSaveLog, &QAction::triggered,
+            this, &GNSSWindow::onActionSaveLogTriggered);
+    connect(ui->actionClearLog, &QAction::triggered,
+            this, &GNSSWindow::onActionClearLogTriggered);
+    connect(ui->actionAbout, &QAction::triggered,
+            this, &GNSSWindow::onActionAboutTriggered);
+    connect(ui->actionExit, &QAction::triggered,
+            this, &QMainWindow::close);
 
     // UI
     connect(ui->cbClass, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -637,8 +1123,110 @@ void GNSSWindow::setupConnections()
     }
 }
 
+void GNSSWindow::stopAllAutoSendTimers()
+{
+    if (m_pvtTimer && m_pvtTimer->isActive()) {
+        m_pvtTimer->stop();
+    }
+    if (m_statusTimer && m_statusTimer->isActive()) {
+        m_statusTimer->stop();
+    }
+
+    QList<QTimer*> allTimers = findChildren<QTimer*>();
+    foreach (QTimer* timer, allTimers) {
+        if (timer->isActive() && timer != m_utcTimer) {
+            timer->stop();
+        }
+    }
+
+
+    QList<QCheckBox*> autoSendCheckBoxes = findChildren<QCheckBox*>(QRegularExpression("cbAutoSend.*"));
+    foreach (QCheckBox* checkBox, autoSendCheckBoxes) {
+        checkBox->setChecked(false);
+    }
+}
+
+void GNSSWindow::onActionSaveSettingsTriggered()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    "Save Settings",
+                                                    "",
+                                                    "JSON Files (*.json);;All Files (*)");
+
+    if (!fileName.isEmpty()) {
+        if (!fileName.endsWith(".json", Qt::CaseInsensitive)) {
+            fileName += ".json";
+        }
+        saveSettings(fileName);
+    }
+}
+
+void GNSSWindow::onActionLoadSettingsTriggered()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    tr("Load Settings"),
+                                                    QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+                                                    tr("JSON Files (*.json);;All Files (*)"));
+
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    QJsonObject backupSettings = getCurrentSettings();
+
+    try {
+        stopAllAutoSendTimers();
+
+        QFile file(fileName);
+        if (!file.open(QIODevice::ReadOnly)) {
+            throw std::runtime_error(tr("Could not open settings file").toStdString());
+        }
+
+        QJsonParseError parseError;
+        QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+        file.close();
+
+        if (parseError.error != QJsonParseError::NoError) {
+            throw std::runtime_error(tr("Invalid JSON format: %1").arg(parseError.errorString()).toStdString());
+        }
+
+        if (doc.isNull() || !doc.isObject()) {
+            throw std::runtime_error(tr("Invalid settings file format").toStdString());
+        }
+
+        m_settingsLoaded = true;
+        applySettings(doc.object());
+
+        if (ui->autoSendCheck->isChecked()) {
+            int rate = ui->rateSpin->value();
+            if (rate > 0) {
+                m_pvtTimer->start(1000 / rate);
+                m_statusTimer->start(1000 / rate);
+            }
+        }
+
+        appendToLog(tr("Settings successfully loaded from %1").arg(fileName), "system");
+        ui->statusbar->showMessage(tr("Settings loaded successfully"), 3000);
+
+    } catch (const std::exception& e) {
+        applySettings(backupSettings);
+
+        QMessageBox::warning(this, tr("Error"), tr(e.what()));
+        appendToLog(tr("Failed to load settings: %1").arg(e.what()), "error");
+    }
+}
+
 void GNSSWindow::sendInitialConfiguration() {
-    if (m_waitingForAck) return;
+    if (m_settingsLoaded || !m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
+        return;
+    }
+
+    if (m_waitingForAck) {
+        appendToLog("Configuration already in progress", "warning");
+        return;
+    }
+
+    appendToLog("Starting initial configuration", "system");
 
     m_waitingForAck = true;
     m_ackTimeoutTimer->start();
@@ -1121,10 +1709,8 @@ void GNSSWindow::sendUbxSecUniqid() {
 
     QByteArray payload(9, 0x00);
 
-    // Версия из UI
     payload[0] = static_cast<quint8>(ui->sbUniqidVersion->value());
 
-    // Chip ID из UI
     QString chipIdStr = ui->leChipId->text();
     bool ok;
     quint32 chipId = chipIdStr.toUInt(&ok, 16);
@@ -1133,7 +1719,6 @@ void GNSSWindow::sendUbxSecUniqid() {
         return;
     }
 
-    // Записываем 5 байт ID
     for (int i = 0; i < 5; i++) {
         payload[4 + i] = static_cast<quint8>((chipId >> (8 * (4 - i))) & 0xFF);
     }
@@ -2305,7 +2890,6 @@ void GNSSWindow::sendUbxCfgPrt() {
 void GNSSWindow::sendUbxMonHw() {
     QByteArray payload(60, 0x00);
 
-    // Заполняем основные поля из UI
     // Noise level (0-8191)
     quint16 noise = static_cast<quint16>(ui->sbHwNoise->value());
     qToLittleEndian<quint16>(noise, payload.data() + 16);
@@ -2328,7 +2912,6 @@ void GNSSWindow::sendUbxMonHw() {
     // CW suppression
     payload[45] = static_cast<quint8>(ui->sbHwCwSuppression->value());
 
-    // Остальные поля оставляем по умолчанию (0)
     // pinSel, pinBank, pinDir, pinVal, usedMask, VP, pinIrq, pullH, pullL
 
     createUbxPacket(UBX_CLASS_MON, UBX_MON_HW, payload);

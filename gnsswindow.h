@@ -33,6 +33,8 @@ public slots:
     void sendUbxCfgItfm();
 
 private slots:
+    void onActionSaveSettingsTriggered();
+    void onActionLoadSettingsTriggered();
     void handleInitTimeout();
     void handleAckTimeout();
     void handleSocketDisconnected();
@@ -161,6 +163,13 @@ private:
     void displayMonVer(const UbxParser::MonVer &data);
     void createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload);
     QString getMessageName(quint8 msgClass, quint8 msgId);
+    void saveSettings(const QString &filename);
+    void loadSettings(const QString &filename);
+    QJsonObject getCurrentSettings() const;
+    void applySettings(const QJsonObject &settings);
+    void setupUiFromSettings(const QJsonObject &settings);
+    bool m_settingsLoaded = false;
+    void stopAllAutoSendTimers();
 };
 
 #endif // GNSSWINDOW_H
