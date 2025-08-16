@@ -30,96 +30,24 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     m_ackTimeoutTimer->setSingleShot(true);
     m_ackTimeoutTimer->setInterval(3000); // 3 sec
 
-    // Connect timer signals
-    connect(m_pvtTimer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
-    connect(m_statusTimer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavStatus);
-
-    connect(m_initTimer, &QTimer::timeout, this, [this]() {
-        if (!m_initializationComplete) {
-            appendToLog("Configuration timeout - proceeding without ACK", "warning");
-            m_initializationComplete = true;
-            // Start both timers on timeout
-            int rate = ui->rateSpin->value();
-            m_pvtTimer->start(1000 / rate);
-            m_statusTimer->start(1000 / rate);
-            ui->autoSendCheck->setChecked(true);
-        }
-    });
-
-    connect(m_ackTimeoutTimer, &QTimer::timeout, this, [this]() {
-        if (m_waitingForAck) {
-            appendToLog("ACK timeout - configuration may be incomplete", "error");
-            m_waitingForAck = false;
-        }
-    });
-
-    // Menu signals
-    connect(ui->actionSaveLog, &QAction::triggered, this, &GNSSWindow::onActionSaveLogTriggered);
-    connect(ui->actionClearLog, &QAction::triggered, this, &GNSSWindow::onActionClearLogTriggered);
-    connect(ui->actionAbout, &QAction::triggered, this, &GNSSWindow::onActionAboutTriggered);
-
-    // Connect message selection signals
-    connect(ui->cbClass, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &GNSSWindow::updateAvailableIds);
-    connect(ui->cbId, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &GNSSWindow::onClassIdChanged);
-
-    // Connect UI elements
-    connect(ui->sendButton, &QPushButton::clicked,
-            this, &GNSSWindow::onSendButtonClicked);
-    connect(ui->autoSendCheck, &QCheckBox::toggled,
-            this, &GNSSWindow::onAutoSendToggled);
-    connect(ui->btnClearLog, &QPushButton::clicked,
-            this, &GNSSWindow::on_btnClearLog_clicked);
-    connect(ui->cbAutoSendNavPvt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavPvtToggled);
-    connect(ui->cbAutoSendNavStatus, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavStatusToggled);
-    connect(ui->cbAutoSendNavSat, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavSatToggled);
-    connect(ui->cbAutoSendNavTimeUTC, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavTimeUtcToggled);
-    connect(ui->cbAutoSendMonVer, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonVerToggled);
-    connect(ui->cbAutoSendMonHw, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonHwToggled);
-    connect(ui->cbAutoSendMonRf, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonRfToggled);
-    connect(ui->cbAutoSendCfgPrt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgPrtToggled);
-    connect(ui->cbAutoSendCfgItfm, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgItfmToggled);
-    connect(ui->cbAutoSendCfgNav5, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgNav5Toggled);
-    connect(ui->cbAutoSendCfgRate, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgRateToggled);
-    connect(ui->cbAutoSendCfgValget, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgValgetToggled);
-    connect(ui->cbAutoSendCfgValset, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgValsetToggled);
-    connect(ui->cbAutoSendCfgAnt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgAntToggled);
-    connect(ui->cbAutoSendInfDebug, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfDebugToggled);
-    connect(ui->cbAutoSendInfError, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfErrorToggled);
-    connect(ui->cbAutoSendInfWarning, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfWarningToggled);
-    connect(ui->cbAutoSendInfNotice, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfNoticeToggled);
-    connect(ui->cbAutoSendInfTest, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfTestToggled);
-    connect(ui->cbAutoSendSecUniqid, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendSecUniqidToggled);
-
-    // Real time signal
-    connect(m_utcTimer, &QTimer::timeout, this, &GNSSWindow::updateUTCTime);
-    m_utcTimer->start(1000);
-    updateUTCTime();
-
-    // Initialize message system
+    // Setup fields
     initClassIdMapping();
     updateAvailableIds();
-    registerHandlers();
-
-    // Connect to parent dialog
-    if (m_parentDialog) {
-        connect(m_parentDialog, &Dialog::logMessage,
-                this, &GNSSWindow::appendToLog);
-        connect(m_parentDialog, &Dialog::connectionStatusChanged,
-                this, &GNSSWindow::onConnectionStatusChanged);
-    }
-
-    // Setup fields
     setupNavSatFields();
     setupMonRfFields();
     setupNavPvtFields();
     setupNavStatusFields();
 
+    // Connections
+    setupConnections();
+
+    // Real time signal
+    m_utcTimer->start(1000);
+    updateUTCTime();
+
     // Initial state
     appendToLog("GNSS Window initialized successfully", "system");
     qDebug() << "GNSSWindow initialized at" << QDateTime::currentDateTime().toString("hh:mm:ss");
-
     ui->statusbar->showMessage("Waiting for connection...", 3000);
 }
 
@@ -231,6 +159,53 @@ void GNSSWindow::setSocket(QTcpSocket *socket) {
     } else {
         appendToLog("Socket pointer is null!", "error");
     }
+}
+
+void GNSSWindow::handleInitTimeout()
+{
+    if (!m_initializationComplete) {
+        appendToLog("Configuration timeout - proceeding without ACK", "warning");
+        m_initializationComplete = true;
+
+        if (m_socket && m_socket->state() == QAbstractSocket::ConnectedState) {
+            int rate = ui->rateSpin->value();
+            m_pvtTimer->start(1000 / rate);
+            m_statusTimer->start(1000 / rate);
+            ui->autoSendCheck->setChecked(true);
+        }
+    }
+}
+
+void GNSSWindow::handleAckTimeout()
+{
+    if (m_waitingForAck) {
+        appendToLog("ACK timeout - configuration may be incomplete", "error");
+        m_waitingForAck = false;
+    }
+}
+
+void GNSSWindow::handleSocketDisconnected()
+{
+    appendToLog("Disconnected from host", "system");
+    m_timer->stop();
+    m_socket = nullptr;
+}
+
+void GNSSWindow::handleSocketError(QAbstractSocket::SocketError error)
+{
+    Q_UNUSED(error);
+    QString errorMsg = m_socket ? m_socket->errorString() : "Socket not initialized";
+    appendToLog("Socket error: " + errorMsg, "error");
+
+    m_timer->stop();
+    m_initializationComplete = false;
+    m_waitingForAck = false;
+
+    if (m_socket && m_socket->state() != QAbstractSocket::UnconnectedState) {
+        m_socket->disconnectFromHost();
+    }
+
+    ui->statusbar->showMessage("Connection error: " + errorMsg, 5000);
 }
 
 void GNSSWindow::onError(QAbstractSocket::SocketError error) {
@@ -601,12 +576,65 @@ void GNSSWindow::hideAllParameterFields() {
     ui->tePayload->setVisible(false);
 }
 
-void GNSSWindow::setupConnections() {
+void GNSSWindow::setupConnections()
+{
+    // Timer connections
     m_timer = new QTimer(this);
-    m_initTimer->start(5000); // 5 sec
-
     connect(m_timer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
-    sendInitialConfiguration();
+    connect(m_pvtTimer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
+    connect(m_statusTimer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavStatus);
+    connect(m_initTimer, &QTimer::timeout, this, &GNSSWindow::handleInitTimeout);
+    connect(m_ackTimeoutTimer, &QTimer::timeout, this, &GNSSWindow::handleAckTimeout);
+    connect(m_utcTimer, &QTimer::timeout, this, &GNSSWindow::updateUTCTime);
+
+    // Menu
+    connect(ui->actionSaveLog, &QAction::triggered, this, &GNSSWindow::onActionSaveLogTriggered);
+    connect(ui->actionClearLog, &QAction::triggered, this, &GNSSWindow::onActionClearLogTriggered);
+    connect(ui->actionAbout, &QAction::triggered, this, &GNSSWindow::onActionAboutTriggered);
+
+    // UI
+    connect(ui->cbClass, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &GNSSWindow::updateAvailableIds);
+    connect(ui->cbId, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &GNSSWindow::onClassIdChanged);
+    connect(ui->sendButton, &QPushButton::clicked,
+            this, &GNSSWindow::onSendButtonClicked);
+    connect(ui->autoSendCheck, &QCheckBox::toggled,
+            this, &GNSSWindow::onAutoSendToggled);
+    connect(ui->btnClearLog, &QPushButton::clicked,
+            this, &GNSSWindow::on_btnClearLog_clicked);
+
+    // Autosend
+    connect(ui->cbAutoSendNavPvt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavPvtToggled);
+    connect(ui->cbAutoSendNavStatus, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavStatusToggled);
+    connect(ui->cbAutoSendNavSat, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavSatToggled);
+    connect(ui->cbAutoSendNavTimeUTC, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavTimeUtcToggled);
+    connect(ui->cbAutoSendMonVer, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonVerToggled);
+    connect(ui->cbAutoSendMonHw, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonHwToggled);
+    connect(ui->cbAutoSendMonRf, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendMonRfToggled);
+    connect(ui->cbAutoSendCfgPrt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgPrtToggled);
+    connect(ui->cbAutoSendCfgItfm, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgItfmToggled);
+    connect(ui->cbAutoSendCfgNav5, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgNav5Toggled);
+    connect(ui->cbAutoSendCfgRate, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgRateToggled);
+    connect(ui->cbAutoSendCfgValget, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgValgetToggled);
+    connect(ui->cbAutoSendCfgValset, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgValsetToggled);
+    connect(ui->cbAutoSendCfgAnt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendCfgAntToggled);
+    connect(ui->cbAutoSendInfDebug, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfDebugToggled);
+    connect(ui->cbAutoSendInfError, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfErrorToggled);
+    connect(ui->cbAutoSendInfWarning, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfWarningToggled);
+    connect(ui->cbAutoSendInfNotice, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfNoticeToggled);
+    connect(ui->cbAutoSendInfTest, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfTestToggled);
+    connect(ui->cbAutoSendSecUniqid, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendSecUniqidToggled);
+
+    // UBX parsers
+    registerHandlers();
+
+    if (m_parentDialog) {
+        connect(m_parentDialog, &Dialog::logMessage,
+                this, &GNSSWindow::appendToLog);
+        connect(m_parentDialog, &Dialog::connectionStatusChanged,
+                this, &GNSSWindow::onConnectionStatusChanged);
+    }
 }
 
 void GNSSWindow::sendInitialConfiguration() {
@@ -647,65 +675,55 @@ void GNSSWindow::onReadyRead() {
 
     qDebug() << "Received" << newData.size() << "bytes of raw data:" << newData.toHex(' ');
 
-    // Add data to buffer
-    static QByteArray buffer;
-    buffer.append(newData);
+    // Add data to member buffer
+    m_receiveBuffer.append(newData);
 
-    qDebug() << "Total buffer size:" << buffer.size() << "bytes";
+    qDebug() << "Total buffer size:" << m_receiveBuffer.size() << "bytes";
     appendToLog(QString("Received %1 bytes (total buffer: %2)")
                     .arg(newData.size())
-                    .arg(buffer.size()), "in");
+                    .arg(m_receiveBuffer.size()), "in");
 
     // Process all complete messages in buffer
-    while (buffer.size() >= 8) { // Minimum UBX message size (without payload)
+    while (m_receiveBuffer.size() >= 8) { // Minimum UBX message size (without payload)
         // 3.1. Find sync bytes
-        int startPos = buffer.indexOf("\xB5\x62");
+        int startPos = m_receiveBuffer.indexOf("\xB5\x62");
         if (startPos < 0) {
             qDebug() << "No UBX sync chars found, clearing buffer";
-            buffer.clear();
+            m_receiveBuffer.clear();
             return;
         }
 
         // Remove garbage before sync bytes
         if (startPos > 0) {
             qDebug() << "Discarding" << startPos << "bytes before sync chars";
-            buffer.remove(0, startPos);
+            m_receiveBuffer.remove(0, startPos);
             continue;
         }
 
-        if (buffer.size() < 8) {
+        if (m_receiveBuffer.size() < 8) {
             qDebug() << "Waiting for more data (header incomplete)";
             return;
         }
 
         // Extract payload length
-        quint16 length = static_cast<quint8>(buffer[4]) | (static_cast<quint8>(buffer[5]) << 8);
-        quint8 msgClass = static_cast<quint8>(buffer[2]);
-        quint8 msgId = static_cast<quint8>(buffer[3]);
-
-        qDebug() << "Potential message - Class:" << QString("0x%1").arg(msgClass, 2, 16, QLatin1Char('0'))
-                 << "ID:" << QString("0x%1").arg(msgId, 2, 16, QLatin1Char('0'))
-                 << "Length:" << length;
+        quint16 length = static_cast<quint8>(m_receiveBuffer[4]) |
+                         (static_cast<quint8>(m_receiveBuffer[5]) << 8);
+        quint8 msgClass = static_cast<quint8>(m_receiveBuffer[2]);
+        quint8 msgId = static_cast<quint8>(m_receiveBuffer[3]);
 
         // Check if we have complete message
         int totalMessageSize = 8 + length; // Header + payload
-        if (buffer.size() < totalMessageSize) {
+        if (m_receiveBuffer.size() < totalMessageSize) {
             qDebug() << "Waiting for more data. Need:" << totalMessageSize
-                     << "Have:" << buffer.size();
+                     << "Have:" << m_receiveBuffer.size();
             return;
         }
 
         // Extract complete message
-        QByteArray message = buffer.left(totalMessageSize);
-        buffer.remove(0, totalMessageSize);
+        QByteArray message = m_receiveBuffer.left(totalMessageSize);
+        m_receiveBuffer.remove(0, totalMessageSize);
 
-        qDebug() << "Processing message of size:" << message.size() << "bytes";
-        appendToLog(QString("Processing UBX: Class=0x%1 ID=0x%2 (%3 bytes)")
-                        .arg(msgClass, 2, 16, QLatin1Char('0'))
-                        .arg(msgId, 2, 16, QLatin1Char('0'))
-                        .arg(message.size()), "debug");
-
-        // Parse message
+        // Parse and process message
         QByteArray payload;
         if (UbxParser::parseUbxMessage(message, msgClass, msgId, payload)) {
             processUbxMessage(msgClass, msgId, payload);
@@ -2137,9 +2155,14 @@ void GNSSWindow::onConnectionStatusChanged(bool connected) {
     ui->statusbar->showMessage(status, 3000);
 
     if (!connected) {
+        clearReceiveBuffer();
         m_timer->stop();
         ui->autoSendCheck->setChecked(false);
     }
+}
+
+void GNSSWindow::clearReceiveBuffer() {
+    m_receiveBuffer.clear();
 }
 
 void GNSSWindow::saveLogToFile() {

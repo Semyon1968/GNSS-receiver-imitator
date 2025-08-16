@@ -33,6 +33,10 @@ public slots:
     void sendUbxCfgItfm();
 
 private slots:
+    void handleInitTimeout();
+    void handleAckTimeout();
+    void handleSocketDisconnected();
+    void handleSocketError(QAbstractSocket::SocketError error);
     void updateAvailableIds();
     void on_btnClearLog_clicked();
     void onReadyRead();
@@ -92,6 +96,7 @@ private:
     UbxParser m_ubxParser;
     QMap<quint8, QMap<int, QString>> m_classIdMap;
     QTimer *m_utcTimer;
+    QByteArray m_receiveBuffer;
     void updateUTCTime();
     void processAckNack(quint8 msgId, const QByteArray& payload);
     void completeInitialization();
@@ -105,6 +110,7 @@ private:
     void setupMonRfFields();
     void displayMonRf(const UbxParser::MonRf &data);
     void sendUbxMonRf();
+    void clearReceiveBuffer();
     bool m_initializationComplete = false;
     void setupNavPvtFields();
     void setupNavStatusFields();

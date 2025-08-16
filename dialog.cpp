@@ -24,8 +24,7 @@ Dialog::Dialog(QWidget *parent) :
     connect(m_socket, &QTcpSocket::stateChanged, this, [this](QAbstractSocket::SocketState state) {
         qDebug() << "Socket state changed to:" << state;
     });
-    connect(m_socket, QOverload<QAbstractSocket::SocketError>::of(&QTcpSocket::errorOccurred),
-            this, &Dialog::onError);
+    connect(m_socket, &QTcpSocket::errorOccurred, this, &Dialog::onError);
     connect(m_socket, &QTcpSocket::readyRead, this, [this]() {
         qDebug() << "Data available:" << m_socket->bytesAvailable() << "bytes";
     });
