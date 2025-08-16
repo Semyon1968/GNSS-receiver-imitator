@@ -170,6 +170,10 @@ private:
     void setupUiFromSettings(const QJsonObject &settings);
     bool m_settingsLoaded = false;
     void stopAllAutoSendTimers();
+    bool m_fieldsInitialized = false;
+    void initializeAllFields();
+    void showFieldsForCurrentSelection();
+    bool m_firstInitialization = true;
 };
 
 #endif // GNSSWINDOW_H

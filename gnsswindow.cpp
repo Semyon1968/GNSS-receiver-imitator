@@ -36,10 +36,9 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     // Setup fields
     initClassIdMapping();
     updateAvailableIds();
-    setupNavSatFields();
-    setupMonRfFields();
-    setupNavPvtFields();
-    setupNavStatusFields();
+    initializeAllFields();
+    m_firstInitialization = false;
+    hideAllParameterFields();
 
     // Connections
     setupConnections();
@@ -740,8 +739,99 @@ void GNSSWindow::onActionAboutTriggered() {
                        "Uses the u-blox UBX protocol");
 }
 
+void GNSSWindow::setupMonRfFields() {
+    ui->gbMonRfFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
+        ui->sbRfVersion->setValue(0);
+        ui->sbRfBlocks->setValue(1);
+        ui->dsbRfNoise->setValue(50.0);
+        ui->dsbRfAgc->setValue(75.0);
+        ui->cbRfJamState->setCurrentIndex(1); // OK
+        ui->cbRfAntStatus->setCurrentIndex(2); // OK
+        ui->cbRfAntPower->setCurrentIndex(1); // ON
+        ui->sbRfCwSuppression->setValue(0);
+    }
+}
+
+void GNSSWindow::setupCfgValsetFields() {
+    ui->gbCfgValsetFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
+        ui->sbValsetVersion->setValue(0);
+        ui->cbValsetRam->setChecked(true);
+        ui->cbValsetBbr->setChecked(false);
+        ui->cbValsetFlash->setChecked(false);
+        ui->leValsetKeysValues->setText("0x00000000=0x00000000");
+    }
+}
+
+void GNSSWindow::setupCfgValgetFields() {
+    ui->gbCfgValgetFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
+        ui->sbValgetVersion->setValue(0);
+        ui->cbValgetLayer->setCurrentIndex(0); // RAM layer
+        ui->sbValgetPosition->setValue(0);
+        ui->leValgetKeys->setText("0x00000000");
+    }
+}
+
+void GNSSWindow::setupMonVerFields() {
+    ui->gbMonVerFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
+        ui->leSwVersion->setText("ROM CORE 3.01 (107888)");
+        ui->leHwVersion->setText("00080000");
+        ui->teExtensions->setPlainText("PROTVER=18.00\nGPS;GLO;GAL;BDS\nSBAS;IMES;QZSS");
+    }
+}
+
+void GNSSWindow::setupMonHwFields() {
+    ui->gbMonHwFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
+        ui->sbHwNoise->setValue(50);
+        ui->sbHwAgc->setValue(75);
+        ui->cbHwAntStatus->setCurrentIndex(2); // OK
+        ui->cbHwAntPower->setCurrentIndex(1); // ON
+        ui->cbHwJamming->setCurrentIndex(1); // OK
+        ui->sbHwCwSuppression->setValue(0);
+    }
+}
+
+void GNSSWindow::setupSecUniqidFields() {
+    ui->gbSecUniqidFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
+        ui->sbUniqidVersion->setValue(1);
+        ui->leChipId->setText("12345678");
+    }
+}
+
+void GNSSWindow::setupNavTimeUtcFields() {
+    ui->gbNavTimeUtcFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
+        ui->sbTimeUtcTAcc->setValue(100000);
+        ui->sbTimeUtcNano->setValue(0);
+        ui->cbTimeUtcValid->setCurrentIndex(2); // Valid UTC
+        ui->cbTimeUtcStandard->setCurrentIndex(4); // BIPM
+    }
+}
+
 void GNSSWindow::setupNavSatFields() {
-    // Set default values
+    ui->gbNavSatFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->sbSatVersion->setValue(1);
     ui->sbNumSatsSat->setValue(10);
     ui->cbQualityInd->setCurrentIndex(4);
@@ -752,43 +842,59 @@ void GNSSWindow::setupNavSatFields() {
     ui->cbDiffCorr->setChecked(false);
     ui->cbSmoothed->setChecked(false);
     ui->cbOrbitSource->setCurrentIndex(1);
+    }
 }
 
 void GNSSWindow::setupInfDebugFields() {
     ui->gbInfDebugFields->setVisible(true);
     ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->teInfDebugMessage->setPlainText("Debug message");
+    }
 }
 
 void GNSSWindow::setupInfErrorFields() {
     ui->gbInfErrorFields->setVisible(true);
     ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->teInfErrorMessage->setPlainText("Error message");
+    }
 }
 
 void GNSSWindow::setupInfWarningFields() {
     ui->gbInfWarningFields->setVisible(true);
     ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->teInfWarningMessage->setPlainText("Warning message");
+    }
 }
 
 void GNSSWindow::setupInfNoticeFields() {
     ui->gbInfNoticeFields->setVisible(true);
     ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->teInfNoticeMessage->setPlainText("Notice message");
+    }
 }
 
 void GNSSWindow::setupInfTestFields() {
     ui->gbInfTestFields->setVisible(true);
     ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->teInfTestMessage->setPlainText("Test message");
+    }
 }
 
 void GNSSWindow::setupCfgAntFields() {
     ui->gbCfgAntFields->setVisible(true);
     ui->tePayload->setVisible(false);
 
-    // Set default values
+    if (m_firstInitialization) {
     ui->cbAntSupplyCtrl->setChecked(true);
     ui->cbAntShortDetect->setChecked(true);
     ui->cbAntOpenDetect->setChecked(true);
@@ -798,13 +904,14 @@ void GNSSWindow::setupCfgAntFields() {
     ui->sbAntShortPin->setValue(1);
     ui->sbAntOpenPin->setValue(2);
     ui->cbAntReconfig->setChecked(false);
+    }
 }
 
 void GNSSWindow::setupCfgNav5Fields() {
     ui->gbCfgNav5Fields->setVisible(true);
     ui->tePayload->setVisible(false);
 
-    // Set default values
+    if (m_firstInitialization) {
     ui->cbDynModel->setCurrentIndex(4);
     ui->cbFixMode->setCurrentIndex(2);
     ui->dsbFixedAlt->setValue(0.0);
@@ -819,12 +926,18 @@ void GNSSWindow::setupCfgNav5Fields() {
     ui->sbCnoThreshNumSVs->setValue(0);
     ui->cbUtcStandard->setCurrentIndex(0);
     ui->dsbStaticHoldMaxDist->setValue(0.0);
+    }
 }
 
 void GNSSWindow::setupCfgRateFields() {
+    ui->gbCfgRateFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->sbMeasRate->setValue(1000);  // 1 Hz
     ui->sbNavRate->setValue(1);
     ui->cbTimeRef->setCurrentIndex(0); // UTC time
+    }
 }
 
 void GNSSWindow::sendUbxInfDebug() {
@@ -917,116 +1030,12 @@ void GNSSWindow::sendUbxCfgRate() {
                     .arg(timeRef), "config");
 }
 
-void GNSSWindow::onClassIdChanged() {
-    hideAllParameterFields();
-
-    int classId = ui->cbClass->currentData().toInt();
-    int msgId = ui->cbId->currentData().toInt();
-
-    switch(classId) {
-    case UBX_CLASS_NAV:
-        if (msgId == UBX_NAV_PVT) {
-            setupNavPvtFields();
-            ui->gbNavPvtFields->setVisible(true);
-        } else if (msgId == UBX_NAV_STATUS) {
-            setupNavStatusFields();
-            ui->gbNavStatusFields->setVisible(true);
-        } else if (msgId == UBX_NAV_SAT) {
-            setupNavSatFields();
-            ui->gbNavSatFields->setVisible(true);
-        } else if (msgId == UBX_NAV_TIMEUTC) {
-            setupNavTimeUtcFields();
-            ui->gbNavTimeUtcFields->setVisible(true);
-        }
-        break;
-    case UBX_CLASS_MON:
-        if (msgId == UBX_MON_VER) {
-            setupMonVerFields();
-            ui->gbMonVerFields->setVisible(true);
-        } else if (msgId == UBX_MON_HW) {
-            setupMonHwFields();
-            ui->gbMonHwFields->setVisible(true);
-        } else if (msgId == UBX_MON_RF) {
-            setupMonRfFields();
-            ui->gbMonRfFields->setVisible(true);
-        }
-        break;
-    case UBX_CLASS_INF:
-        if (msgId == UBX_INF_DEBUG) {
-            setupInfDebugFields();
-            ui->gbInfDebugFields->setVisible(true);
-        }
-        else if (msgId == UBX_INF_ERROR) {
-            setupInfErrorFields();
-            ui->gbInfErrorFields->setVisible(true);
-        }
-        else if (msgId == UBX_INF_WARNING) {
-            setupInfWarningFields();
-            ui->gbInfWarningFields->setVisible(true);
-        }
-        else if (msgId == UBX_INF_NOTICE) {
-            setupInfNoticeFields();
-            ui->gbInfNoticeFields->setVisible(true);
-        }
-        else if (msgId == UBX_INF_TEST) {
-            setupInfTestFields();
-            ui->gbInfTestFields->setVisible(true);
-        }
-        break;
-    case UBX_CLASS_CFG:
-        if (msgId == UBX_CFG_PRT) {
-            setupCfgPrtFields();
-            ui->gbCfgPrtFields->setVisible(true);
-        } else if (msgId == UBX_CFG_ITFM) {
-            setupCfgItfmFields();
-            ui->gbCfgItfmFields->setVisible(true);
-        } else if (msgId == UBX_CFG_NAV5) {
-            setupCfgNav5Fields();
-            ui->gbCfgNav5Fields->setVisible(true);
-        } else if (msgId == UBX_CFG_RATE) {
-            setupCfgRateFields();
-            ui->gbCfgRateFields->setVisible(true);
-        } else if (msgId == UBX_CFG_VALGET) {
-            setupCfgValgetFields();
-            ui->gbCfgValgetFields->setVisible(true);
-        } else if (msgId == UBX_CFG_VALSET) {
-            setupCfgValsetFields();
-            ui->gbCfgValsetFields->setVisible(true);
-        } else if (msgId == UBX_CFG_ANT) {
-            setupCfgAntFields();
-            ui->gbCfgAntFields->setVisible(true);
-        }
-        break;
-    case UBX_CLASS_SEC:
-        if (msgId == UBX_SEC_UNIQID) {
-            setupSecUniqidFields();
-            ui->gbSecUniqidFields->setVisible(true);
-        }
-        break;
+void GNSSWindow::onClassIdChanged()
+{
+    if (!m_fieldsInitialized) {
+        initializeAllFields();
     }
-
-    if (!ui->gbNavPvtFields->isVisible() &&
-        !ui->gbNavStatusFields->isVisible() &&
-        !ui->gbMonRfFields->isVisible() &&
-        !ui->gbNavSatFields->isVisible() &&
-        !ui->gbCfgPrtFields->isVisible() &&
-        !ui->gbMonVerFields->isVisible() &&
-        !ui->gbNavTimeUtcFields->isVisible() &&
-        !ui->gbMonHwFields->isVisible() &&
-        !ui->gbCfgValsetFields->isVisible() &&
-        !ui->gbInfDebugFields->isVisible() &&
-        !ui->gbInfErrorFields->isVisible() &&
-        !ui->gbInfWarningFields->isVisible() &&
-        !ui->gbInfNoticeFields->isVisible() &&
-        !ui->gbInfTestFields->isVisible() &&
-        !ui->gbCfgAntFields->isVisible() &&
-        !ui->gbCfgValgetFields->isVisible() &&
-        !ui->gbCfgItfmFields->isVisible() &&
-        !ui->gbCfgNav5Fields->isVisible() &&
-        !ui->gbCfgRateFields->isVisible() &&
-        !ui->gbSecUniqidFields->isVisible()) {
-        ui->tePayload->setVisible(true);
-    }
+    showFieldsForCurrentSelection();
 }
 
 void GNSSWindow::hideAllParameterFields() {
@@ -1051,6 +1060,159 @@ void GNSSWindow::hideAllParameterFields() {
     ui->gbCfgValgetFields->setVisible(false);
     ui->gbCfgNav5Fields->setVisible(false);
     ui->tePayload->setVisible(false);
+}
+
+void GNSSWindow::initializeAllFields()
+{
+    if (m_fieldsInitialized) return;
+
+    setupNavPvtFields();
+    setupNavStatusFields();
+    setupNavSatFields();
+    setupNavTimeUtcFields();
+    setupMonVerFields();
+    setupMonHwFields();
+    setupMonRfFields();
+    setupCfgPrtFields();
+    setupCfgItfmFields();
+    setupCfgNav5Fields();
+    setupCfgRateFields();
+    setupCfgValgetFields();
+    setupCfgValsetFields();
+    setupCfgAntFields();
+    setupInfDebugFields();
+    setupInfErrorFields();
+    setupInfWarningFields();
+    setupInfNoticeFields();
+    setupInfTestFields();
+    setupSecUniqidFields();
+
+    m_fieldsInitialized = true;
+}
+
+void GNSSWindow::showFieldsForCurrentSelection()
+{
+    hideAllParameterFields();
+
+    int classId = ui->cbClass->currentData().toInt();
+    int msgId = ui->cbId->currentData().toInt();
+
+    QWidget* groupToShow = nullptr;
+    bool showPayloadEditor = false;
+
+    switch(classId) {
+    case UBX_CLASS_NAV:
+        switch(msgId) {
+        case UBX_NAV_PVT:
+            groupToShow = ui->gbNavPvtFields;
+            break;
+        case UBX_NAV_STATUS:
+            groupToShow = ui->gbNavStatusFields;
+            break;
+        case UBX_NAV_SAT:
+            groupToShow = ui->gbNavSatFields;
+            break;
+        case UBX_NAV_TIMEUTC:
+            groupToShow = ui->gbNavTimeUtcFields;
+            break;
+        default:
+            showPayloadEditor = true;
+            break;
+        }
+        break;
+
+    case UBX_CLASS_MON:
+        switch(msgId) {
+        case UBX_MON_VER:
+            groupToShow = ui->gbMonVerFields;
+            break;
+        case UBX_MON_HW:
+            groupToShow = ui->gbMonHwFields;
+            break;
+        case UBX_MON_RF:
+            groupToShow = ui->gbMonRfFields;
+            break;
+        default:
+            showPayloadEditor = true;
+            break;
+        }
+        break;
+
+    case UBX_CLASS_CFG:
+        switch(msgId) {
+        case UBX_CFG_PRT:
+            groupToShow = ui->gbCfgPrtFields;
+            break;
+        case UBX_CFG_ITFM:
+            groupToShow = ui->gbCfgItfmFields;
+            break;
+        case UBX_CFG_NAV5:
+            groupToShow = ui->gbCfgNav5Fields;
+            break;
+        case UBX_CFG_RATE:
+            groupToShow = ui->gbCfgRateFields;
+            break;
+        case UBX_CFG_VALGET:
+            groupToShow = ui->gbCfgValgetFields;
+            break;
+        case UBX_CFG_VALSET:
+            groupToShow = ui->gbCfgValsetFields;
+            break;
+        case UBX_CFG_ANT:
+            groupToShow = ui->gbCfgAntFields;
+            break;
+        default:
+            showPayloadEditor = true;
+            break;
+        }
+        break;
+
+    case UBX_CLASS_INF:
+        switch(msgId) {
+        case UBX_INF_DEBUG:
+            groupToShow = ui->gbInfDebugFields;
+            break;
+        case UBX_INF_ERROR:
+            groupToShow = ui->gbInfErrorFields;
+            break;
+        case UBX_INF_WARNING:
+            groupToShow = ui->gbInfWarningFields;
+            break;
+        case UBX_INF_NOTICE:
+            groupToShow = ui->gbInfNoticeFields;
+            break;
+        case UBX_INF_TEST:
+            groupToShow = ui->gbInfTestFields;
+            break;
+        default:
+            showPayloadEditor = true;
+            break;
+        }
+        break;
+
+    case UBX_CLASS_SEC:
+        if (msgId == UBX_SEC_UNIQID) {
+            groupToShow = ui->gbSecUniqidFields;
+        } else {
+            showPayloadEditor = true;
+        }
+        break;
+
+    default:
+        showPayloadEditor = true;
+        break;
+    }
+
+    if (groupToShow) {
+        groupToShow->setVisible(true);
+    } else if (showPayloadEditor) {
+        ui->tePayload->setVisible(true);
+    }
+
+    QString statusMsg = QString("Showing fields for: %1-%2")
+                            .arg(ui->cbClass->currentText())
+                            .arg(ui->cbId->currentText());
+    appendToLog(statusMsg, "debug");
 }
 
 void GNSSWindow::setupConnections()
@@ -1163,10 +1325,12 @@ void GNSSWindow::onActionSaveSettingsTriggered()
 
 void GNSSWindow::onActionLoadSettingsTriggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this,
-                                                    tr("Load Settings"),
-                                                    QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
-                                                    tr("JSON Files (*.json);;All Files (*)"));
+    QString fileName = QFileDialog::getOpenFileName(
+        this,
+        tr("Load Settings"),
+        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+        tr("JSON Settings (*.json);;All Files (*)")
+        );
 
     if (fileName.isEmpty()) {
         return;
@@ -1195,6 +1359,8 @@ void GNSSWindow::onActionLoadSettingsTriggered()
         }
 
         m_settingsLoaded = true;
+        m_firstInitialization = false;
+
         applySettings(doc.object());
 
         if (ui->autoSendCheck->isChecked()) {
@@ -1209,10 +1375,19 @@ void GNSSWindow::onActionLoadSettingsTriggered()
         ui->statusbar->showMessage(tr("Settings loaded successfully"), 3000);
 
     } catch (const std::exception& e) {
+        m_settingsLoaded = false;
         applySettings(backupSettings);
 
         QMessageBox::warning(this, tr("Error"), tr(e.what()));
         appendToLog(tr("Failed to load settings: %1").arg(e.what()), "error");
+
+        if (ui->autoSendCheck->isChecked()) {
+            int rate = ui->rateSpin->value();
+            if (rate > 0) {
+                m_pvtTimer->start(1000 / rate);
+                m_statusTimer->start(1000 / rate);
+            }
+        }
     }
 }
 
@@ -1375,75 +1550,6 @@ void GNSSWindow::sendUbxCfgItfm() {
                     .arg(ui->sbBbThreshold->value())
                     .arg(ui->sbCwThreshold->value())
                     .arg(ui->cbEnable->isChecked() ? "ON" : "OFF"), "out");
-}
-
-void GNSSWindow::setupMonRfFields() {
-    // Set default values
-    ui->sbRfVersion->setValue(0);
-    ui->sbRfBlocks->setValue(1);
-    ui->dsbRfNoise->setValue(50.0);
-    ui->dsbRfAgc->setValue(75.0);
-    ui->cbRfJamState->setCurrentIndex(1); // OK
-    ui->cbRfAntStatus->setCurrentIndex(2); // OK
-    ui->cbRfAntPower->setCurrentIndex(1); // ON
-    ui->sbRfCwSuppression->setValue(0);
-}
-
-void GNSSWindow::setupCfgValsetFields() {
-    ui->gbCfgValsetFields->setVisible(true);
-    ui->tePayload->setVisible(false);
-
-    ui->sbValsetVersion->setValue(0);
-    ui->cbValsetRam->setChecked(true);
-    ui->cbValsetBbr->setChecked(false);
-    ui->cbValsetFlash->setChecked(false);
-    ui->leValsetKeysValues->setText("0x00000000=0x00000000");
-}
-
-void GNSSWindow::setupCfgValgetFields() {
-    ui->gbCfgValgetFields->setVisible(true);
-    ui->tePayload->setVisible(false);
-
-    ui->sbValgetVersion->setValue(0);
-    ui->cbValgetLayer->setCurrentIndex(0); // RAM layer
-    ui->sbValgetPosition->setValue(0);
-    ui->leValgetKeys->setText("0x00000000");
-}
-
-void GNSSWindow::setupMonVerFields() {
-    ui->gbMonVerFields->setVisible(true);
-
-    ui->leSwVersion->setText("ROM CORE 3.01 (107888)");
-    ui->leHwVersion->setText("00080000");
-    ui->teExtensions->setPlainText("PROTVER=18.00\nGPS;GLO;GAL;BDS\nSBAS;IMES;QZSS");
-}
-
-void GNSSWindow::setupMonHwFields() {
-    ui->gbMonHwFields->setVisible(true);
-
-    ui->sbHwNoise->setValue(50);
-    ui->sbHwAgc->setValue(75);
-    ui->cbHwAntStatus->setCurrentIndex(2); // OK
-    ui->cbHwAntPower->setCurrentIndex(1); // ON
-    ui->cbHwJamming->setCurrentIndex(1); // OK
-    ui->sbHwCwSuppression->setValue(0);
-}
-
-void GNSSWindow::setupSecUniqidFields() {
-    ui->gbSecUniqidFields->setVisible(true);
-    ui->tePayload->setVisible(false);
-
-    ui->sbUniqidVersion->setValue(1);
-    ui->leChipId->setText("12345678");
-}
-
-void GNSSWindow::setupNavTimeUtcFields() {
-    ui->gbNavTimeUtcFields->setVisible(true);
-
-    ui->sbTimeUtcTAcc->setValue(100000);
-    ui->sbTimeUtcNano->setValue(0);
-    ui->cbTimeUtcValid->setCurrentIndex(2); // Valid UTC
-    ui->cbTimeUtcStandard->setCurrentIndex(4); // BIPM
 }
 
 void GNSSWindow::sendUbxCfgValset() {
@@ -2801,9 +2907,9 @@ void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId) {
 }
 void GNSSWindow::setupNavPvtFields() {
     ui->gbNavPvtFields->setVisible(true);
-    ui->gbNavStatusFields->setVisible(false);
     ui->tePayload->setVisible(false);
 
+    if (m_firstInitialization) {
     ui->dsbLat->setValue(55.7522200);
     ui->dsbLon->setValue(37.6155600);
     ui->dsbHeight->setValue(150.0);
@@ -2816,35 +2922,44 @@ void GNSSWindow::setupNavPvtFields() {
     ui->dsbRmsPos->setValue(1.0);
     ui->dsbRmsVel->setValue(0.1);
     ui->dsbPdop->setValue(1.5);
+    }
 }
 
 void GNSSWindow::setupNavStatusFields() {
-    ui->gbNavPvtFields->setVisible(false);
     ui->gbNavStatusFields->setVisible(true);
     ui->tePayload->setVisible(false);
 
+    if (m_firstInitialization) {
     ui->sbFixTypeStatus->setValue(3); // 3D fix
     ui->sbTtff->setValue(5000); // 5 seconds
+    }
 }
 
 void GNSSWindow::setupCfgPrtFields() {
     ui->gbCfgPrtFields->setVisible(true);
+    ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->cbPortId->setCurrentIndex(0); // UART1 by default
     ui->cbBaudRate->setCurrentText("115200");
     ui->cbInUbx->setChecked(true);
     ui->cbInNmea->setChecked(true);
     ui->cbOutUbx->setChecked(true);
     ui->cbOutNmea->setChecked(true);
+    }
 }
 
 void GNSSWindow::setupCfgItfmFields() {
     ui->gbCfgItfmFields->setVisible(true);
     ui->tePayload->setVisible(false);
+
+    if (m_firstInitialization) {
     ui->sbBbThreshold->setValue(0);
     ui->sbCwThreshold->setValue(0);
     ui->cbEnable->setChecked(true);
     ui->cbAntSetting->setCurrentIndex(0);
     ui->cbEnable2->setChecked(false);
+    }
 }
 
 void GNSSWindow::sendUbxCfgPrt() {
