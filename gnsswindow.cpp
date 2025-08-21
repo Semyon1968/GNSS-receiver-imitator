@@ -3,6 +3,7 @@
 #include <QStandardItemModel>
 #include <QLabel>
 #include <QMessageBox>
+#include <QTranslator>
 #include <QDateTime>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -48,9 +49,9 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     updateUTCTime();
 
     // Initial state
-    appendToLog("GNSS Window initialized successfully", "system");
+    appendToLog(tr("GNSS Window initialized successfully"), "system");
     qDebug() << "GNSSWindow initialized at" << QDateTime::currentDateTime().toString("hh:mm:ss");
-    ui->statusbar->showMessage("Waiting for connection...", 3000);
+    ui->statusbar->showMessage(tr("Waiting for connection..."), 3000);
 }
 
 void GNSSWindow::initClassIdMapping() {
@@ -349,7 +350,7 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
 void GNSSWindow::saveSettings(const QString &filename) {
     QFile file(filename);
     if (!file.open(QIODevice::WriteOnly)) {
-        QMessageBox::warning(this, "Error", "Could not save settings file");
+            QMessageBox::warning(this, tr("Error"), tr("Could not save settings file"));
         return;
     }
 
@@ -358,13 +359,13 @@ void GNSSWindow::saveSettings(const QString &filename) {
     file.write(doc.toJson());
     file.close();
 
-    appendToLog(QString("Settings saved to %1").arg(filename), "system");
+    appendToLog(tr("Settings saved to %1").arg(filename), "system");
 }
 
 void GNSSWindow::loadSettings(const QString &filename) {
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, "Error", "Could not load settings file");
+        QMessageBox::warning(this, tr("Error"), tr("Could not load settings file"));
         return;
     }
 
@@ -373,30 +374,27 @@ void GNSSWindow::loadSettings(const QString &filename) {
 
     QJsonDocument doc = QJsonDocument::fromJson(data);
     if (doc.isNull()) {
-        QMessageBox::warning(this, "Error", "Invalid settings file format");
+        QMessageBox::warning(this, tr("Error"), tr("Invalid settings file format"));
         return;
     }
 
     applySettings(doc.object());
-    appendToLog(QString("Settings loaded from %1").arg(filename), "system");
+    appendToLog(tr("Settings loaded successfully"), "system");
 }
 
 void GNSSWindow::applySettings(const QJsonObject &settings)
 {
-    // 1. Блокируем сигналы всех виджетов
     QList<QWidget*> widgets = findChildren<QWidget*>();
     foreach (QWidget* widget, widgets) {
         widget->blockSignals(true);
     }
 
-    // 2. Применяем общие настройки
     if (settings.contains("general")) {
         QJsonObject general = settings["general"].toObject();
         ui->autoSendCheck->setChecked(general["autoSendEnabled"].toBool());
         ui->rateSpin->setValue(general["updateRate"].toInt(1));
     }
 
-    // 3. Применяем настройки автоотправки
     if (settings.contains("autoSend")) {
         QJsonObject autoSend = settings["autoSend"].toObject();
         auto applyCheckbox = [&](const QString& key, QCheckBox* checkbox) {
@@ -425,7 +423,6 @@ void GNSSWindow::applySettings(const QJsonObject &settings)
         applyCheckbox("secUniqid", ui->cbAutoSendSecUniqid);
     }
 
-    // 4. Применяем параметры для каждого типа сообщений
     auto applyNavPvtSettings = [&](const QJsonObject& obj) {
         ui->dsbLat->setValue(obj["lat"].toDouble(55.7522200));
         ui->dsbLon->setValue(obj["lon"].toDouble(37.6155600));
@@ -611,7 +608,7 @@ void GNSSWindow::applySettings(const QJsonObject &settings)
     onAutoSendToggled(ui->autoSendCheck->isChecked());
 
     ui->statusbar->showMessage(tr("Settings applied successfully"), 3000);
-    appendToLog("All settings applied from configuration", "system");
+    appendToLog(tr("All settings applied from configuration"), "system");
 }
 
 void GNSSWindow::setSocket(QTcpSocket *socket) {
@@ -628,7 +625,7 @@ void GNSSWindow::setSocket(QTcpSocket *socket) {
 
         // Disconnection handler
         connect(m_socket, &QTcpSocket::disconnected, this, [this]() {
-            appendToLog("Disconnected from host", "system");
+            appendToLog(tr("Disconnected from host"), "system");
             m_timer->stop();
             m_socket = nullptr;
         });
@@ -636,16 +633,16 @@ void GNSSWindow::setSocket(QTcpSocket *socket) {
         // Error handler
         connect(m_socket, &QTcpSocket::errorOccurred, this, &GNSSWindow::onError);
 
-        appendToLog("Socket connected and configured", "debug");
+        appendToLog(tr("Socket connected and configured"), "debug");
     } else {
-        appendToLog("Socket pointer is null!", "error");
+        appendToLog(tr("Socket pointer is null!"), "error");
     }
 }
 
 void GNSSWindow::handleInitTimeout()
 {
     if (!m_initializationComplete) {
-        appendToLog("Configuration timeout - proceeding without ACK", "warning");
+        appendToLog(tr("Configuration timeout - proceeding without ACK"), "warning");
         m_initializationComplete = true;
 
         if (m_socket && m_socket->state() == QAbstractSocket::ConnectedState) {
@@ -660,14 +657,14 @@ void GNSSWindow::handleInitTimeout()
 void GNSSWindow::handleAckTimeout()
 {
     if (m_waitingForAck) {
-        appendToLog("ACK timeout - configuration may be incomplete", "error");
+        appendToLog(tr("ACK timeout - configuration may be incomplete"), "error");
         m_waitingForAck = false;
     }
 }
 
 void GNSSWindow::handleSocketDisconnected()
 {
-    appendToLog("Disconnected from host", "system");
+    appendToLog(tr("Disconnected from host"), "system");
     m_timer->stop();
     m_socket = nullptr;
 }
@@ -676,7 +673,7 @@ void GNSSWindow::handleSocketError(QAbstractSocket::SocketError error)
 {
     Q_UNUSED(error);
     QString errorMsg = m_socket ? m_socket->errorString() : "Socket not initialized";
-    appendToLog("Socket error: " + errorMsg, "error");
+    appendToLog(tr("Socket error: ") + errorMsg, "error");
 
     m_timer->stop();
     m_initializationComplete = false;
@@ -686,13 +683,13 @@ void GNSSWindow::handleSocketError(QAbstractSocket::SocketError error)
         m_socket->disconnectFromHost();
     }
 
-    ui->statusbar->showMessage("Connection error: " + errorMsg, 5000);
+    ui->statusbar->showMessage(tr("Connection error: %1").arg(errorMsg), 5000);
 }
 
 void GNSSWindow::onError(QAbstractSocket::SocketError error) {
     Q_UNUSED(error);
     QString errorMsg = m_socket ? m_socket->errorString() : "Socket not initialized";
-    appendToLog("Socket error: " + errorMsg, "error");
+    appendToLog(tr("Socket error: %1").arg(errorMsg), "error");
 
     // Additional error handling
     m_timer->stop();
@@ -703,7 +700,7 @@ void GNSSWindow::onError(QAbstractSocket::SocketError error) {
         m_socket->disconnectFromHost();
     }
 
-    ui->statusbar->showMessage("Connection error: " + errorMsg, 5000);
+    ui->statusbar->showMessage(tr("Connection error: %1").arg(errorMsg), 5000);
 }
 
 void GNSSWindow::updateUTCTime() {
@@ -713,12 +710,12 @@ void GNSSWindow::updateUTCTime() {
 }
 
 void GNSSWindow::onActionSaveLogTriggered() {
-    QString fileName = QFileDialog::getSaveFileName(this, "Save Log", "", "Text Files (*.txt);;All Files (*)");
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Log"), "", tr("Text Files (*.txt);;All Files (*)"));
     if (fileName.isEmpty()) return;
 
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "Error", "Could not save file");
+        QMessageBox::warning(this, tr("Error"), tr("Could not save file"));
         return;
     }
 
@@ -729,14 +726,14 @@ void GNSSWindow::onActionSaveLogTriggered() {
 
 void GNSSWindow::onActionClearLogTriggered() {
     ui->teReceived->clear();
-    appendToLog("Log cleared by user", "system");
+    appendToLog(tr("Log cleared by user"), "system");
 }
 
 void GNSSWindow::onActionAboutTriggered() {
-    QMessageBox::about(this, "About GNSS Simulator",
-                       "Application simulates GNSS receiver\n"
-                       "Version: 1.0\n"
-                       "Uses the u-blox UBX protocol");
+    QMessageBox::about(this, tr("About GNSS Simulator"),
+                       tr("Application simulates GNSS receiver") + "\n" +
+                           tr("Version: %1").arg("1.0") + "\n" +
+                           tr("Uses the u-blox UBX protocol"));
 }
 
 void GNSSWindow::setupMonRfFields() {
@@ -942,7 +939,7 @@ void GNSSWindow::setupCfgRateFields() {
 
 void GNSSWindow::sendUbxInfDebug() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send INF-DEBUG", "error");
+        appendToLog(tr("Error: No active connection to send INF-DEBUG"), "error");
         return;
     }
 
@@ -950,12 +947,12 @@ void GNSSWindow::sendUbxInfDebug() {
     QByteArray payload = debugMessage.toLatin1();
 
     createUbxPacket(UBX_CLASS_INF, UBX_INF_DEBUG, payload);
-    appendToLog(QString("INF-DEBUG sent: %1").arg(debugMessage), "out");
+    appendToLog(tr("INF-DEBUG sent: %1").arg(debugMessage), "out");
 }
 
 void GNSSWindow::sendUbxInfError() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send INF-ERROR", "error");
+        appendToLog(tr("Error: No active connection to send INF-ERROR"), "error");
         return;
     }
 
@@ -963,12 +960,12 @@ void GNSSWindow::sendUbxInfError() {
     QByteArray payload = message.toLatin1();
 
     createUbxPacket(UBX_CLASS_INF, UBX_INF_ERROR, payload);
-    appendToLog(QString("INF-ERROR sent: %1").arg(message), "out");
+    appendToLog(tr("INF-ERROR sent: %1").arg(message), "out");
 }
 
 void GNSSWindow::sendUbxInfNotice() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send INF-NOTICE", "error");
+        appendToLog(tr("Error: No active connection to send INF-NOTICE"), "error");
         return;
     }
 
@@ -976,12 +973,12 @@ void GNSSWindow::sendUbxInfNotice() {
     QByteArray payload = message.toLatin1();
 
     createUbxPacket(UBX_CLASS_INF, UBX_INF_NOTICE, payload);
-    appendToLog(QString("INF-NOTICE sent: %1").arg(message), "out");
+    appendToLog(tr("INF-NOTICE sent: %1").arg(message), "out");
 }
 
 void GNSSWindow::sendUbxInfTest() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send INF-TEST", "error");
+        appendToLog(tr("Error: No active connection to send INF-TEST"), "error");
         return;
     }
 
@@ -994,7 +991,7 @@ void GNSSWindow::sendUbxInfTest() {
 
 void GNSSWindow::sendUbxInfWarning() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send INF-WARNING", "error");
+        appendToLog(tr("Error: No active connection to send INF-WARNING"), "error");
         return;
     }
 
@@ -1002,12 +999,12 @@ void GNSSWindow::sendUbxInfWarning() {
     QByteArray payload = message.toLatin1();
 
     createUbxPacket(UBX_CLASS_INF, UBX_INF_WARNING, payload);
-    appendToLog(QString("INF-WARNING sent: %1").arg(message), "out");
+    appendToLog(tr("INF-WARNING sent: %1").arg(message), "out");
 }
 
 void GNSSWindow::sendUbxCfgRate() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send CFG-RATE", "error");
+        appendToLog(tr("Error: No active connection to send CFG-RATE"), "error");
         return;
     }
 
@@ -1024,10 +1021,11 @@ void GNSSWindow::sendUbxCfgRate() {
     qToLittleEndian<quint16>(timeRef, payload.data() + 4);
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_RATE, payload);
-    appendToLog(QString("CFG-RATE sent: MeasRate=%1ms, NavRate=%2, TimeRef=%3")
+    appendToLog(tr("CFG-RATE sent: MeasRate=%1ms, NavRate=%2, TimeRef=%3")
                     .arg(measRate)
                     .arg(navRate)
-                    .arg(timeRef), "config");
+                    .arg(timeRef),
+                    "config");
 }
 
 void GNSSWindow::onClassIdChanged()
@@ -1208,11 +1206,6 @@ void GNSSWindow::showFieldsForCurrentSelection()
     } else if (showPayloadEditor) {
         ui->tePayload->setVisible(true);
     }
-
-    QString statusMsg = QString("Showing fields for: %1-%2")
-                            .arg(ui->cbClass->currentText())
-                            .arg(ui->cbId->currentText());
-    appendToLog(statusMsg, "debug");
 }
 
 void GNSSWindow::setupConnections()
@@ -1397,11 +1390,11 @@ void GNSSWindow::sendInitialConfiguration() {
     }
 
     if (m_waitingForAck) {
-        appendToLog("Configuration already in progress", "warning");
+        appendToLog(tr("Configuration already in progress"), "warning");
         return;
     }
 
-    appendToLog("Starting initial configuration", "system");
+    appendToLog(tr("Starting initial configuration"), "system");
 
     m_waitingForAck = true;
     m_ackTimeoutTimer->start();
@@ -1442,13 +1435,14 @@ void GNSSWindow::onReadyRead() {
     m_receiveBuffer.append(newData);
 
     qDebug() << "Total buffer size:" << m_receiveBuffer.size() << "bytes";
-    appendToLog(QString("Received %1 bytes (total buffer: %2)")
+    appendToLog(tr("Received %1 bytes (total buffer: %2)")
                     .arg(newData.size())
-                    .arg(m_receiveBuffer.size()), "in");
+                    .arg(m_receiveBuffer.size()),
+                "in");
 
     // Process all complete messages in buffer
     while (m_receiveBuffer.size() >= 8) { // Minimum UBX message size (without payload)
-        // 3.1. Find sync bytes
+        // Find sync bytes
         int startPos = m_receiveBuffer.indexOf("\xB5\x62");
         if (startPos < 0) {
             qDebug() << "No UBX sync chars found, clearing buffer";
@@ -1492,7 +1486,7 @@ void GNSSWindow::onReadyRead() {
             processUbxMessage(msgClass, msgId, payload);
         } else {
             qWarning() << "Failed to parse UBX message";
-            appendToLog("Failed to parse UBX message", "error");
+            appendToLog(tr("Failed to parse UBX message"), "error");
         }
     }
 }
@@ -1508,19 +1502,19 @@ void GNSSWindow::registerHandlers() {
     connect(&m_ubxParser, &UbxParser::cfgPrtReceived, this, &GNSSWindow::displayCfgPrt);
 
     connect(&m_ubxParser, &UbxParser::infErrorReceived, this, [this](const QString& msg) {
-        appendToLog("INF-ERROR: " + msg, "error");
-        QMessageBox::warning(this, "Receiver Error", msg);
+        appendToLog(tr("INF-ERROR: %1").arg(msg), "error");
+        QMessageBox::warning(this, tr("Receiver Error"), msg);
     });
 }
 
 void GNSSWindow::sendUbxSecUniqidReq() {
     createUbxPacket(UBX_CLASS_SEC, UBX_SEC_UNIQID, QByteArray());
-    appendToLog("Requested SEC-UNIQID", "config");
+    appendToLog(tr("Requested SEC-UNIQID"), "config");
 }
 
 void GNSSWindow::sendUbxCfgItfm() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send CFG-ITFM", "error");
+        appendToLog(tr("Error: No active connection to send CFG-ITFM"), "error");
         return;
     }
 
@@ -1546,7 +1540,7 @@ void GNSSWindow::sendUbxCfgItfm() {
     qToLittleEndian<quint32>(config2, payload.data() + 4);
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_ITFM, payload);
-    appendToLog(QString("CFG-ITFM sent: BB=%1, CW=%2, Enable=%3")
+    appendToLog(tr("CFG-ITFM sent: BB=%1, CW=%2, Enable=%3")
                     .arg(ui->sbBbThreshold->value())
                     .arg(ui->sbCwThreshold->value())
                     .arg(ui->cbEnable->isChecked() ? "ON" : "OFF"), "out");
@@ -1554,7 +1548,7 @@ void GNSSWindow::sendUbxCfgItfm() {
 
 void GNSSWindow::sendUbxCfgValset() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send CFG-VALSET", "error");
+        appendToLog(tr("Error: No active connection to send CFG-VALSET"), "error");
         return;
     }
 
@@ -1583,7 +1577,7 @@ void GNSSWindow::sendUbxCfgValset() {
     }
 
     if (kvPairs.isEmpty()) {
-        appendToLog("Error: No valid key-value pairs provided for CFG-VALSET", "error");
+        appendToLog(tr("Error: No valid key-value pairs provided for CFG-VALSET"), "error");
         return;
     }
 
@@ -1611,15 +1605,15 @@ void GNSSWindow::sendUbxCfgValset() {
     }
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_VALSET, payload);
-    appendToLog(QString("CFG-VALSET sent: Version=%1, Layers=0x%2, %3 key-value pairs")
+    appendToLog(tr("CFG-VALSET sent: Version=%1, Layers=0x%2, %n key-value pair(s)", "", kvPairs.size())
                     .arg(version)
-                    .arg(layers, 2, 16, QLatin1Char('0'))
-                    .arg(kvPairs.size()), "config");
+                    .arg(layers, 2, 16, QLatin1Char('0')),
+                "config");
 }
 
 void GNSSWindow::sendUbxCfgValGet() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send CFG-VALGET", "error");
+        appendToLog(tr("Error: No active connection to send CFG-VALGET"), "error");
         return;
     }
 
@@ -1641,7 +1635,7 @@ void GNSSWindow::sendUbxCfgValGet() {
     }
 
     if (keys.isEmpty()) {
-        appendToLog("Error: No valid keys provided for CFG-VALGET", "error");
+        appendToLog(tr("Error: No valid keys provided for CFG-VALGET"), "error");
         return;
     }
 
@@ -1660,11 +1654,12 @@ void GNSSWindow::sendUbxCfgValGet() {
     }
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_VALGET, payload);
-    appendToLog(QString("CFG-VALGET sent: Version=%1, Layer=%2, Position=%3, Keys=%4")
+    appendToLog(tr("CFG-VALGET sent: Version=%1, Layer=%2, Position=%3, Keys=%4")
                     .arg(version)
                     .arg(layer)
                     .arg(position)
-                    .arg(keysStr), "config");
+                    .arg(keysStr),
+                    "config");
 }
 
 void GNSSWindow::sendUbxNavTimeUtc() {
@@ -1708,19 +1703,19 @@ void GNSSWindow::sendUbxNavTimeUtc() {
     payload[19] = validFlags;
 
     createUbxPacket(UBX_CLASS_NAV, UBX_NAV_TIMEUTC, payload);
-    appendToLog("Sent NAV-TIMEUTC", "out");
+    appendToLog(tr("Sent NAV-TIMEUTC"), "out");
 }
 
 void GNSSWindow::processCfgValGet(const QByteArray& payload) {
     if (payload.size() < 4) {
-        appendToLog("CFG-VALGET response too short", "error");
+        appendToLog(tr("CFG-VALGET response too short"), "error");
         return;
     }
 
     quint8 version = static_cast<quint8>(payload[0]);
     quint8 layer = static_cast<quint8>(payload[1]);
 
-    QString message = QString("CFG-VALGET response: Version=%1, Layer=%2").arg(version).arg(layer);
+    QString message = tr("CFG-VALGET response: Version=%1, Layer=%2").arg(version).arg(layer);
 
     // Processing key-value (evry 8 bytes: 4 bytes key, 4 bytes value)
     for (int i = 4; i + 7 < payload.size(); i += 8) {
@@ -1736,12 +1731,12 @@ void GNSSWindow::processCfgValGet(const QByteArray& payload) {
 
 void GNSSWindow::processCfgValSet(const QByteArray &payload) {
     sendUbxAck(UBX_CLASS_CFG, UBX_CFG_VALSET);
-    appendToLog("CFG-VALSET processed", "config");
+    appendToLog(tr("CFG-VALSET processed"), "config");
 }
 
 void GNSSWindow::sendUbxMonRf() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send MON-RF", "error");
+        appendToLog(tr("Error: No active connection to send MON-RF"), "error");
         return;
     }
 
@@ -1750,14 +1745,14 @@ void GNSSWindow::sendUbxMonRf() {
     const int payloadSize = 4 + 24 * numBlocks;
     QByteArray payload(payloadSize, 0x00);
 
-    appendToLog(QString("Preparing MON-RF message with %1 blocks (%2 bytes total)")
+    appendToLog(tr("Preparing MON-RF message with %1 blocks (%2 bytes total)")
                     .arg(numBlocks).arg(payloadSize), "debug");
 
     // Header
     payload[0] = static_cast<quint8>(ui->sbRfVersion->value());
     payload[1] = static_cast<quint8>(numBlocks);
 
-    appendToLog(QString("Header: version=%1, nBlocks=%2")
+    appendToLog(tr("Header: version=%1, nBlocks=%2")
                     .arg(payload[0]).arg(payload[1]), "debug");
 
     // Write each RF blok
@@ -1789,7 +1784,7 @@ void GNSSWindow::sendUbxMonRf() {
         payload[offset+20] = static_cast<quint8>(128); // magQ
 
         // Log blocks
-        appendToLog(QString("Block %1: antId=%2, jamState=%3, antStatus=%4, antPower=%5, noise=%6, agc=%7")
+        appendToLog(tr("Block %1: antId=%2, jamState=%3, antStatus=%4, antPower=%5, noise=%6, agc=%7")
                         .arg(i)
                         .arg(payload[offset])
                         .arg(payload[offset+1])
@@ -1800,16 +1795,16 @@ void GNSSWindow::sendUbxMonRf() {
     }
 
     // Log payload before sending
-    appendToLog("MON-RF payload: " + payload.toHex(' '), "debug");
+    appendToLog(tr("MON-RF payload (hex): %1").arg(QString(payload.toHex(' '))), "debug");
 
     // Create and sending packet
     createUbxPacket(UBX_CLASS_MON, UBX_MON_RF, payload);
-    appendToLog(QString("MON-RF message sent (%1 bytes)").arg(payloadSize + 8), "out");
+    appendToLog(tr("MON-RF message sent (%1 bytes total)").arg(payloadSize + 8), "out");
 }
 
 void GNSSWindow::sendUbxSecUniqid() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send SEC-UNIQID", "error");
+        appendToLog(tr("Error: No active connection to send SEC-UNIQID"), "error");
         return;
     }
 
@@ -1821,7 +1816,7 @@ void GNSSWindow::sendUbxSecUniqid() {
     bool ok;
     quint32 chipId = chipIdStr.toUInt(&ok, 16);
     if (!ok) {
-        appendToLog("Invalid Chip ID format (must be hex)", "error");
+        appendToLog(tr("Invalid Chip ID format (must be hex)"), "error");
         return;
     }
 
@@ -1830,7 +1825,7 @@ void GNSSWindow::sendUbxSecUniqid() {
     }
 
     createUbxPacket(UBX_CLASS_SEC, UBX_SEC_UNIQID, payload);
-    appendToLog(QString("SEC-UNIQID sent: Version=%1, ChipID=0x%2")
+    appendToLog(tr("SEC-UNIQID sent: Version=%1, ChipID=0x%2")
                     .arg(ui->sbUniqidVersion->value())
                     .arg(chipIdStr), "out");
 }
@@ -1864,7 +1859,7 @@ void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate) {
         payload.append('\0'); // Padding
 
         createUbxPacket(UBX_CLASS_CFG, UBX_CFG_VALSET, payload); // UBX-CFG-VALSET
-        appendToLog(QString("CFG-VALSET for MSG: Class=0x%1 ID=0x%2 Rate=%3")
+        appendToLog(tr("CFG-VALSET for MSG: Class=0x%1 ID=0x%2 Rate=%3")
                         .arg(msgClass, 2, 16, QLatin1Char('0'))
                         .arg(msgId, 2, 16, QLatin1Char('0'))
                         .arg(rate), "config");
@@ -1876,7 +1871,7 @@ void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate) {
         payload.append(static_cast<char>(rate));
 
         createUbxPacket(UBX_CLASS_CFG, UBX_CFG_MSG, payload);
-        appendToLog(QString("CFG-MSG: Class=0x%1 ID=0x%2 Rate=%3")
+        appendToLog(tr("CFG-MSG: Class=0x%1 ID=0x%2 Rate=%3")
                         .arg(msgClass, 2, 16, QLatin1Char('0'))
                         .arg(msgId, 2, 16, QLatin1Char('0'))
                         .arg(rate), "config");
@@ -1888,10 +1883,11 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
     QString timestamp = QDateTime::currentDateTime().toString("[hh:mm:ss.zzz]");
 
     // Log incoming message
-    qDebug().nospace() << timestamp << " Processing UBX message: "
-                       << "Class=0x" << QString("%1").arg(msgClass, 2, 16, QLatin1Char('0')).toUpper()
-                       << " ID=0x" << QString("%1").arg(msgId, 2, 16, QLatin1Char('0')).toUpper()
-                       << " Size=" << payload.size() << " bytes";
+    qDebug().nospace() << timestamp << " "
+                       << tr("Processing UBX message:") << " "
+                       << tr("Class=0x%1").arg(QString("%1").arg(msgClass, 2, 16, QLatin1Char('0')).toUpper()) << " "
+                       << tr("ID=0x%1").arg(QString("%1").arg(msgId, 2, 16, QLatin1Char('0')).toUpper()) << " "
+                       << tr("Size=%1 bytes").arg(payload.size());
 
     if (msgClass == UBX_CLASS_ACK) {
         if (payload.size() >= 2) {
@@ -1899,7 +1895,7 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
             quint8 ackedId = static_cast<quint8>(payload[1]);
 
             if (msgId == UBX_ACK_ACK) {
-                appendToLog(QString("ACK received for Class=0x%1 ID=0x%2")
+                appendToLog(tr("ACK received for Class=0x%1 ID=0x%2")
                                 .arg(ackedClass, 2, 16, QLatin1Char('0'))
                                 .arg(ackedId, 2, 16, QLatin1Char('0')),
                             "in");
@@ -1910,7 +1906,7 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
                 }
             }
             else if (msgId == UBX_ACK_NAK) {
-                appendToLog(QString("NACK received for Class=0x%1 ID=0x%2")
+                appendToLog(tr("NACK received for Class=0x%1 ID=0x%2")
                                 .arg(ackedClass, 2, 16, QLatin1Char('0'))
                                 .arg(ackedId, 2, 16, QLatin1Char('0')),
                             "error");
@@ -1937,7 +1933,8 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
     case UBX_CLASS_MON: messageInfo = processMonMessages(msgId, payload); break;
     case UBX_CLASS_SEC: messageInfo = processSecMessages(msgId, payload); break;
     default:
-        messageInfo = QString("Unknown message class: 0x%1").arg(msgClass, 2, 16, QLatin1Char('0'));
+        messageInfo = tr("Unknown message class: 0x%1 (hex)").arg(
+            QString::number(msgClass, 16).rightJustified(2, '0').toUpper());
         qWarning() << messageInfo;
         break;
     }
@@ -1949,7 +1946,7 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
 
 void GNSSWindow::processAckNack(quint8 msgId, const QByteArray& payload) {
     if (payload.size() < 2) {
-        appendToLog("Invalid ACK/NAK payload size", "error");
+        appendToLog(tr("Invalid ACK/NAK payload size"), "error");
         return;
     }
 
@@ -1957,14 +1954,14 @@ void GNSSWindow::processAckNack(quint8 msgId, const QByteArray& payload) {
     quint8 ackedId = static_cast<quint8>(payload[1]);
 
     if (msgId == UBX_ACK_ACK) {
-        appendToLog(QString("ACK received for %1 (0x%2) ID: 0x%3")
+        appendToLog(tr("ACK received for %1 (0x%2) ID: 0x%3")
                         .arg(getMessageName(ackedClass, ackedId))
                         .arg(ackedClass, 2, 16, QLatin1Char('0'))
                         .arg(ackedId, 2, 16, QLatin1Char('0')),
                     "in");
     }
     else if (msgId == UBX_ACK_NAK) {
-        appendToLog(QString("NACK received for %1 (0x%2) ID: 0x%3")
+        appendToLog(tr("NACK received for %1 (0x%2) ID: 0x%3")
                         .arg(getMessageName(ackedClass, ackedId))
                         .arg(ackedClass, 2, 16, QLatin1Char('0'))
                         .arg(ackedId, 2, 16, QLatin1Char('0')),
@@ -1984,7 +1981,7 @@ void GNSSWindow::completeInitialization() {
 
     ui->autoSendCheck->setChecked(true);
 
-    appendToLog("Configuration complete. Starting NAV-PVT and NAV-STATUS.", "system");
+    appendToLog(tr("Configuration complete. Starting NAV-PVT and NAV-STATUS."), "system");
 }
 
 
@@ -2007,7 +2004,8 @@ void GNSSWindow::processCfgMessages(quint8 msgId, const QByteArray& payload) {
         sendUbxCfgItfm();
         break;
     default:
-        message = QString("Unknown CFG message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+        message = tr("Unknown CFG message ID: 0x%1")
+                      .arg(msgId, 2, 16, QLatin1Char('0'));
         qWarning() << message;
         break;
     }
@@ -2087,7 +2085,7 @@ QString GNSSWindow::processMonMessages(quint8 msgId, const QByteArray& payload) 
         return QString("MON-RF: %1 RF blocks").arg(rf.nBlocks);
     }
     default:
-        return QString("Unknown MON message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+        return tr("Unknown MON message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
     }
 }
 
@@ -2099,7 +2097,7 @@ QString GNSSWindow::processSecMessages(quint8 msgId, const QByteArray& payload) 
         return QString("SEC-UNIQID: 0x%1").arg(uniqid.uniqueId, 8, 16, QLatin1Char('0'));
     }
     default:
-        return QString("Unknown SEC message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
+        return tr("Unknown SEC message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0'));
     }
 }
 
@@ -2109,19 +2107,21 @@ void GNSSWindow::processInfMessages(quint8 msgId, const QByteArray& payload) {
         emit infErrorReceived(QString::fromLatin1(payload));
         break;
     case UBX_INF_WARNING:
-        appendToLog("INF-WARNING: " + QString::fromLatin1(payload), "warning");
+        appendToLog(QString("INF-WARNING: %1").arg(QString::fromLatin1(payload)), "warning");
         break;
     case UBX_INF_NOTICE:
-        appendToLog("INF-NOTICE: " + QString::fromLatin1(payload), "info");
+        appendToLog(QString("INF-NOTICE: %1").arg(QString::fromLatin1(payload)), "info");
         break;
     case UBX_INF_TEST:
-        appendToLog("INF-TEST: " + QString::fromLatin1(payload), "test");
+        appendToLog(QString("INF-TEST: %1").arg(QString::fromLatin1(payload)), "test");
         break;
     case UBX_INF_DEBUG:
-        appendToLog("INF-DEBUG: " + QString::fromLatin1(payload), "debug");
+        appendToLog(QString("INF-DEBUG: %1").arg(QString::fromLatin1(payload)), "debug");
         break;
     default:
-        appendToLog(QString("Unknown INF message ID: 0x%1").arg(msgId, 2, 16, QLatin1Char('0')), "warning");
+        appendToLog(tr("Unknown INF message ID: 0x%1")
+                        .arg(msgId, 2, 16, QLatin1Char('0')),
+                    "warning");
         break;
     }
 }
@@ -2176,7 +2176,7 @@ QString GNSSWindow::getMessageName(quint8 msgClass, quint8 msgId) {
         default: return QString("SEC-UNKNOWN (0x%1)").arg(msgId, 2, 16, QLatin1Char('0'));
         }
     default:
-        return QString("UNKNOWN (Class: 0x%1, ID: 0x%2)")
+        return tr("UNKNOWN (Class: 0x%1, ID: 0x%2)")
             .arg(msgClass, 2, 16, QLatin1Char('0'))
             .arg(msgId, 2, 16, QLatin1Char('0'));
     }
@@ -2265,7 +2265,7 @@ void GNSSWindow::displayMonVer(const UbxParser::MonVer &data) {
     QRegularExpressionMatch match = re.match(data.swVersion);
     if (match.hasMatch()) {
         m_protocolVersion = match.captured(1).toFloat();
-        appendToLog(QString("Protocol version detected: %1").arg(m_protocolVersion), "system");
+        appendToLog(tr("Protocol version detected: %1").arg(m_protocolVersion), "system");
     }
 
     ui->statusbar->showMessage(
@@ -2305,7 +2305,8 @@ void GNSSWindow::appendToLog(const QString &message, const QString &type) {
     if (ui && ui->teReceived) {
         if (ui->teReceived->document()->lineCount() > 10000) {
             ui->teReceived->clear();
-            ui->teReceived->append("<div style='color:#7B1FA2;'><b>Log cleared automatically</b></div>");
+            ui->teReceived->append(QString("<div style='color:#7B1FA2;'><b>%1</b></div>")
+                                       .arg(tr("Log cleared automatically")));
         }
 
         ui->teReceived->append(formattedMessage);
@@ -2324,19 +2325,19 @@ void GNSSWindow::appendToLog(const QString &message, const QString &type) {
 }
 
 void GNSSWindow::processMonHw(const UbxParser::MonHw &hw) {
-    QString status = hw.aPower == 1 ? "Active (Powered)" : "Inactive";
-    QString info = QString("Antenna: %1\nJamming: %2%\nNoise: %3\nAGC: %4")
+    QString status = hw.aPower == 1 ? tr("Active (Powered)") : tr("Inactive");
+    QString info = tr("Antenna: %1\nJamming: %2%\nNoise: %3\nAGC: %4")
                        .arg(status)
                        .arg(hw.jamInd)
                        .arg(hw.noisePerMS)
                        .arg(hw.agcCnt);
 
-    appendToLog(QString("MON-HW: %1").arg(info), "status");
+    appendToLog(tr("MON-HW: %1").arg(info), "status");
 }
 
 void GNSSWindow::sendUbxCfgAnt() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send CFG-ANT", "error");
+        appendToLog(tr("Error: No active connection to send CFG-ANT"), "error");
         return;
     }
 
@@ -2362,7 +2363,7 @@ void GNSSWindow::sendUbxCfgAnt() {
     qToLittleEndian<quint16>(pins, payload.data() + 2);
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_ANT, payload);
-    appendToLog(QString("CFG-ANT sent: flags=0x%1, pins=0x%2")
+    appendToLog(tr("CFG-ANT sent: flags=0x%1, pins=0x%2")
                     .arg(flags, 4, 16, QLatin1Char('0'))
                     .arg(pins, 4, 16, QLatin1Char('0')), "config");
 }
@@ -2434,7 +2435,7 @@ void GNSSWindow::sendUbxNavSat() {
     qToLittleEndian<quint32>(iTOW, payload.data());
 
     createUbxPacket(UBX_CLASS_NAV, UBX_NAV_SAT, payload);
-    appendToLog("Sent NAV-SAT message", "out");
+    appendToLog(tr("Sent NAV-SAT message"), "out");
 }
 
 void GNSSWindow::onSendButtonClicked() {
@@ -2475,8 +2476,8 @@ void GNSSWindow::onSendButtonClicked() {
 }
 void GNSSWindow::onAutoSendToggled(bool checked) {
     if (checked && !m_initializationComplete) {
-        QMessageBox::warning(this, "Warning",
-                             "Cannot start sending - initialization not complete");
+        QMessageBox::warning(this, tr("Warning"),
+                             tr("Cannot start sending - initialization not complete"));
         ui->autoSendCheck->setChecked(false);
         return;
     }
@@ -2718,12 +2719,12 @@ void GNSSWindow::sendUbxCfgPrtResponse() {
     qToLittleEndian<quint16>(0x0003, payload.data() + 14); // outProtoMask: UBX + NMEA
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_PRT, payload);
-    appendToLog("Sent CFG-PRT", "config");
+    appendToLog(tr("Sent CFG-PRT"), "config");
 }
 
 void GNSSWindow::sendUbxCfgNav5() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send CFG-NAV5", "error");
+        appendToLog(tr("Error: No active connection to send CFG-NAV5"), "error");
         return;
     }
 
@@ -2784,7 +2785,7 @@ void GNSSWindow::sendUbxCfgNav5() {
     payload[30] = static_cast<quint8>(ui->cbUtcStandard->currentIndex());
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_NAV5, payload);
-    appendToLog("Sent CFG-NAV5 configuration", "config");
+    appendToLog(tr("Sent CFG-NAV5 configuration"), "config");
 }
 
 void GNSSWindow::sendUbxMonVer() {
@@ -2814,10 +2815,8 @@ void GNSSWindow::sendUbxMonVer() {
     }
 
     createUbxPacket(UBX_CLASS_MON, UBX_MON_VER, payload);
-    appendToLog(QString("Sent MON-VER: SW=%1, HW=%2, %3 extensions")
-                    .arg(swVersion)
-                    .arg(hwVersion)
-                    .arg(extensions.size()), "config");
+    appendToLog(tr("Sent MON-VER: SW=%1, HW=%2, %3 extensions")
+                    .arg(swVersion, hwVersion, QString::number(extensions.size())), "config");
 }
 
 void GNSSWindow::sendUbxNavStatus() {
@@ -2833,12 +2832,12 @@ void GNSSWindow::sendUbxNavStatus() {
     qToLittleEndian<quint32>(ttff, payload.data() + 8); // ttff
 
     createUbxPacket(UBX_CLASS_NAV, UBX_NAV_STATUS, payload);
-    appendToLog("Sent NAV-STATUS", "out");
+    appendToLog(tr("Sent NAV-STATUS"), "out");
 }
 
 void GNSSWindow::on_btnClearLog_clicked() {
     ui->teReceived->clear();
-    appendToLog("Log cleared");
+    appendToLog(tr("Log cleared"));
 }
 
 void GNSSWindow::onConnectionStatusChanged(bool connected) {
@@ -2857,7 +2856,7 @@ void GNSSWindow::clearReceiveBuffer() {
 }
 
 void GNSSWindow::saveLogToFile() {
-    QString fileName = QFileDialog::getSaveFileName(this, "Save Log", "", "Text Files (*.txt);;All Files (*)");
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Log"), "", tr("Text Files (*.txt);;All Files (*)"));
     if (fileName.isEmpty()) return;
 
     QFile file(fileName);
@@ -2870,15 +2869,15 @@ void GNSSWindow::saveLogToFile() {
 
 void GNSSWindow::clearLog() {
     ui->teReceived->clear();
-    appendToLog("Log cleared", "system");
+    appendToLog(tr("Log cleared"), "system");
 }
 
 void GNSSWindow::pauseLog(bool paused) {
     if (paused) {
-        ui->statusbar->showMessage("Log paused", 2000);
+        ui->statusbar->showMessage(tr("Log paused"), 2000);
     } else {
         ui->teReceived->ensureCursorVisible();
-        ui->statusbar->showMessage("Log resumed", 2000);
+        ui->statusbar->showMessage(tr("Log resumed"), 2000);
     }
 }
 
@@ -2888,7 +2887,7 @@ void GNSSWindow::sendUbxAck(quint8 msgClass, quint8 msgId) {
     payload.append(static_cast<char>(msgId));
 
     createUbxPacket(UBX_CLASS_ACK, UBX_ACK_ACK, payload);
-    appendToLog(QString("Sent ACK for Class=0x%1 ID=0x%2")
+    appendToLog(tr("Sent ACK for Class=0x%1 ID=0x%2")
                     .arg(msgClass, 2, 16, QLatin1Char('0'))
                     .arg(msgId, 2, 16, QLatin1Char('0')),
                 "config");
@@ -2900,7 +2899,7 @@ void GNSSWindow::sendUbxNack(quint8 msgClass, quint8 msgId) {
     payload.append(static_cast<char>(msgId));
 
     createUbxPacket(UBX_CLASS_ACK, UBX_ACK_NAK, payload);
-    appendToLog(QString("Sent NACK for Class=0x%1 ID=0x%2")
+    appendToLog(tr("Sent NACK for Class=0x%1 ID=0x%2")
                     .arg(msgClass, 2, 16, QLatin1Char('0'))
                     .arg(msgId, 2, 16, QLatin1Char('0')),
                 "error");
@@ -2964,7 +2963,7 @@ void GNSSWindow::setupCfgItfmFields() {
 
 void GNSSWindow::sendUbxCfgPrt() {
     if (!m_socket || m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog("Error: No active connection to send CFG-PRT", "error");
+        appendToLog(tr("Error: No active connection to send CFG-PRT"), "error");
         return;
     }
 
@@ -2995,7 +2994,7 @@ void GNSSWindow::sendUbxCfgPrt() {
     qToLittleEndian<quint32>(0x000008D0, payload.data() + 4);
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_PRT, payload);
-    appendToLog(QString("Sent CFG-PRT: Port=%1, Baud=%2, InProto=0x%3, OutProto=0x%4")
+    appendToLog(tr("Sent CFG-PRT: Port=%1, Baud=%2, InProto=0x%3, OutProto=0x%4")
                     .arg(portId)
                     .arg(baudRate)
                     .arg(inProtoMask, 4, 16, QLatin1Char('0'))
@@ -3030,7 +3029,7 @@ void GNSSWindow::sendUbxMonHw() {
     // pinSel, pinBank, pinDir, pinVal, usedMask, VP, pinIrq, pullH, pullL
 
     createUbxPacket(UBX_CLASS_MON, UBX_MON_HW, payload);
-    appendToLog(QString("MON-HW sent: Noise=%1, AGC=%2%, AntStatus=%3, AntPower=%4")
+    appendToLog(tr("MON-HW sent: Noise=%1, AGC=%2%, AntStatus=%3, AntPower=%4")
                     .arg(noise)
                     .arg(ui->sbHwAgc->value())
                     .arg(ui->cbHwAntStatus->currentText())
@@ -3085,17 +3084,17 @@ void GNSSWindow::sendUbxNavPvt() {
     payload[23] = numSV;   // numSV
 
     createUbxPacket(UBX_CLASS_NAV, UBX_NAV_PVT, payload);
-    appendToLog("Sent NAV-PVT", "out");
+    appendToLog(tr("Sent NAV-PVT"), "out");
 }
 
 void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray &payload) {
     if (!m_socket) {
-        appendToLog("Error: Socket not initialized", "error");
+        appendToLog(tr("Error: Socket not initialized"), "error");
         return;
     }
 
     if (m_socket->state() != QAbstractSocket::ConnectedState) {
-        appendToLog(QString("Error: Socket not connected (state: %1)").arg(m_socket->state()), "error");
+        appendToLog(tr("Error: Socket not connected (state: %1)").arg(m_socket->state()), "error");
         return;
     }
 
@@ -3120,8 +3119,7 @@ void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray
     packet.append(ck_a);
     packet.append(ck_b);
 
-    // Логирование деталей пакета
-    appendToLog(QString("UBX Packet: Class=0x%1, ID=0x%2, Length=%3, Checksum=0x%4 0x%5")
+    appendToLog(tr("UBX Packet: Class=0x%1, ID=0x%2, Length=%3, Checksum=0x%4 0x%5")
                     .arg(msgClass, 2, 16, QLatin1Char('0'))
                     .arg(msgId, 2, 16, QLatin1Char('0'))
                     .arg(length)
@@ -3131,14 +3129,14 @@ void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray
     // Sending
     qint64 bytesWritten = m_socket->write(packet);
     if (bytesWritten == -1) {
-        appendToLog(QString("Write error: %1").arg(m_socket->errorString()), "error");
+        appendToLog(tr("Write error: %1").arg(m_socket->errorString()), "error");
     } else if (bytesWritten != packet.size()) {
-        appendToLog(QString("Partial write: %1/%2 bytes").arg(bytesWritten).arg(packet.size()), "warning");
+        appendToLog(tr("Partial write: %1/%2 bytes").arg(bytesWritten).arg(packet.size()), "warning");
     } else {
-        appendToLog(QString("Successfully sent %1 bytes").arg(bytesWritten), "debug");
+        appendToLog(tr("Successfully sent %1 bytes").arg(bytesWritten), "debug");
     }
 
     if (!m_socket->flush()) {
-        appendToLog(QString("Flush failed: %1").arg(m_socket->errorString()), "warning");
+        appendToLog(tr("Flush failed: %1").arg(m_socket->errorString()), "warning");
     }
 }

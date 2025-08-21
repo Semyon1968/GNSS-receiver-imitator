@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QTimer>
+#include <QTranslator>
 
 Dialog::Dialog(QWidget *parent) :
     QDialog(parent),
@@ -22,24 +23,24 @@ Dialog::Dialog(QWidget *parent) :
     connect(m_socket, &QTcpSocket::connected, this, &Dialog::onConnected);
     connect(m_socket, &QTcpSocket::disconnected, this, &Dialog::onDisconnected);
     connect(m_socket, &QTcpSocket::stateChanged, this, [this](QAbstractSocket::SocketState state) {
-        qDebug() << "Socket state changed to:" << state;
+        qDebug() << tr("Socket state changed to: %1").arg(state);
     });
     connect(m_socket, &QTcpSocket::errorOccurred, this, &Dialog::onError);
     connect(m_socket, &QTcpSocket::readyRead, this, [this]() {
-        qDebug() << "Data available:" << m_socket->bytesAvailable() << "bytes";
+        qDebug() << tr("Data available: %1 bytes").arg(m_socket->bytesAvailable());
     });
 
     // Set default UI values
     ui->leIpAddress->setText("192.168.2.22");
     ui->lePort->setText("40001");
 
-    qDebug() << "Dialog initialized, socket state:" << m_socket->state();
+    qDebug() << tr("Dialog initialized, socket state: %1").arg(m_socket->state());
 }
 
 void Dialog::onConnectionTimeout() {
     if (m_socket->state() == QAbstractSocket::ConnectingState) {
         m_socket->abort();
-        QMessageBox::warning(this, "Timeout", "Connection timed out");
+        QMessageBox::warning(this, tr("Timeout"), tr("Connection timed out"));
     }
 }
 
@@ -48,7 +49,7 @@ void Dialog::onDisconnected() {
         m_gnssWindow->close();
     }
 
-    qDebug() << "Disconnected from host";
+    qDebug() << tr("Disconnected from host");
 
     if (m_socket) {
         m_socket->abort();
@@ -65,7 +66,7 @@ void Dialog::onConnected() {
         this->hide();
     }
 
-    emit logMessage("Connected to autopilot", "system");
+    emit logMessage(tr("Connected to autopilot"), "system");
 }
 
 void Dialog::appendToLog(const QString &message, const QString &type) {
@@ -82,14 +83,14 @@ void Dialog::on_connectButton_clicked() {
     QString portStr = ui->lePort->text().trimmed();
 
     if (host.isEmpty() || portStr.isEmpty()) {
-        QMessageBox::warning(this, "Error", "Please enter host and port");
+            QMessageBox::warning(this, tr("Error"), tr("Please enter host and port"));
         return;
     }
 
     bool ok;
     quint16 port = portStr.toUShort(&ok);
     if (!ok || port == 0) {
-        QMessageBox::warning(this, "Error", "Invalid port number");
+        QMessageBox::warning(this, tr("Error"), tr("Invalid port number"));
         return;
     }
 
@@ -109,7 +110,7 @@ void Dialog::onError(QAbstractSocket::SocketError error) {
     m_connectionTimer->stop();
 
     QString errorMsg = m_socket->errorString();
-    QMessageBox::critical(this, "Connection Error", errorMsg);
+    QMessageBox::critical(this, tr("Connection Error"), errorMsg);
 
     if (m_gnssWindow) {
         m_gnssWindow->close();

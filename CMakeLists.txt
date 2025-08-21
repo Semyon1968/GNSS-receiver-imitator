@@ -10,8 +10,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt with required components
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network PrintSupport)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network PrintSupport)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network PrintSupport LinguistTools)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network PrintSupport LinguistTools)
+
+# Translations
+set(TRANSLATION_FILES
+    translations/gnss_simulator_ru.ts
+)
+qt_add_translation(QM_FILES ${TRANSLATION_FILES})
+qt_add_resources(PROJECT_SOURCES
+    "translations"
+    PREFIX "/translations"
+    FILES ${QM_FILES}
+)
 
 # QCustomPlot sources (modified version with Antialiasing fixes)
 set(QCP_SOURCES
