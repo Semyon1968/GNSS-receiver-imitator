@@ -17,6 +17,7 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     ui(new Ui::GNSSWindow),
     m_parentDialog(parentDialog),
     m_socket(nullptr),
+    m_receiveBuffer(nullptr),
     m_pvtTimer(new QTimer(this)),
     m_statusTimer(new QTimer(this)),
     m_initTimer(new QTimer(this)),
@@ -345,6 +346,82 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     settings["secUniqid"] = secUniqidSettings;
 
     return settings;
+}
+
+void GNSSWindow::setReceiveBuffer(QByteArray *receiveBuffer) {
+    m_receiveBuffer = receiveBuffer;
+}
+
+void GNSSWindow::processBuffer() {
+    if (!m_receiveBuffer || m_receiveBuffer->isEmpty()) {
+        return;
+    }
+
+    qDebug() << "Processing buffer:" << m_receiveBuffer->size() << "bytes";
+
+    while (m_receiveBuffer->size() >= 8) { // Minimum UBX message size
+        // Find sync bytes
+        int startPos = m_receiveBuffer->indexOf("\xB5\x62");
+        if (startPos < 0) {
+            qDebug() << "No UBX sync chars found, clearing buffer";
+            m_receiveBuffer->clear();
+            return;
+        }
+
+        // Remove garbage before sync bytes
+        if (startPos > 0) {
+            qDebug() << "Discarding" << startPos << "bytes before sync chars";
+            m_receiveBuffer->remove(0, startPos);
+            continue;
+        }
+
+        if (m_receiveBuffer->size() < 8) {
+            qDebug() << "Waiting for more data (header incomplete)";
+            return;
+        }
+
+        // Extract payload length
+        quint16 length = static_cast<quint8>((*m_receiveBuffer)[4]) |
+                         (static_cast<quint8>((*m_receiveBuffer)[5]) << 8);
+        quint8 msgClass = static_cast<quint8>((*m_receiveBuffer)[2]);
+        quint8 msgId = static_cast<quint8>((*m_receiveBuffer)[3]);
+
+        // Check if we have complete message
+        int totalMessageSize = 8 + length;
+        if (m_receiveBuffer->size() < totalMessageSize) {
+            qDebug() << "Waiting for more data. Need:" << totalMessageSize
+                     << "Have:" << m_receiveBuffer->size();
+            return;
+        }
+
+        // Extract complete message
+        QByteArray message = m_receiveBuffer->left(totalMessageSize);
+        m_receiveBuffer->remove(0, totalMessageSize);
+
+        // Parse and process message
+        QByteArray payload;
+        if (UbxParser::parseUbxMessage(message, msgClass, msgId, payload)) {
+            processUbxMessage(msgClass, msgId, payload);
+        } else {
+            qWarning() << "Failed to parse UBX message";
+            appendToLog(tr("Failed to parse UBX message"), "error");
+        }
+    }
+}
+
+void GNSSWindow::clearReceiveBuffer() {
+    if (m_receiveBuffer) {
+        m_receiveBuffer->clear();
+    }
+}
+
+void GNSSWindow::onReadyRead() {
+    if (!m_socket || !m_receiveBuffer) {
+        qCritical() << "onReadyRead: Socket or buffer not initialized!";
+        return;
+    }
+
+    processBuffer();
 }
 
 void GNSSWindow::saveSettings(const QString &filename) {
@@ -1415,7 +1492,7 @@ void GNSSWindow::sendInitialConfiguration() {
     QTimer::singleShot(1000, this, &GNSSWindow::sendUbxMonHw);
     QTimer::singleShot(1500, this, &GNSSWindow::sendUbxSecUniqidReq);
 }
-
+/*
 void GNSSWindow::onReadyRead() {
     if (!m_socket) {
         qCritical() << "onReadyRead: Socket is null!";
@@ -1490,7 +1567,7 @@ void GNSSWindow::onReadyRead() {
         }
     }
 }
-
+*/
 void GNSSWindow::registerHandlers() {
     connect(&m_ubxParser, &UbxParser::navPvtReceived, this, &GNSSWindow::displayNavPvt);
     connect(&m_ubxParser, &UbxParser::navStatusReceived, this, &GNSSWindow::displayNavStatus);
@@ -2849,10 +2926,6 @@ void GNSSWindow::onConnectionStatusChanged(bool connected) {
         m_timer->stop();
         ui->autoSendCheck->setChecked(false);
     }
-}
-
-void GNSSWindow::clearReceiveBuffer() {
-    m_receiveBuffer.clear();
 }
 
 void GNSSWindow::saveLogToFile() {

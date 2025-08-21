@@ -19,6 +19,7 @@ public:
     ~Dialog();
 
     QTcpSocket* getSocket() const { return m_socket; }
+    QByteArray& getReceiveBuffer() { return m_receiveBuffer; }
     void appendToLog(const QString &message, const QString &type = "info");
 
 signals:
@@ -37,6 +38,7 @@ private:
     QTcpSocket *m_socket;
     GNSSWindow *m_gnssWindow = nullptr;
     QTimer *m_connectionTimer;
+    QByteArray m_receiveBuffer;
 };
 
 #endif // DIALOG_H

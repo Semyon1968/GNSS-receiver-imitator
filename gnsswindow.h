@@ -26,6 +26,7 @@ public:
     ~GNSSWindow();
     void sendUbxCfgPrtResponse();
     void setSocket(QTcpSocket *socket);
+    void setReceiveBuffer(QByteArray *receiveBuffer);
     void onConnectionStatusChanged(bool connected);
 
 public slots:
@@ -98,7 +99,7 @@ private:
     UbxParser m_ubxParser;
     QMap<quint8, QMap<int, QString>> m_classIdMap;
     QTimer *m_utcTimer;
-    QByteArray m_receiveBuffer;
+    // QByteArray m_receiveBuffer;
     void updateUTCTime();
     void processAckNack(quint8 msgId, const QByteArray& payload);
     void completeInitialization();
@@ -109,6 +110,8 @@ private:
     QString processMonMessages(quint8 msgId, const QByteArray& payload);
     QString processSecMessages(quint8 msgId, const QByteArray& payload);
     void processInfMessages(quint8 msgId, const QByteArray& payload);
+    QByteArray *m_receiveBuffer;
+    void processBuffer();
     void setupMonRfFields();
     void displayMonRf(const UbxParser::MonRf &data);
     void sendUbxMonRf();

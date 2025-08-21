@@ -26,8 +26,16 @@ Dialog::Dialog(QWidget *parent) :
         qDebug() << tr("Socket state changed to: %1").arg(state);
     });
     connect(m_socket, &QTcpSocket::errorOccurred, this, &Dialog::onError);
+    /*
     connect(m_socket, &QTcpSocket::readyRead, this, [this]() {
         qDebug() << tr("Data available: %1 bytes").arg(m_socket->bytesAvailable());
+    });
+*/
+    connect(m_socket, &QTcpSocket::readyRead, this, [this]() {
+        QByteArray newData = m_socket->readAll();
+        m_receiveBuffer.append(newData);
+        qDebug() << tr("Data received: %1 bytes, total buffer: %2 bytes")
+                        .arg(newData.size()).arg(m_receiveBuffer.size());
     });
 
     // Set default UI values
@@ -62,6 +70,7 @@ void Dialog::onConnected() {
     if (!m_gnssWindow) {
         m_gnssWindow = new GNSSWindow(this);
         m_gnssWindow->setSocket(m_socket);
+        m_gnssWindow->setReceiveBuffer(&m_receiveBuffer);
         m_gnssWindow->show();
         this->hide();
     }

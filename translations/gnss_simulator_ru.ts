@@ -15,7 +15,11 @@
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
-        <message>
+    <message>
+    <source>CFG-VALGET response: Version=%1, Layer=%2</source>
+    <translation>Ответ CFG-VALGET: Версия=%1, Слой=%2</translation>
+    </message>
+    <message>
         <source>About</source>
         <translation>О программе</translation>
     </message>
@@ -1082,6 +1086,22 @@
     <message>
         <source>Select message</source>
         <translation>Выберите сообщение</translation>
+    </message>
+    <message>
+    <source>CFG-VALGET response: Version=%1, Layer=%2, Position=%3, Size=%4 bytes</source>
+    <translation>Ответ CFG-VALGET: Версия=%1, Слой=%2, Позиция=%3, Размер=%4 байт</translation>
+    </message>
+    <message>
+    <source>Contains %1 key-value pairs:</source>
+    <translation>Содержит %1 пар ключ-значение:</translation>
+    </message>
+    <message>
+    <source>No key-value data in response</source>
+    <translation>Нет данных ключ-значение в ответе</translation>
+    </message>
+    <message>
+    <source>Key: 0x%1, Value: 0x%2</source>
+    <translation>Ключ: 0x%1, Значение: 0x%2</translation>
     </message>
     <message>
         <source>Valid TOW (0x01)</source>
