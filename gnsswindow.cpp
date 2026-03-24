@@ -27,29 +27,24 @@ GNSSWindow::GNSSWindow(Dialog* parentDialog, QWidget *parent) :
     m_waitingForAck(false) {
     ui->setupUi(this);
 
-    // Setup timer intervals (default 1 Hz)
     m_pvtTimer->setInterval(1000);
     m_statusTimer->setInterval(1000);
     m_initTimer->setSingleShot(true);
-    m_initTimer->setInterval(15000);   // 15 sec
+    m_initTimer->setInterval(15000);
     m_ackTimeoutTimer->setSingleShot(true);
-    m_ackTimeoutTimer->setInterval(3000); // 3 sec
+    m_ackTimeoutTimer->setInterval(3000);
 
-    // Setup fields
     initClassIdMapping();
     updateAvailableIds();
     initializeAllFields();
     m_firstInitialization = false;
     hideAllParameterFields();
 
-    // Connections
     setupConnections();
 
-    // Real time signal
     m_utcTimer->start(1000);
     updateUTCTime();
 
-    // Initial state
     appendToLog(tr("GNSS Window initialized successfully"), "system");
     qDebug() << "GNSSWindow initialized at" << QDateTime::currentDateTime().toString("hh:mm:ss");
     ui->statusbar->showMessage(tr("Waiting for connection..."), 3000);
@@ -99,7 +94,6 @@ void GNSSWindow::initClassIdMapping() {
     ackIds.insert(UBX_ACK_NAK, "NAK");
     m_classIdMap.insert(UBX_CLASS_ACK, ackIds);
 
-    // Fill class comboBox
     ui->cbClass->clear();
     ui->cbClass->addItem("NAV (0x01)", UBX_CLASS_NAV);
     ui->cbClass->addItem("CFG (0x06)", UBX_CLASS_CFG);
@@ -108,7 +102,7 @@ void GNSSWindow::initClassIdMapping() {
     ui->cbClass->addItem("INF (0x04)", UBX_CLASS_INF);
     ui->cbClass->addItem("ACK (0x05)", UBX_CLASS_ACK);
 
-    updateAvailableIds(); // Initialize ID list
+    updateAvailableIds();
 }
 
 void GNSSWindow::updateAvailableIds() {
@@ -130,7 +124,7 @@ void GNSSWindow::updateAvailableIds() {
     }
 
     ui->cbId->blockSignals(false);
-    onClassIdChanged(); // Update displayed fields
+    onClassIdChanged();
 }
 
 GNSSWindow::~GNSSWindow() {
@@ -140,7 +134,6 @@ GNSSWindow::~GNSSWindow() {
 QJsonObject GNSSWindow::getCurrentSettings() const {
     QJsonObject settings;
 
-    // Save auto-send checkboxes
     QJsonObject autoSendSettings;
     autoSendSettings["navPvt"] = ui->cbAutoSendNavPvt->isChecked();
     autoSendSettings["navStatus"] = ui->cbAutoSendNavStatus->isChecked();
@@ -164,10 +157,8 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     autoSendSettings["secUniqid"] = ui->cbAutoSendSecUniqid->isChecked();
     settings["autoSend"] = autoSendSettings;
 
-    // Save rate
     settings["rate"] = ui->rateSpin->value();
 
-    // Save NAV-PVT settings
     QJsonObject navPvtSettings;
     navPvtSettings["lat"] = ui->dsbLat->value();
     navPvtSettings["lon"] = ui->dsbLon->value();
@@ -183,13 +174,11 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     navPvtSettings["pdop"] = ui->dsbPdop->value();
     settings["navPvt"] = navPvtSettings;
 
-    // Save NAV-STATUS settings
     QJsonObject navStatusSettings;
     navStatusSettings["fixType"] = ui->sbFixTypeStatus->value();
     navStatusSettings["ttff"] = ui->sbTtff->value();
     settings["navStatus"] = navStatusSettings;
 
-    // Save NAV-SAT settings
     QJsonObject navSatSettings;
     navSatSettings["version"] = ui->sbSatVersion->value();
     navSatSettings["numSats"] = ui->sbNumSatsSat->value();
@@ -203,7 +192,6 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     navSatSettings["orbitSource"] = ui->cbOrbitSource->currentIndex();
     settings["navSat"] = navSatSettings;
 
-    // Save NAV-TIMEUTC settings
     QJsonObject navTimeUtcSettings;
     navTimeUtcSettings["tAcc"] = ui->sbTimeUtcTAcc->value();
     navTimeUtcSettings["nano"] = ui->sbTimeUtcNano->value();
@@ -211,14 +199,12 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     navTimeUtcSettings["standard"] = ui->cbTimeUtcStandard->currentIndex();
     settings["navTimeUtc"] = navTimeUtcSettings;
 
-    // Save MON-VER settings
     QJsonObject monVerSettings;
     monVerSettings["swVersion"] = ui->leSwVersion->text();
     monVerSettings["hwVersion"] = ui->leHwVersion->text();
     monVerSettings["extensions"] = ui->teExtensions->toPlainText();
     settings["monVer"] = monVerSettings;
 
-    // Save MON-HW settings
     QJsonObject monHwSettings;
     monHwSettings["noise"] = ui->sbHwNoise->value();
     monHwSettings["agc"] = ui->sbHwAgc->value();
@@ -240,7 +226,6 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     monRfSettings["cwSuppression"] = ui->sbRfCwSuppression->value();
     settings["monRf"] = monRfSettings;
 
-    // Save CFG-PRT settings
     QJsonObject cfgPrtSettings;
     cfgPrtSettings["portId"] = ui->cbPortId->currentIndex();
     cfgPrtSettings["baudRate"] = ui->cbBaudRate->currentText();
@@ -250,7 +235,6 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     cfgPrtSettings["outNmea"] = ui->cbOutNmea->isChecked();
     settings["cfgPrt"] = cfgPrtSettings;
 
-    // Save CFG-ITFM settings
     QJsonObject cfgItfmSettings;
     cfgItfmSettings["bbThreshold"] = ui->sbBbThreshold->value();
     cfgItfmSettings["cwThreshold"] = ui->sbCwThreshold->value();
@@ -259,7 +243,6 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     cfgItfmSettings["enable2"] = ui->cbEnable2->isChecked();
     settings["cfgItfm"] = cfgItfmSettings;
 
-    // Save CFG-NAV5 settings
     QJsonObject cfgNav5Settings;
     cfgNav5Settings["dynModel"] = ui->cbDynModel->currentIndex();
     cfgNav5Settings["fixMode"] = ui->cbFixMode->currentIndex();
@@ -277,14 +260,12 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     cfgNav5Settings["staticHoldMaxDist"] = ui->dsbStaticHoldMaxDist->value();
     settings["cfgNav5"] = cfgNav5Settings;
 
-    // Save CFG-RATE settings
     QJsonObject cfgRateSettings;
     cfgRateSettings["measRate"] = ui->sbMeasRate->value();
     cfgRateSettings["navRate"] = ui->sbNavRate->value();
     cfgRateSettings["timeRef"] = ui->cbTimeRef->currentIndex();
     settings["cfgRate"] = cfgRateSettings;
 
-    // Save CFG-VALGET settings
     QJsonObject cfgValgetSettings;
     cfgValgetSettings["version"] = ui->sbValgetVersion->value();
     cfgValgetSettings["layer"] = ui->cbValgetLayer->currentIndex();
@@ -301,7 +282,6 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     cfgValsetSettings["keysValues"] = ui->leValsetKeysValues->text();
     settings["cfgValset"] = cfgValsetSettings;
 
-    // Save CFG-ANT settings
     QJsonObject cfgAntSettings;
     cfgAntSettings["supplyCtrl"] = ui->cbAntSupplyCtrl->isChecked();
     cfgAntSettings["shortDetect"] = ui->cbAntShortDetect->isChecked();
@@ -314,32 +294,26 @@ QJsonObject GNSSWindow::getCurrentSettings() const {
     cfgAntSettings["reconfig"] = ui->cbAntReconfig->isChecked();
     settings["cfgAnt"] = cfgAntSettings;
 
-    // Save INF-DEBUG settings
     QJsonObject infDebugSettings;
     infDebugSettings["message"] = ui->teInfDebugMessage->toPlainText();
     settings["infDebug"] = infDebugSettings;
 
-    // Save INF-ERROR settings
     QJsonObject infErrorSettings;
     infErrorSettings["message"] = ui->teInfErrorMessage->toPlainText();
     settings["infError"] = infErrorSettings;
 
-    // Save INF-WARNING settings
     QJsonObject infWarningSettings;
     infWarningSettings["message"] = ui->teInfWarningMessage->toPlainText();
     settings["infWarning"] = infWarningSettings;
 
-    // Save INF-NOTICE settings
     QJsonObject infNoticeSettings;
     infNoticeSettings["message"] = ui->teInfNoticeMessage->toPlainText();
     settings["infNotice"] = infNoticeSettings;
 
-    // Save INF-TEST settings
     QJsonObject infTestSettings;
     infTestSettings["message"] = ui->teInfTestMessage->toPlainText();
     settings["infTest"] = infTestSettings;
 
-    // Save SEC-UNIQID settings
     QJsonObject secUniqidSettings;
     secUniqidSettings["version"] = ui->sbUniqidVersion->value();
     secUniqidSettings["chipId"] = ui->leChipId->text();
@@ -359,8 +333,7 @@ void GNSSWindow::processBuffer() {
 
     qDebug() << "Processing buffer:" << m_receiveBuffer->size() << "bytes";
 
-    while (m_receiveBuffer->size() >= 8) { // Minimum UBX message size
-        // Find sync bytes
+    while (m_receiveBuffer->size() >= 8) {
         int startPos = m_receiveBuffer->indexOf("\xB5\x62");
         if (startPos < 0) {
             qDebug() << "No UBX sync chars found, clearing buffer";
@@ -368,7 +341,6 @@ void GNSSWindow::processBuffer() {
             return;
         }
 
-        // Remove garbage before sync bytes
         if (startPos > 0) {
             qDebug() << "Discarding" << startPos << "bytes before sync chars";
             m_receiveBuffer->remove(0, startPos);
@@ -380,13 +352,11 @@ void GNSSWindow::processBuffer() {
             return;
         }
 
-        // Extract payload length
         quint16 length = static_cast<quint8>((*m_receiveBuffer)[4]) |
                          (static_cast<quint8>((*m_receiveBuffer)[5]) << 8);
         quint8 msgClass = static_cast<quint8>((*m_receiveBuffer)[2]);
         quint8 msgId = static_cast<quint8>((*m_receiveBuffer)[3]);
 
-        // Check if we have complete message
         int totalMessageSize = 8 + length;
         if (m_receiveBuffer->size() < totalMessageSize) {
             qDebug() << "Waiting for more data. Need:" << totalMessageSize
@@ -394,11 +364,9 @@ void GNSSWindow::processBuffer() {
             return;
         }
 
-        // Extract complete message
         QByteArray message = m_receiveBuffer->left(totalMessageSize);
         m_receiveBuffer->remove(0, totalMessageSize);
 
-        // Parse and process message
         QByteArray payload;
         if (UbxParser::parseUbxMessage(message, msgClass, msgId, payload)) {
             processUbxMessage(msgClass, msgId, payload);
@@ -689,7 +657,6 @@ void GNSSWindow::applySettings(const QJsonObject &settings)
 }
 
 void GNSSWindow::setSocket(QTcpSocket *socket) {
-    // Disconnect old socket if exists
     if (m_socket) {
         m_socket->disconnect(this);
     }
@@ -697,17 +664,14 @@ void GNSSWindow::setSocket(QTcpSocket *socket) {
     m_socket = socket;
 
     if (m_socket) {
-        // Main data reading connection
         connect(m_socket, &QTcpSocket::readyRead, this, &GNSSWindow::onReadyRead);
 
-        // Disconnection handler
         connect(m_socket, &QTcpSocket::disconnected, this, [this]() {
             appendToLog(tr("Disconnected from host"), "system");
             m_timer->stop();
             m_socket = nullptr;
         });
 
-        // Error handler
         connect(m_socket, &QTcpSocket::errorOccurred, this, &GNSSWindow::onError);
 
         appendToLog(tr("Socket connected and configured"), "debug");
@@ -768,7 +732,6 @@ void GNSSWindow::onError(QAbstractSocket::SocketError error) {
     QString errorMsg = m_socket ? m_socket->errorString() : "Socket not initialized";
     appendToLog(tr("Socket error: %1").arg(errorMsg), "error");
 
-    // Additional error handling
     m_timer->stop();
     m_initializationComplete = false;
     m_waitingForAck = false;
@@ -1287,7 +1250,6 @@ void GNSSWindow::showFieldsForCurrentSelection()
 
 void GNSSWindow::setupConnections()
 {
-    // Timer connections
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
     connect(m_pvtTimer, &QTimer::timeout, this, &GNSSWindow::sendUbxNavPvt);
@@ -1296,7 +1258,6 @@ void GNSSWindow::setupConnections()
     connect(m_ackTimeoutTimer, &QTimer::timeout, this, &GNSSWindow::handleAckTimeout);
     connect(m_utcTimer, &QTimer::timeout, this, &GNSSWindow::updateUTCTime);
 
-    // Menu connections
     connect(ui->actionSaveSettings, &QAction::triggered,
             this, &GNSSWindow::onActionSaveSettingsTriggered);
     connect(ui->actionLoadSettings, &QAction::triggered,
@@ -1310,7 +1271,6 @@ void GNSSWindow::setupConnections()
     connect(ui->actionExit, &QAction::triggered,
             this, &QMainWindow::close);
 
-    // UI
     connect(ui->cbClass, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &GNSSWindow::updateAvailableIds);
     connect(ui->cbId, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -1322,7 +1282,6 @@ void GNSSWindow::setupConnections()
     connect(ui->btnClearLog, &QPushButton::clicked,
             this, &GNSSWindow::on_btnClearLog_clicked);
 
-    // Autosend
     connect(ui->cbAutoSendNavPvt, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavPvtToggled);
     connect(ui->cbAutoSendNavStatus, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavStatusToggled);
     connect(ui->cbAutoSendNavSat, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendNavSatToggled);
@@ -1344,7 +1303,6 @@ void GNSSWindow::setupConnections()
     connect(ui->cbAutoSendInfTest, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendInfTestToggled);
     connect(ui->cbAutoSendSecUniqid, &QCheckBox::toggled, this, &GNSSWindow::onAutoSendSecUniqidToggled);
 
-    // UBX parsers
     registerHandlers();
 
     if (m_parentDialog) {
@@ -1477,7 +1435,6 @@ void GNSSWindow::sendInitialConfiguration() {
     m_ackTimeoutTimer->start();
     m_initTimer->start(20000);
 
-    // Main configuration
     sendUbxCfgPrtResponse();
     sendUbxCfgMsg(UBX_CLASS_NAV, UBX_NAV_PVT, 1);
     sendUbxCfgMsg(UBX_CLASS_NAV, UBX_NAV_STATUS, 1);
@@ -1487,7 +1444,6 @@ void GNSSWindow::sendInitialConfiguration() {
     sendUbxCfgAnt();
     sendUbxCfgItfm();
 
-    // Delayed info requests
     QTimer::singleShot(500, this, &GNSSWindow::sendUbxMonVer);
     QTimer::singleShot(1000, this, &GNSSWindow::sendUbxMonHw);
     QTimer::singleShot(1500, this, &GNSSWindow::sendUbxSecUniqidReq);
@@ -1499,7 +1455,6 @@ void GNSSWindow::onReadyRead() {
         return;
     }
 
-    // Read all available data
     QByteArray newData = m_socket->readAll();
     if (newData.isEmpty()) {
         qWarning() << "Received empty data packet";
@@ -1508,7 +1463,6 @@ void GNSSWindow::onReadyRead() {
 
     qDebug() << "Received" << newData.size() << "bytes of raw data:" << newData.toHex(' ');
 
-    // Add data to member buffer
     m_receiveBuffer.append(newData);
 
     qDebug() << "Total buffer size:" << m_receiveBuffer.size() << "bytes";
@@ -1517,9 +1471,7 @@ void GNSSWindow::onReadyRead() {
                     .arg(m_receiveBuffer.size()),
                 "in");
 
-    // Process all complete messages in buffer
-    while (m_receiveBuffer.size() >= 8) { // Minimum UBX message size (without payload)
-        // Find sync bytes
+    while (m_receiveBuffer.size() >= 8) {
         int startPos = m_receiveBuffer.indexOf("\xB5\x62");
         if (startPos < 0) {
             qDebug() << "No UBX sync chars found, clearing buffer";
@@ -1527,7 +1479,6 @@ void GNSSWindow::onReadyRead() {
             return;
         }
 
-        // Remove garbage before sync bytes
         if (startPos > 0) {
             qDebug() << "Discarding" << startPos << "bytes before sync chars";
             m_receiveBuffer.remove(0, startPos);
@@ -1539,25 +1490,21 @@ void GNSSWindow::onReadyRead() {
             return;
         }
 
-        // Extract payload length
         quint16 length = static_cast<quint8>(m_receiveBuffer[4]) |
                          (static_cast<quint8>(m_receiveBuffer[5]) << 8);
         quint8 msgClass = static_cast<quint8>(m_receiveBuffer[2]);
         quint8 msgId = static_cast<quint8>(m_receiveBuffer[3]);
 
-        // Check if we have complete message
-        int totalMessageSize = 8 + length; // Header + payload
+        int totalMessageSize = 8 + length;
         if (m_receiveBuffer.size() < totalMessageSize) {
             qDebug() << "Waiting for more data. Need:" << totalMessageSize
                      << "Have:" << m_receiveBuffer.size();
             return;
         }
 
-        // Extract complete message
         QByteArray message = m_receiveBuffer.left(totalMessageSize);
         m_receiveBuffer.remove(0, totalMessageSize);
 
-        // Parse and process message
         QByteArray payload;
         if (UbxParser::parseUbxMessage(message, msgClass, msgId, payload)) {
             processUbxMessage(msgClass, msgId, payload);
@@ -1568,6 +1515,7 @@ void GNSSWindow::onReadyRead() {
     }
 }
 */
+
 void GNSSWindow::registerHandlers() {
     connect(&m_ubxParser, &UbxParser::navPvtReceived, this, &GNSSWindow::displayNavPvt);
     connect(&m_ubxParser, &UbxParser::navStatusReceived, this, &GNSSWindow::displayNavStatus);
@@ -1597,22 +1545,20 @@ void GNSSWindow::sendUbxCfgItfm() {
 
     QByteArray payload(8, 0x00);
 
-    // Forms config word with UI elements
     quint32 config = 0;
-    config |= (ui->sbBbThreshold->value() & 0x0F);        // BB Threshold (0-3)
-    config |= (ui->sbCwThreshold->value() & 0x1F) << 4;   // CW Threshold (4-8)
-    config |= 0x16B156 << 9;                             // Algoritmic bytes
+    config |= (ui->sbBbThreshold->value() & 0x0F);
+    config |= (ui->sbCwThreshold->value() & 0x1F) << 4;
+    config |= 0x16B156 << 9;
     if (ui->cbEnable->isChecked()) {
-        config |= 0x80000000;                            // Turn On byte (31)
+        config |= 0x80000000;
     }
     qToLittleEndian<quint32>(config, payload.data());
 
-    // Forms config2 word with UI elements
     quint32 config2 = 0;
-    config2 |= 0x31E;                                    // Fixed general bytes
+    config2 |= 0x31E;
     config2 |= (ui->cbAntSetting->currentIndex() & 0x03) << 12;
     if (ui->cbEnable2->isChecked()) {
-        config2 |= 0x00004000;                           // Aux band
+        config2 |= 0x00004000;
     }
     qToLittleEndian<quint32>(config2, payload.data() + 4);
 
@@ -1629,7 +1575,6 @@ void GNSSWindow::sendUbxCfgValset() {
         return;
     }
 
-    // Gets UI parametrs
     quint8 version = static_cast<quint8>(ui->sbValsetVersion->value());
     quint8 layers = 0;
     if (ui->cbValsetRam->isChecked()) layers |= 0x01;
@@ -1638,7 +1583,6 @@ void GNSSWindow::sendUbxCfgValset() {
 
     QString kvPairsStr = ui->leValsetKeysValues->text();
 
-    // Parse key=values
     QList<QPair<quint32, quint32>> kvPairs;
     QStringList pairs = kvPairsStr.split(',', Qt::SkipEmptyParts);
     for (const QString &pair : pairs) {
@@ -1658,14 +1602,12 @@ void GNSSWindow::sendUbxCfgValset() {
         return;
     }
 
-    // Forming payload
     QByteArray payload;
     payload.append(static_cast<char>(version));
     payload.append(static_cast<char>(layers));
-    payload.append('\0'); // reserved1
-    payload.append('\0'); // reserved2
+    payload.append('\0');
+    payload.append('\0');
 
-    // Add key-values
     for (const auto &kv : kvPairs) {
         quint32 key = kv.first;
         quint32 value = kv.second;
@@ -1694,13 +1636,11 @@ void GNSSWindow::sendUbxCfgValGet() {
         return;
     }
 
-    // Gets parameters from UI
     quint8 version = static_cast<quint8>(ui->sbValgetVersion->value());
     quint8 layer = static_cast<quint8>(ui->cbValgetLayer->currentIndex());
     quint16 position = static_cast<quint16>(ui->sbValgetPosition->value());
     QString keysStr = ui->leValgetKeys->text();
 
-    // Parse keys (format: "0x12345678,0x87654321")
     QList<quint32> keys;
     QStringList keyList = keysStr.split(',', Qt::SkipEmptyParts);
     for (const QString &keyStr : keyList) {
@@ -1716,7 +1656,6 @@ void GNSSWindow::sendUbxCfgValGet() {
         return;
     }
 
-    // Forming payload (version + lauer + position + keys)
     QByteArray payload;
     payload.append(static_cast<char>(version));
     payload.append(static_cast<char>(layer));
@@ -1743,19 +1682,15 @@ void GNSSWindow::sendUbxNavTimeUtc() {
     QByteArray payload(20, 0x00);
     QDateTime currentTime = QDateTime::currentDateTimeUtc();
 
-    // iTOW
     quint32 iTOW = static_cast<quint32>(currentTime.toMSecsSinceEpoch() % (7 * 24 * 60 * 60 * 1000));
     qToLittleEndian<quint32>(iTOW, payload.data());
 
-    // tAcc
     quint32 tAcc = static_cast<quint32>(ui->sbTimeUtcTAcc->value());
     qToLittleEndian<quint32>(tAcc, payload.data() + 4);
 
-    // nano
     qint32 nano = static_cast<qint32>(ui->sbTimeUtcNano->value());
     qToLittleEndian<qint32>(nano, payload.data() + 8);
 
-    // Date and time UTC
     qToLittleEndian<quint16>(currentTime.date().year(), payload.data() + 12);
     payload[14] = static_cast<quint8>(currentTime.date().month());
     payload[15] = static_cast<quint8>(currentTime.date().day());
@@ -1763,7 +1698,6 @@ void GNSSWindow::sendUbxNavTimeUtc() {
     payload[17] = static_cast<quint8>(currentTime.time().minute());
     payload[18] = static_cast<quint8>(currentTime.time().second());
 
-    // Valid flags
     quint8 validFlags = 0;
     switch(ui->cbTimeUtcValid->currentIndex()) {
     case 0: validFlags |= 0x01; break; // Valid TOW
@@ -1772,11 +1706,9 @@ void GNSSWindow::sendUbxNavTimeUtc() {
     case 3: validFlags |= 0x08; break; // Authenticated
     }
 
-    // UTC standart (4)
     quint8 utcStandard = static_cast<quint8>(ui->cbTimeUtcStandard->currentIndex());
     validFlags |= (utcStandard << 4);
 
-    // Write flags
     payload[19] = validFlags;
 
     createUbxPacket(UBX_CLASS_NAV, UBX_NAV_TIMEUTC, payload);
@@ -1794,7 +1726,6 @@ void GNSSWindow::processCfgValGet(const QByteArray& payload) {
 
     QString message = tr("CFG-VALGET response: Version=%1, Layer=%2").arg(version).arg(layer);
 
-    // Processing key-value (evry 8 bytes: 4 bytes key, 4 bytes value)
     for (int i = 4; i + 7 < payload.size(); i += 8) {
         quint32 key = qFromLittleEndian<quint32>(payload.mid(i, 4).constData());
         quint32 value = qFromLittleEndian<quint32>(payload.mid(i + 4, 4).constData());
@@ -1817,7 +1748,6 @@ void GNSSWindow::sendUbxMonRf() {
         return;
     }
 
-    // Processing data
     const int numBlocks = ui->sbRfBlocks->value();
     const int payloadSize = 4 + 24 * numBlocks;
     QByteArray payload(payloadSize, 0x00);
@@ -1825,42 +1755,34 @@ void GNSSWindow::sendUbxMonRf() {
     appendToLog(tr("Preparing MON-RF message with %1 blocks (%2 bytes total)")
                     .arg(numBlocks).arg(payloadSize), "debug");
 
-    // Header
     payload[0] = static_cast<quint8>(ui->sbRfVersion->value());
     payload[1] = static_cast<quint8>(numBlocks);
 
     appendToLog(tr("Header: version=%1, nBlocks=%2")
                     .arg(payload[0]).arg(payload[1]), "debug");
 
-    // Write each RF blok
     for (int i = 0; i < numBlocks; i++) {
         int offset = 4 + i * 24;
 
-        // base parameters
         payload[offset] = static_cast<quint8>(i); // blockId
         payload[offset+1] = static_cast<quint8>(ui->cbRfJamState->currentIndex()); // flags
         payload[offset+2] = static_cast<quint8>(ui->cbRfAntStatus->currentIndex()); // antStatus
         payload[offset+3] = static_cast<quint8>(ui->cbRfAntPower->currentIndex()); // antPower
 
-        // POST status (0 = no errors)
         qToLittleEndian<quint32>(0x00000000, payload.data() + offset + 4);
 
-        // Noise and AGC (scaled values)
         quint16 noisePerMS = static_cast<quint16>(ui->dsbRfNoise->value() * 100);
         quint16 agcCnt = static_cast<quint16>(ui->dsbRfAgc->value() * 100);
         qToLittleEndian<quint16>(noisePerMS, payload.data() + offset + 12);
         qToLittleEndian<quint16>(agcCnt, payload.data() + offset + 14);
 
-        // CW suppression
         payload[offset+16] = static_cast<quint8>(ui->sbRfCwSuppression->value());
 
-        // I/Q parameters
         payload[offset+17] = static_cast<qint8>(0);    // ofsI
         payload[offset+18] = static_cast<quint8>(128); // magI
         payload[offset+19] = static_cast<qint8>(0);    // ofsQ
         payload[offset+20] = static_cast<quint8>(128); // magQ
 
-        // Log blocks
         appendToLog(tr("Block %1: antId=%2, jamState=%3, antStatus=%4, antPower=%5, noise=%6, agc=%7")
                         .arg(i)
                         .arg(payload[offset])
@@ -1871,10 +1793,8 @@ void GNSSWindow::sendUbxMonRf() {
                         .arg(agcCnt), "debug");
     }
 
-    // Log payload before sending
     appendToLog(tr("MON-RF payload (hex): %1").arg(QString(payload.toHex(' '))), "debug");
 
-    // Create and sending packet
     createUbxPacket(UBX_CLASS_MON, UBX_MON_RF, payload);
     appendToLog(tr("MON-RF message sent (%1 bytes total)").arg(payloadSize + 8), "out");
 }
@@ -1915,21 +1835,18 @@ void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate) {
     }
 
     if (!useLegacyMethod) {
-        // Use UBX-CFG-VALSET for modern receivers
         QByteArray payload;
         payload.append(0x01); // Version 1
         payload.append(0x07); // RAM + BBR + Flash layers
         payload.append('\0'); // Reserved
         payload.append('\0'); // Reserved
 
-        // Key for message rate configuration
         quint32 key = 0x20910000 | (msgClass << 8) | msgId;
         payload.append(static_cast<char>(key & 0xFF));
         payload.append(static_cast<char>((key >> 8) & 0xFF));
         payload.append(static_cast<char>((key >> 16) & 0xFF));
         payload.append(static_cast<char>((key >> 24) & 0xFF));
 
-        // Value (rate)
         payload.append(static_cast<char>(rate));
         payload.append('\0'); // Padding
         payload.append('\0'); // Padding
@@ -1941,7 +1858,6 @@ void GNSSWindow::sendUbxCfgMsg(quint8 msgClass, quint8 msgId, quint8 rate) {
                         .arg(msgId, 2, 16, QLatin1Char('0'))
                         .arg(rate), "config");
     } else {
-        // Legacy method for older receivers
         QByteArray payload;
         payload.append(static_cast<char>(msgClass));
         payload.append(static_cast<char>(msgId));
@@ -1959,7 +1875,6 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
     QString messageInfo;
     QString timestamp = QDateTime::currentDateTime().toString("[hh:mm:ss.zzz]");
 
-    // Log incoming message
     qDebug().nospace() << timestamp << " "
                        << tr("Processing UBX message:") << " "
                        << tr("Class=0x%1").arg(QString("%1").arg(msgClass, 2, 16, QLatin1Char('0')).toUpper()) << " "
@@ -1976,8 +1891,6 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
                                 .arg(ackedClass, 2, 16, QLatin1Char('0'))
                                 .arg(ackedId, 2, 16, QLatin1Char('0')),
                             "in");
-
-                // Handle configuration completion if this was for a CFG message
                 if (ackedClass == UBX_CLASS_CFG) {
                     completeInitialization();
                 }
@@ -1992,18 +1905,15 @@ void GNSSWindow::processUbxMessage(quint8 msgClass, quint8 msgId, const QByteArr
         return;
     }
 
-    // Process CFG messages
     if (msgClass == UBX_CLASS_CFG) {
         processCfgMessages(msgId, payload);
         return;
     }
 
-    // Process info requests
     if (processInfoRequests(msgClass, msgId)) {
         return;
     }
 
-    // Process main messages by class
     switch (msgClass) {
     case UBX_CLASS_NAV: messageInfo = processNavMessages(msgId, payload); break;
     case UBX_CLASS_INF: processInfMessages(msgId, payload); return;
@@ -2323,7 +2233,6 @@ void GNSSWindow::displayCfgPrt(const UbxParser::CfgPrt &data) {
 }
 
 void GNSSWindow::displayNavPvt(const UbxParser::NavPvt &data) {
-    // Status bar
     QString status = QString("Position: Lat=%1 Lon=%2 Fix=%3D Sats=%4")
                          .arg(data.lat / 1e7, 0, 'f', 7)
                          .arg(data.lon / 1e7, 0, 'f', 7)
@@ -2420,7 +2329,6 @@ void GNSSWindow::sendUbxCfgAnt() {
 
     QByteArray payload(4, 0x00);
 
-    // Build flags
     quint16 flags = 0;
     if (ui->cbAntSupplyCtrl->isChecked()) flags |= 0x0001;
     if (ui->cbAntShortDetect->isChecked()) flags |= 0x0002;
@@ -2428,14 +2336,12 @@ void GNSSWindow::sendUbxCfgAnt() {
     if (ui->cbAntPowerDown->isChecked()) flags |= 0x0008;
     if (ui->cbAntAutoRecover->isChecked()) flags |= 0x0010;
 
-    // Build pins configuration
     quint16 pins = 0;
     pins |= (ui->sbAntSwitchPin->value() & 0x1F);
     pins |= ((ui->sbAntShortPin->value() & 0x1F) << 5);
     pins |= ((ui->sbAntOpenPin->value() & 0x1F) << 10);
     if (ui->cbAntReconfig->isChecked()) pins |= 0x8000;
 
-    // Write to payload
     qToLittleEndian<quint16>(flags, payload.data());
     qToLittleEndian<quint16>(pins, payload.data() + 2);
 
@@ -2449,13 +2355,11 @@ void GNSSWindow::sendUbxNavSat() {
     QByteArray payload;
     QRandomGenerator *generator = QRandomGenerator::global();
 
-    // Header (8 bytes)
     payload.append("\x00\x00\x00\x00", 4); // iTOW (fill later)
     payload.append(static_cast<char>(ui->sbSatVersion->value())); // version
     payload.append(static_cast<char>(ui->sbNumSatsSat->value())); // numSvs
     payload.append("\x00\x00", 2); // reserved
 
-    // Get UI settings
     quint8 qualityInd = static_cast<quint8>(ui->cbQualityInd->currentIndex());
     quint8 health = static_cast<quint8>(ui->cbHealth->currentIndex());
     bool svUsed = ui->cbSvUsed->isChecked();
@@ -2465,29 +2369,23 @@ void GNSSWindow::sendUbxNavSat() {
     double prResMin = ui->dsbPrResMin->value();
     double prResMax = ui->dsbPrResMax->value();
 
-    // Add satellites (12 bytes each)
     for(int i = 0; i < ui->sbNumSatsSat->value(); i++) {
-        // Basic satellite info
         payload.append(static_cast<char>(1)); // gnssId (GPS)
         payload.append(static_cast<char>(i+1)); // svId
         payload.append(static_cast<char>(35 + generator->bounded(20))); // cno (35-55 dBHz)
         payload.append(static_cast<char>(30 + generator->bounded(50))); // elev (30-80 deg)
 
-        // Azimuth
         qint16 azim = generator->bounded(360);
         payload.append(static_cast<char>(azim & 0xFF));
         payload.append(static_cast<char>((azim >> 8) & 0xFF));
 
-        // Pseudorange residual (prRes) in 0.1m units
         double prResMeters = prResMin + generator->bounded(prResMax - prResMin);
         qint16 prRes = static_cast<qint16>(prResMeters * 10); // convert to 0.1m units
         payload.append(static_cast<char>(prRes & 0xFF));
         payload.append(static_cast<char>((prRes >> 8) & 0xFF));
 
-        // Flags (4 bytes)
         quint32 flags = 0;
 
-        // Set flags from UI
         flags |= (qualityInd & 0x07) << 0;  // qualityInd (bits 0-2)
         flags |= (svUsed ? 1 : 0) << 3;     // svUsed (bit 3)
         flags |= (health & 0x03) << 4;      // health (bits 4-5)
@@ -2495,18 +2393,15 @@ void GNSSWindow::sendUbxNavSat() {
         flags |= (smoothed ? 1 : 0) << 7;   // smoothed (bit 7)
         flags |= (orbitSource & 0x07) << 8; // orbitSource (bits 8-10)
 
-        // Set derived flags
         if (orbitSource == 1) flags |= 1 << 11; // ephAvail if ephemeris
         flags |= 1 << 12; // almAvail (always available)
 
-        // Add flags to payload
         payload.append(static_cast<char>((flags >> 0) & 0xFF));
         payload.append(static_cast<char>((flags >> 8) & 0xFF));
         payload.append(static_cast<char>((flags >> 16) & 0xFF));
         payload.append(static_cast<char>((flags >> 24) & 0xFF));
     }
 
-    // Update iTOW (GPS week time in ms)
     QDateTime currentTime = QDateTime::currentDateTimeUtc();
     quint32 iTOW = static_cast<quint32>(currentTime.toMSecsSinceEpoch() % (7 * 24 * 60 * 60 * 1000));
     qToLittleEndian<quint32>(iTOW, payload.data());
@@ -2614,7 +2509,7 @@ void GNSSWindow::onAutoSendMonVerToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxMonVer);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxMonVer);
-        timer->start(5000); // Every 5 seconds
+        timer->start(5000);
     } else {
         timer->stop();
     }
@@ -2625,7 +2520,7 @@ void GNSSWindow::onAutoSendMonHwToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxMonHw);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxMonHw);
-        timer->start(5000); // Every 5 seconds
+        timer->start(5000);
     } else {
         timer->stop();
     }
@@ -2647,7 +2542,7 @@ void GNSSWindow::onAutoSendCfgPrtToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgPrt);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgPrt);
-        timer->start(10000); // Every 10 seconds
+        timer->start(10000);
     } else {
         timer->stop();
     }
@@ -2658,7 +2553,7 @@ void GNSSWindow::onAutoSendCfgItfmToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgItfm);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgItfm);
-        timer->start(10000); // Every 10 seconds
+        timer->start(10000);
     } else {
         timer->stop();
     }
@@ -2669,7 +2564,7 @@ void GNSSWindow::onAutoSendCfgNav5Toggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgNav5);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgNav5);
-        timer->start(10000); // Every 10 seconds
+        timer->start(10000);
     } else {
         timer->stop();
     }
@@ -2680,7 +2575,7 @@ void GNSSWindow::onAutoSendCfgRateToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgRate);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgRate);
-        timer->start(10000); // Every 10 seconds
+        timer->start(10000);
     } else {
         timer->stop();
     }
@@ -2691,7 +2586,7 @@ void GNSSWindow::onAutoSendCfgValgetToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgValGet);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgValGet);
-        timer->start(5000); // Every 5 seconds
+        timer->start(5000);
     } else {
         timer->stop();
     }
@@ -2702,7 +2597,7 @@ void GNSSWindow::onAutoSendCfgValsetToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgValset);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgValset);
-        timer->start(5000); // Every 5 seconds
+        timer->start(5000);
     } else {
         timer->stop();
     }
@@ -2713,7 +2608,7 @@ void GNSSWindow::onAutoSendCfgAntToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxCfgAnt);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxCfgAnt);
-        timer->start(10000); // Every 10 seconds
+        timer->start(10000);
     } else {
         timer->stop();
     }
@@ -2724,7 +2619,7 @@ void GNSSWindow::onAutoSendInfDebugToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfDebug);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfDebug);
-        timer->start(2000); // Every 2 seconds
+        timer->start(2000);
     } else {
         timer->stop();
     }
@@ -2735,7 +2630,7 @@ void GNSSWindow::onAutoSendInfErrorToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfError);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfError);
-        timer->start(5000); // Every 5 seconds
+        timer->start(5000);
     } else {
         timer->stop();
     }
@@ -2746,7 +2641,7 @@ void GNSSWindow::onAutoSendInfWarningToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfWarning);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfWarning);
-        timer->start(3000); // Every 3 seconds
+        timer->start(3000);
     } else {
         timer->stop();
     }
@@ -2757,7 +2652,7 @@ void GNSSWindow::onAutoSendInfNoticeToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfNotice);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfNotice);
-        timer->start(4000); // Every 4 seconds
+        timer->start(4000);
     } else {
         timer->stop();
     }
@@ -2768,7 +2663,7 @@ void GNSSWindow::onAutoSendInfTestToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxInfTest);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxInfTest);
-        timer->start(3000); // Every 3 seconds
+        timer->start(3000);
     } else {
         timer->stop();
     }
@@ -2779,7 +2674,7 @@ void GNSSWindow::onAutoSendSecUniqidToggled(bool checked) {
     connect(timer, &QTimer::timeout, this, &GNSSWindow::sendUbxSecUniqid);
     if (checked) {
         QTimer::singleShot(0, this, &GNSSWindow::sendUbxSecUniqid);
-        timer->start(10000); // Every 10 seconds
+        timer->start(10000);
     } else {
         timer->stop();
     }
@@ -2788,7 +2683,6 @@ void GNSSWindow::onAutoSendSecUniqidToggled(bool checked) {
 void GNSSWindow::sendUbxCfgPrtResponse() {
     QByteArray payload(20, 0x00);
 
-    // UART1 configuration
     payload[0] = 0x01; // Port ID: UART1
     qToLittleEndian<quint32>(0x000008D0, payload.data() + 4); // Mode: 8N1, no parity
     qToLittleEndian<quint32>(115200, payload.data() + 8); // BaudRate: 115200
@@ -2807,58 +2701,43 @@ void GNSSWindow::sendUbxCfgNav5() {
 
     QByteArray payload(36, 0x00);
 
-    // Set mask - enable all parameters
-    quint16 mask = 0x05FF; // Enable all parameters except reserved bits
+    quint16 mask = 0x05FF;
     qToLittleEndian<quint16>(mask, payload.data());
 
-    // Dynamic model
     payload[2] = static_cast<quint8>(ui->cbDynModel->currentIndex());
 
-    // Fix mode
-    payload[3] = static_cast<quint8>(ui->cbFixMode->currentIndex() + 1); // Fix modes start at 1
+    payload[3] = static_cast<quint8>(ui->cbFixMode->currentIndex() + 1);
 
-    // Fixed altitude (cm)
     qint32 fixedAlt = static_cast<qint32>(ui->dsbFixedAlt->value() * 100);
     qToLittleEndian<qint32>(fixedAlt, payload.data() + 4);
 
-    // Fixed altitude variance (0.0001 m^2)
     quint32 fixedAltVar = 10000; // Default 1 m^2
     qToLittleEndian<quint32>(fixedAltVar, payload.data() + 8);
 
-    // Minimum elevation
     payload[12] = static_cast<quint8>(ui->sbMinElev->value());
 
-    // PDOP mask (0.1 units)
     quint16 pDop = static_cast<quint16>(ui->dsbPDOP->value() * 10);
     qToLittleEndian<quint16>(pDop, payload.data() + 14);
 
-    // TDOP mask (0.1 units)
     quint16 tDop = static_cast<quint16>(ui->dsbTDOP->value() * 10);
     qToLittleEndian<quint16>(tDop, payload.data() + 16);
 
-    // Position accuracy mask (m)
     quint16 pAcc = static_cast<quint16>(ui->dsbPAcc->value());
     qToLittleEndian<quint16>(pAcc, payload.data() + 18);
 
-    // Time accuracy mask (m)
     quint16 tAcc = static_cast<quint16>(ui->dsbTAcc->value());
     qToLittleEndian<quint16>(tAcc, payload.data() + 20);
 
-    // Static hold threshold (cm/s)
     payload[22] = static_cast<quint8>(ui->dsbStaticHoldThresh->value());
 
-    // DGNSS timeout (s)
     payload[23] = static_cast<quint8>(ui->sbDgnssTimeout->value());
 
-    // CNO threshold and number of SVs
     payload[24] = static_cast<quint8>(ui->sbCnoThreshNumSVs->value());
     payload[25] = static_cast<quint8>(ui->sbCnoThresh->value());
 
-    // Static hold max distance (m)
     quint16 staticHoldMaxDist = static_cast<quint16>(ui->dsbStaticHoldMaxDist->value());
     qToLittleEndian<quint16>(staticHoldMaxDist, payload.data() + 28);
 
-    // UTC standard
     payload[30] = static_cast<quint8>(ui->cbUtcStandard->currentIndex());
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_NAV5, payload);
@@ -2870,25 +2749,23 @@ void GNSSWindow::sendUbxMonVer() {
 
     // Software version (30 bytes, null-terminated)
     QString swVersion = ui->leSwVersion->text();
-    QByteArray swVersionBytes = swVersion.left(29).toLatin1(); // Ensure it fits in 30 bytes with null terminator
+    QByteArray swVersionBytes = swVersion.left(29).toLatin1();
     payload.append(swVersionBytes);
     payload.append('\0');
-    while (payload.size() < 30) payload.append('\0'); // Pad to 30 bytes
+    while (payload.size() < 30) payload.append('\0');
 
-    // Hardware version (10 bytes, null-terminated)
     QString hwVersion = ui->leHwVersion->text();
-    QByteArray hwVersionBytes = hwVersion.left(9).toLatin1(); // Ensure it fits in 10 bytes with null terminator
+    QByteArray hwVersionBytes = hwVersion.left(9).toLatin1();
     payload.append(hwVersionBytes);
     payload.append('\0');
-    while (payload.size() < 40) payload.append('\0'); // Pad to 40 bytes
+    while (payload.size() < 40) payload.append('\0');
 
-    // Extensions (each 30 bytes, null-terminated)
     QStringList extensions = ui->teExtensions->toPlainText().split('\n', Qt::SkipEmptyParts);
     for (const QString &ext : extensions) {
-        QByteArray extBytes = ext.left(29).toLatin1(); // Ensure it fits in 30 bytes with null terminator
+        QByteArray extBytes = ext.left(29).toLatin1();
         payload.append(extBytes);
         payload.append('\0');
-        while (payload.size() % 30 != 0) payload.append('\0'); // Pad to multiple of 30 bytes
+        while (payload.size() % 30 != 0) payload.append('\0');
     }
 
     createUbxPacket(UBX_CLASS_MON, UBX_MON_VER, payload);
@@ -3003,7 +2880,7 @@ void GNSSWindow::setupNavStatusFields() {
 
     if (m_firstInitialization) {
     ui->sbFixTypeStatus->setValue(3); // 3D fix
-    ui->sbTtff->setValue(5000); // 5 seconds
+    ui->sbTtff->setValue(5000);
     }
 }
 
@@ -3042,15 +2919,12 @@ void GNSSWindow::sendUbxCfgPrt() {
 
     QByteArray payload(20, 0x00);
 
-    // Port ID
     quint8 portId = static_cast<quint8>(ui->cbPortId->currentIndex() + 1);
     payload[0] = portId;
 
-    // Baud Rate
     quint32 baudRate = ui->cbBaudRate->currentText().toUInt();
     qToLittleEndian<quint32>(baudRate, payload.data() + 8);
 
-    // Protocol masks
     quint16 inProtoMask = 0;
     if (ui->cbInUbx->isChecked()) inProtoMask |= 0x0001;
     if (ui->cbInNmea->isChecked()) inProtoMask |= 0x0002;
@@ -3063,7 +2937,6 @@ void GNSSWindow::sendUbxCfgPrt() {
     if (ui->cbOutRtcm->isChecked()) outProtoMask |= 0x0004;
     qToLittleEndian<quint16>(outProtoMask, payload.data() + 14);
 
-    // Mode: 8N1, no parity (0x000008D0)
     qToLittleEndian<quint32>(0x000008D0, payload.data() + 4);
 
     createUbxPacket(UBX_CLASS_CFG, UBX_CFG_PRT, payload);
@@ -3077,29 +2950,21 @@ void GNSSWindow::sendUbxCfgPrt() {
 void GNSSWindow::sendUbxMonHw() {
     QByteArray payload(60, 0x00);
 
-    // Noise level (0-8191)
     quint16 noise = static_cast<quint16>(ui->sbHwNoise->value());
     qToLittleEndian<quint16>(noise, payload.data() + 16);
 
-    // AGC (0-100% -> 0-8191)
     quint16 agc = static_cast<quint16>(ui->sbHwAgc->value() * 81.91);
     qToLittleEndian<quint16>(agc, payload.data() + 18);
 
-    // Antenna status
     payload[20] = static_cast<quint8>(ui->cbHwAntStatus->currentIndex());
 
-    // Antenna power
     payload[21] = static_cast<quint8>(ui->cbHwAntPower->currentIndex());
 
-    // Flags
     quint8 flags = 0;
-    flags |= (ui->cbHwJamming->currentIndex() << 2); // Jamming state in bits 2-3
+    flags |= (ui->cbHwJamming->currentIndex() << 2);
     payload[22] = flags;
 
-    // CW suppression
     payload[45] = static_cast<quint8>(ui->sbHwCwSuppression->value());
-
-    // pinSel, pinBank, pinDir, pinVal, usedMask, VP, pinIrq, pullH, pullL
 
     createUbxPacket(UBX_CLASS_MON, UBX_MON_HW, payload);
     appendToLog(tr("MON-HW sent: Noise=%1, AGC=%2%, AntStatus=%3, AntPower=%4")
@@ -3115,7 +2980,6 @@ void GNSSWindow::sendUbxNavPvt() {
     QDateTime currentTime = QDateTime::currentDateTime();
     quint32 iTOW = static_cast<quint32>(currentTime.toMSecsSinceEpoch() % (7 * 24 * 60 * 60 * 1000));
 
-    // Get values from UI
     qint32 lat = static_cast<qint32>(ui->dsbLat->value() * 1e7);
     qint32 lon = static_cast<qint32>(ui->dsbLon->value() * 1e7);
     qint32 height = static_cast<qint32>(ui->dsbHeight->value() * 1000);
@@ -3131,7 +2995,6 @@ void GNSSWindow::sendUbxNavPvt() {
     quint32 sAcc = static_cast<quint32>(ui->dsbRmsVel->value() * 1000);
     quint16 pDOP = static_cast<quint16>(ui->dsbPdop->value() * 100);
 
-    // Fill payload
     qToLittleEndian<quint32>(iTOW, payload.data()); // iTOW
     qToLittleEndian<quint16>(currentTime.date().year(), payload.data() + 4);
     payload[6] = static_cast<quint8>(currentTime.date().month());
@@ -3182,7 +3045,6 @@ void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray
     packet.append(static_cast<char>((length >> 8) & 0xFF));
     packet.append(payload);
 
-    // Calculate checksum
     quint8 ck_a = 0, ck_b = 0;
     for (int i = 2; i < packet.size(); i++) {
         quint8 byte = static_cast<quint8>(packet[i]);
@@ -3199,7 +3061,6 @@ void GNSSWindow::createUbxPacket(quint8 msgClass, quint8 msgId, const QByteArray
                     .arg(ck_a, 2, 16, QLatin1Char('0'))
                     .arg(ck_b, 2, 16, QLatin1Char('0')), "debug");
 
-    // Sending
     qint64 bytesWritten = m_socket->write(packet);
     if (bytesWritten == -1) {
         appendToLog(tr("Write error: %1").arg(m_socket->errorString()), "error");

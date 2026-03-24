@@ -193,4 +193,4 @@ public:
     static CfgMsg parseCfgMsg(const QByteArray &payload);
 };
 
-#endif // UBX_PARSER_H
+#endif

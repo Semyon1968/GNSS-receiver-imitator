@@ -14,23 +14,17 @@ Dialog::Dialog(QWidget *parent) :
     m_connectionTimer(new QTimer(this)) {
     ui->setupUi(this);
 
-    // Setup connection timer (10 sec timeout)
     m_connectionTimer->setSingleShot(true);
     m_connectionTimer->setInterval(10000);
     connect(m_connectionTimer, &QTimer::timeout, this, &Dialog::onConnectionTimeout);
 
-    // Setup socket connections
     connect(m_socket, &QTcpSocket::connected, this, &Dialog::onConnected);
     connect(m_socket, &QTcpSocket::disconnected, this, &Dialog::onDisconnected);
     connect(m_socket, &QTcpSocket::stateChanged, this, [this](QAbstractSocket::SocketState state) {
         qDebug() << tr("Socket state changed to: %1").arg(state);
     });
     connect(m_socket, &QTcpSocket::errorOccurred, this, &Dialog::onError);
-    /*
-    connect(m_socket, &QTcpSocket::readyRead, this, [this]() {
-        qDebug() << tr("Data available: %1 bytes").arg(m_socket->bytesAvailable());
-    });
-*/
+
     connect(m_socket, &QTcpSocket::readyRead, this, [this]() {
         QByteArray newData = m_socket->readAll();
         m_receiveBuffer.append(newData);
@@ -38,7 +32,6 @@ Dialog::Dialog(QWidget *parent) :
                         .arg(newData.size()).arg(m_receiveBuffer.size());
     });
 
-    // Set default UI values
     ui->leIpAddress->setText("192.168.2.22");
     ui->lePort->setText("40001");
 

@@ -9,7 +9,6 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
-    // Setup translations
     QTranslator translator;
     QString projectBaseDir;
     QString appDir = QCoreApplication::applicationDirPath();

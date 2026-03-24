@@ -41,4 +41,4 @@ private:
     QByteArray m_receiveBuffer;
 };
 
-#endif // DIALOG_H
+#endif

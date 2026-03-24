@@ -9,34 +9,29 @@ bool UbxParser::parseUbxMessage(const QByteArray &data,
                                 quint8 &msgClass,
                                 quint8 &msgId,
                                 QByteArray &payload) {
-    // Check minimum message size
     if (data.size() < 8) {
         qDebug() << "UBX message too short. Minimum size is 8 bytes, got"
                  << data.size() << "bytes";
         return false;
     }
 
-    // Verify sync bytes
     if (static_cast<quint8>(data[0]) != 0xB5 ||
         static_cast<quint8>(data[1]) != 0x62) {
         qDebug() << "Invalid UBX sync bytes";
         return false;
     }
 
-    // Extract header fields
     msgClass = static_cast<quint8>(data[2]);
     msgId = static_cast<quint8>(data[3]);
     quint16 length = static_cast<quint8>(data[4]) |
                      (static_cast<quint8>(data[5]) << 8);
 
-    // Verify full message size
     if (data.size() != 6 + length + 2) {
         qDebug() << "UBX message length mismatch. Expected"
                  << 6 + length + 2 << "bytes, got" << data.size() << "bytes";
         return false;
     }
 
-    // Calculate and verify checksum
     quint8 ck_a = 0;
     quint8 ck_b = 0;
 
@@ -51,7 +46,6 @@ bool UbxParser::parseUbxMessage(const QByteArray &data,
         return false;
     }
 
-    // Extract payload
     payload = data.mid(6, length);
 
     qDebug() << "Successfully parsed UBX message:"
@@ -266,15 +260,12 @@ UbxParser::MonVer UbxParser::parseMonVer(const QByteArray &payload) {
     MonVer result;
     int pos = 0;
 
-    // Parse SW version
     result.swVersion = QString::fromLatin1(payload.constData() + pos);
     pos += result.swVersion.length() + 1;
 
-    // Parse HW version
     result.hwVersion = QString::fromLatin1(payload.constData() + pos);
     pos += result.hwVersion.length() + 1;
 
-    // Parse extensions
     while (pos < payload.size()) {
         QString ext = QString::fromLatin1(payload.constData() + pos);
         if (ext.isEmpty()) {
@@ -297,32 +288,26 @@ UbxParser::MonHw UbxParser::parseMonHw(const QByteArray &payload) {
         return result;
     }
 
-    // Read 32-bit values
     result.pinSel = qFromLittleEndian<quint32>(payload.mid(0, 4).constData());
     result.pinBank = qFromLittleEndian<quint32>(payload.mid(4, 4).constData());
     result.pinDir = qFromLittleEndian<quint32>(payload.mid(8, 4).constData());
     result.pinVal = qFromLittleEndian<quint32>(payload.mid(12, 4).constData());
 
-    // Read 16-bit values
     result.noisePerMS = qFromLittleEndian<quint16>(payload.mid(16, 2).constData());
     result.agcCnt = qFromLittleEndian<quint16>(payload.mid(18, 2).constData());
 
-    // Read 8-bit values
     result.aStatus = static_cast<quint8>(payload[20]);
     result.aPower = static_cast<quint8>(payload[21]);
     result.flags = static_cast<quint8>(payload[22]);
     result.reserved1 = static_cast<quint8>(payload[23]);
 
-    // Read usedMask
     result.usedMask = qFromLittleEndian<quint32>(payload.mid(24, 4).constData());
 
-    // Read VP array (17 bytes)
     const int vpStart = 28;
     for (int i = 0; i < 17 && (vpStart + i) < payload.size(); i++) {
         result.VP[i] = static_cast<quint8>(payload[vpStart + i]);
     }
 
-    // Read remaining fields
     const int jamIndPos = vpStart + 17;
     if (payload.size() > jamIndPos) {
         result.jamInd = static_cast<quint8>(payload[jamIndPos]);
@@ -336,7 +321,6 @@ UbxParser::MonHw UbxParser::parseMonHw(const QByteArray &payload) {
         result.reserved2[1] = static_cast<quint8>(payload[jamIndPos + 2]);
     }
 
-    // Read additional 32-bit fields if available
     const int pinIrqPos = jamIndPos + 3;
     if (payload.size() >= pinIrqPos + 12) {
         result.pinIrq = qFromLittleEndian<quint32>(payload.mid(pinIrqPos, 4).constData());

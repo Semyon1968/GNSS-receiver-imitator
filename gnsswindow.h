@@ -99,7 +99,6 @@ private:
     UbxParser m_ubxParser;
     QMap<quint8, QMap<int, QString>> m_classIdMap;
     QTimer *m_utcTimer;
-    // QByteArray m_receiveBuffer;
     void updateUTCTime();
     void processAckNack(quint8 msgId, const QByteArray& payload);
     void completeInitialization();
@@ -179,4 +178,4 @@ private:
     bool m_firstInitialization = true;
 };
 
-#endif // GNSSWINDOW_H
+#endif

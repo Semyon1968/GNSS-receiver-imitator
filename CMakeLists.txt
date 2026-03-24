@@ -9,22 +9,14 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find Qt with required components
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network PrintSupport LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network PrintSupport LinguistTools)
 
-# Translations
 set(TRANSLATION_FILES
     translations/gnss_simulator_ru.ts
 )
 qt_add_translation(QM_FILES ${TRANSLATION_FILES})
-qt_add_resources(PROJECT_SOURCES
-    "translations"
-    PREFIX "/translations"
-    FILES ${QM_FILES}
-)
 
-# QCustomPlot sources (modified version with Antialiasing fixes)
 set(QCP_SOURCES
     qcustomplot.cpp
     qcustomplot.h
@@ -43,7 +35,6 @@ set(PROJECT_SOURCES
     ${QCP_SOURCES}
 )
 
-# Check for duplicate source files
 list(REMOVE_DUPLICATES PROJECT_SOURCES)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -64,19 +55,24 @@ else()
     endif()
 endif()
 
-# Link required Qt modules
+if(QM_FILES)
+    qt_add_resources(ImitatorGNSS "translation_resources"
+        PREFIX "/translations"
+        BASE ${CMAKE_CURRENT_BINARY_DIR}
+        FILES ${QM_FILES}
+    )
+endif()
+
 target_link_libraries(ImitatorGNSS PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::PrintSupport
 )
 
-# Include directories
 target_include_directories(ImitatorGNSS PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# macOS bundle settings
 set(BUNDLE_ID_OPTION "")
 if(APPLE AND ${QT_VERSION} VERSION_LESS 6.1.0)
     set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.ImitatorGNSS)
@@ -90,7 +86,6 @@ set_target_properties(ImitatorGNSS PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-# Installation
 include(GNUInstallDirs)
 install(TARGETS ImitatorGNSS
     BUNDLE DESTINATION .
@@ -98,13 +93,11 @@ install(TARGETS ImitatorGNSS
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# Finalize for Qt6
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(ImitatorGNSS)
 endif()
 
-# Add definitions to avoid multiple declarations
 target_compile_definitions(ImitatorGNSS PRIVATE
     QT_DEPRECATED_WARNINGS
-    QT_DISABLE_DEPRECATED_BEFORE=0x050F00  # Disable deprecation warnings before Qt 5.15
+    QT_DISABLE_DEPRECATED_BEFORE=0x050F00
 )
